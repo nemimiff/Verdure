@@ -12,7 +12,7 @@
     // SVG Icon Map - centralized icon definitions (28 icons)
     const ICON_PATHS = {
       'sprout' : '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>',
-      'plant-plus': '<path d="M13 8.536V6a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V4a4 4 0 0 1-4 4 4 4 0 0 0-4 4 5 5 0 0 1-8-4 5 5 0 0 1 8 4c0 2 1 3 1 5"/><path d="m14 17-1 3.58A2 2 0 0 1 11.08 22H7.002a2 2 0 0 1-1.913-1.418L4 17"/><path d="M3 17h12"/><path d="M19 13v6"/><path d="M16 16h6"/>',
+      'plant-plus': '<path d="M13 9.5V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" fill="#588157" fill-opacity="0.25"/><path d="M3 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" fill="#588157" fill-opacity="0.25"/><path d="M18.5 14v6" stroke-width="2.2"/><path d="M15.5 17h6" stroke-width="2.2"/>',
       'layers': '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
       'download': '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
       'upload': '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
@@ -158,9 +158,17 @@
   <header class="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-stoneborder">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
       <!-- Brand Logo -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-sage-600 text-white flex items-center justify-center shadow-sm">
-          <span data-icon="sprout" data-icon-class="w-5 h-5"></span>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 shrink-0 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <!-- 地面 -->
+            <path d="M4 21h16" stroke="#2F3E46" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- 茎 -->
+            <path d="M12 21v-7" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- 左右の葉（薄緑塗り＋フチ） -->
+            <path d="M12 14c-4.5 0-7-3-7-7 4 0 7 2.5 7 7Z" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 11c3.5 0 7-2 7-6-3.5 0-7 2-7 6Z" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
         <div>
           <h1 class="font-bold tracking-tight text-base sm:text-lg text-charcoal leading-none">VERDURE</h1>
@@ -190,8 +198,8 @@
         <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
         <!-- 株を追加 -->
-        <button data-action="openPlantFormModal" id="addPlantBtn" class="p-2 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-600 hover:bg-sage-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer shrink-0" title="株を追加">
-          <span data-icon="plant-plus" data-icon-class="w-4 h-4"></span>
+        <button data-action="openPlantFormModal" id="addPlantBtn" class="p-2 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-100 hover:bg-sage-200 text-sage-800 flex items-center gap-1.5 transition cursor-pointer shrink-0" title="株を追加">
+          <span data-icon="plant-plus" data-icon-class="w-4 h-4 text-sage-700"></span>
           <span class="hidden sm:inline whitespace-nowrap">株を追加</span>
         </button>
       </div>
@@ -221,57 +229,53 @@
   </div>
 
   <!-- ================= FILTER & SEARCH CONTROLS ================= -->
-  <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-2 space-y-3">
-    <!-- Top Row: Location Filter Pills -->
-    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1" id="locationTabsContainer"></div>
+  <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 pb-2 flex flex-col gap-2.5">
+    <!-- 1段目: 置き場所タブ -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="locationTabsContainer"></div>
 
-    <!-- Second Row: Search, Needs-Water Toggle, Sort, Stats -->
-    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-      <div class="flex items-center gap-2 flex-1 min-w-[220px]">
-        <!-- Search Input -->
-        <div class="relative flex-1 max-w-xs">
-          <span data-icon="search" data-icon-class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" data-icon-stroke-width="1.5"></span>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="名前・用土・ショップで検索..."
-            class="w-full pl-9 pr-7 py-1.5 bg-white border border-stoneborder rounded-xl text-xs sm:text-sm focus:outline-none focus:border-sage-600 transition"
-          />
-          <button id="clearSearchBtn" data-action="clearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-            <span data-icon="x" data-icon-class="w-3.5 h-3.5" data-icon-stroke-width="1.5"></span>
-          </button>
-        </div>
-
-        <!-- Needs Water Filter Toggle -->
-        <button
-          id="filterNeedsWaterBtn"
-          data-action="toggleNeedsWaterFilter"
-          class="px-3 py-1.5 rounded-xl text-xs font-medium border border-stoneborder bg-white text-gray-600 hover:bg-amber-50 flex items-center gap-1.5 transition shrink-0"
-        >
-          <span data-icon="droplet" data-icon-class="w-3.5 h-3.5 text-amber-500"></span>
-          <span>水やり目安</span>
-          <span id="needsWaterCountBadge" class="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">0</span>
+    <!-- 2段目: 検索バー ＆ 水やり目安トグル -->
+    <div class="flex items-center gap-2 w-full">
+      <div class="relative flex-1">
+        <span data-icon="search" data-icon-class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" data-icon-stroke-width="1.5"></span>
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="名前・用土・ショップで検索..."
+          class="w-full h-9 pl-9 pr-7 bg-white border border-stoneborder rounded-xl text-xs sm:text-sm focus:outline-none focus:border-sage-600 transition"
+        />
+        <button id="clearSearchBtn" data-action="clearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <span data-icon="x" data-icon-class="w-3.5 h-3.5" data-icon-stroke-width="1.5"></span>
         </button>
       </div>
 
-      <!-- Sort Dropdown -->
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 py-1.5 text-xs text-gray-600">
-          <span data-icon="arrow-up-down" data-icon-class="w-3.5 h-3.5 text-gray-400"></span>
-          <select id="sortSelect" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer">
-            <option value="water_desc">水やり経過が長い順</option>
-            <option value="name_asc">植物名順 (A-Z)</option>
-            <option value="purchase_desc">お迎えが新しい順</option>
-            <option value="purchase_asc">お迎えが古い順</option>
-            <option value="price_desc">価格が高い順</option>
-          </select>
-        </div>
+      <button
+        id="filterNeedsWaterBtn"
+        data-action="toggleNeedsWaterFilter"
+        class="h-9 px-3 rounded-xl text-xs font-medium border border-stoneborder bg-white text-gray-600 hover:bg-amber-50 flex items-center gap-1.5 transition shrink-0"
+      >
+        <span data-icon="droplet" data-icon-class="w-3.5 h-3.5 text-amber-500"></span>
+        <span class="whitespace-nowrap">水やり目安</span>
+        <span id="needsWaterCountBadge" class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold leading-none">0</span>
+      </button>
+    </div>
+
+    <!-- 3段目: ソートドロップダウン -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 h-9 text-xs text-gray-600 w-full sm:w-auto">
+        <span data-icon="arrow-up-down" data-icon-class="w-3.5 h-3.5 text-gray-400 shrink-0"></span>
+        <select id="sortSelect" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer w-full text-xs">
+          <option value="water_desc">水やり経過が長い順</option>
+          <option value="name_asc">植物名順 (A-Z)</option>
+          <option value="purchase_desc">お迎えが新しい順</option>
+          <option value="purchase_asc">お迎えが古い順</option>
+          <option value="price_desc">価格が高い順</option>
+        </select>
       </div>
     </div>
   </section>
 
   <!-- ================= MAIN PLANT GRID ================= -->
-  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 flex-1">
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-1 pb-6 flex-1">
     <div id="plantGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4"></div>
 
     <!-- Empty State -->
@@ -1144,7 +1148,7 @@
         card.id = `card_${plant.id}`;
         if (appState.batchMode) card.addEventListener('click', () => toggleSelectInBatch(plant.id));
 
-        const visual = createElement('div', 'relative h-28 sm:h-44 bg-sage-50/60 border-b border-stoneborder flex items-center justify-center overflow-hidden pt-6 sm:pt-7');
+        const visual = createElement('div', `relative h-28 sm:h-44 bg-sage-50/60 border-b border-stoneborder flex items-center justify-center overflow-hidden ${latestPhoto ? '' : 'pt-6 sm:pt-7'}`);
         if (latestPhoto) {
           const image = createElement('img', 'w-full h-full object-cover group-hover:scale-105 transition duration-500');
           image.src = latestPhoto;
@@ -1226,10 +1230,14 @@
         // Quick Care Action Buttons (水やり / 活力剤)
         const actions = createElement('div', 'grid grid-cols-2 gap-1 pt-1 sm:gap-1.5');
         QUICK_CARE_CARDS.slice(0, 2).forEach(cardDef => {
-          const button = createElement('button', `py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
+          // py-2 で外側（ボタン上下端）の余白を確保し、gap-0 でアイコンと文字間を最狭にする
+          const button = createElement('button', `py-2 sm:py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
           button.type = 'button';
           button.title = `今日${cardDef.label}したとして記録`;
-          button.append(createLucideIcon(cardDef.icon, 'w-3 h-3 sm:w-3.5 sm:h-3.5'), createElement('span', 'text-[9px] sm:text-xs', cardDef.label));
+          button.append(
+            createLucideIcon(cardDef.icon, 'w-3.5 h-3.5 shrink-0'),
+            createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', cardDef.label)
+          );
           button.addEventListener('click', event => {
             event.stopPropagation();
             recordPlantCare(plant.id, cardDef.careType, `${cardDef.label}を記録しました`);
@@ -1266,12 +1274,14 @@
 
       const btn = document.getElementById('batchModeBtnHeader');
       if (btn) {
-        btn.classList.toggle('bg-sage-600', appState.batchMode);
-        btn.classList.toggle('text-white', appState.batchMode);
-        btn.classList.toggle('border-sage-700', appState.batchMode);
+        btn.classList.toggle('bg-sage-100', appState.batchMode);
+        btn.classList.toggle('text-sage-800', appState.batchMode);
+        btn.classList.toggle('border-sage-500', appState.batchMode);
+        btn.classList.toggle('font-semibold', appState.batchMode);
         btn.classList.toggle('bg-white', !appState.batchMode);
         btn.classList.toggle('text-charcoal', !appState.batchMode);
         btn.classList.toggle('border-stoneborder', !appState.batchMode);
+        btn.classList.toggle('font-medium', !appState.batchMode);
       }
 
       updateBatchCountUI();
@@ -1546,7 +1556,10 @@
       form.reset();
       clearFormPhoto();
 
-      if (editPlantId) {
+      // 文字列のIDが明示的に渡された場合のみ編集モードとする
+      const isEdit = typeof editPlantId === 'string' && editPlantId.length > 0;
+
+      if (isEdit) {
         const p = appState.plants.find(x => x.id === editPlantId);
         if (!p) return;
         setPlantFormTitle('pencil', `「${p.name}」を編集`);
@@ -1927,7 +1940,7 @@
         toggleBatchMode,
         exportData,
         triggerImport,
-        openPlantFormModal,
+        openPlantFormModal: () => openPlantFormModal(null),
         selectAllVisibleInBatch,
         executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
         executeBatchFertilizer: () => executeBatchCare(['lastWatered', 'lastFertilized'], '🧪 {count}株に水やり＋活力剤を一括記録しました'),
