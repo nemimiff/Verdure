@@ -4,14 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>VERDURE — Botanical Collection & Care Log</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -95,26 +92,26 @@
       <!-- Right Action Buttons -->
       <div class="flex items-center gap-1.5 sm:gap-2">
         <!-- Batch Watering Mode Toggle -->
-        <button id="batchModeBtn" onclick="toggleBatchMode()" class="px-3 py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shadow-2xs" title="複数の鉢にまとめて水やりを記録します">
+        <button id="batchModeBtn" data-action="toggleBatchMode" class="px-3 py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shadow-2xs" title="複数の鉢にまとめて水やりを記録します">
           <i data-lucide="layers" class="w-4 h-4 text-sage-600"></i>
           <span class="hidden md:inline">一括水やり</span>
         </button>
 
         <!-- Export JSON -->
-        <button onclick="exportData()" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="写真を含む全データをJSONファイルに書き出し">
+        <button data-action="exportData" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="写真を含む全データをJSONファイルに書き出し">
           <i data-lucide="download" class="w-4 h-4 text-gray-600"></i>
           <span class="hidden lg:inline">保存(Export)</span>
         </button>
 
         <!-- Import JSON -->
-        <button onclick="triggerImport()" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="JSONファイルからデータを復元">
+        <button data-action="triggerImport" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="JSONファイルからデータを復元">
           <i data-lucide="upload" class="w-4 h-4 text-gray-600"></i>
           <span class="hidden lg:inline">読込(Import)</span>
         </button>
-        <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" onchange="handleImportFile(event)" />
+        <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
         <!-- Add New Plant Button -->
-        <button onclick="openPlantFormModal()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-600 hover:bg-sage-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+        <button data-action="openPlantFormModal" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-600 hover:bg-sage-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>株を追加</span>
         </button>
@@ -128,18 +125,18 @@
       <div class="flex items-center gap-3">
         <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-sage-600 text-xs font-bold" id="batchSelectedCount">0</span>
         <span class="text-xs sm:text-sm font-medium">株を選択中（一括ドボン・水やりモード）</span>
-        <button onclick="selectAllVisibleInBatch()" class="text-xs underline text-sage-200 hover:text-white ml-2">表示中の株をすべて選択</button>
+        <button data-action="selectAllVisibleInBatch" class="text-xs underline text-sage-200 hover:text-white ml-2">表示中の株をすべて選択</button>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="executeBatchWater()" class="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition">
+        <button data-action="executeBatchWater" class="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition">
           <i data-lucide="droplets" class="w-4 h-4"></i>
           <span>今日水やり完了にする</span>
         </button>
-        <button onclick="executeBatchFertilizer()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
+        <button data-action="executeBatchFertilizer" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
           <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>
           <span>＋活力剤も記録</span>
         </button>
-        <button onclick="toggleBatchMode()" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs">完了</button>
+        <button data-action="toggleBatchMode" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs">完了</button>
       </div>
     </div>
   </div>
@@ -160,11 +157,10 @@
           <input
             type="text"
             id="searchInput"
-            oninput="renderApp()"
             placeholder="名前・用土・ショップで検索..."
             class="w-full pl-9 pr-7 py-1.5 bg-white border border-stoneborder rounded-xl text-xs sm:text-sm focus:outline-none focus:border-sage-600 transition"
           />
-          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <button id="clearSearchBtn" data-action="clearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
             <i data-lucide="x" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -172,7 +168,7 @@
         <!-- Needs Water Filter Toggle -->
         <button
           id="filterNeedsWaterBtn"
-          onclick="toggleNeedsWaterFilter()"
+          data-action="toggleNeedsWaterFilter"
           class="px-3 py-1.5 rounded-xl text-xs font-medium border border-stoneborder bg-white text-gray-600 hover:bg-amber-50 flex items-center gap-1.5 transition shrink-0"
         >
           <i data-lucide="droplet" class="w-3.5 h-3.5 text-amber-500"></i>
@@ -185,7 +181,7 @@
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 py-1.5 text-xs text-gray-600">
           <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-gray-400"></i>
-          <select id="sortSelect" onchange="renderApp()" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer">
+          <select id="sortSelect" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer">
             <option value="water_desc">水やり経過が長い順</option>
             <option value="name_asc">植物名順 (A-Z)</option>
             <option value="purchase_desc">お迎えが新しい順</option>
@@ -199,7 +195,7 @@
 
   <!-- ================= MAIN PLANT GRID ================= -->
   <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 flex-1">
-    <div id="plantGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div id="plantGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
       <!-- Populated by JavaScript -->
     </div>
 
@@ -211,8 +207,8 @@
       <h3 class="font-bold text-base text-charcoal mb-1">表示できる植物がありません</h3>
       <p class="text-xs text-gray-500 mb-5 leading-relaxed">条件を変更するか、右上の「＋ 株を追加」ボタンから新しい植物を登録してください。</p>
       <div class="flex items-center justify-center gap-2">
-        <button onclick="resetFilters()" class="px-4 py-2 rounded-xl text-xs font-medium border border-stoneborder hover:bg-gray-50">フィルタを解除</button>
-        <button onclick="openPlantFormModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sage-600 text-white hover:bg-sage-700">＋ 最初の株を追加</button>
+        <button data-action="resetFilters" class="px-4 py-2 rounded-xl text-xs font-medium border border-stoneborder hover:bg-gray-50">フィルタを解除</button>
+        <button data-action="openPlantFormModal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sage-600 text-white hover:bg-sage-700">＋ 最初の株を追加</button>
       </div>
     </div>
   </main>
@@ -240,7 +236,7 @@
           <button id="detailDeleteBtn" class="p-2 rounded-xl border border-stoneborder bg-white hover:bg-red-50 text-red-600 text-xs flex items-center gap-1" title="削除">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
           </button>
-          <button onclick="closeDetailModal()" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 ml-1">
+          <button data-action="closeDetailModal" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 ml-1">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
@@ -290,7 +286,7 @@
               <p id="specLight" class="font-semibold text-charcoal mt-0.5">-</p>
             </div>
             <div>
-              <span class="text-gray-400 flex items-center gap-1"><i data-lucide="Sprout" class="w-3.5 h-3.5"></i>用土・鉢</span>
+              <span class="text-gray-400 flex items-center gap-1"><i data-lucide="sprout" class="w-3.5 h-3.5"></i>用土・鉢</span>
               <p id="specSoil" class="font-semibold text-charcoal mt-0.5">-</p>
             </div>
             <div>
@@ -363,7 +359,7 @@
                 <label class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition">
                   <i data-lucide="image-plus" class="w-4 h-4"></i>
                   <span id="newGrowthPhotoLabel">写真を選択 (自動圧縮)</span>
-                  <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" onchange="previewGrowthPhoto(event)" />
+                  <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
                 </label>
               </div>
               <!-- Date -->
@@ -376,7 +372,7 @@
               </div>
               <!-- Submit -->
               <div class="sm:col-span-2">
-                <button onclick="addGrowthLogEntry()" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer">
+                <button data-action="addGrowthLogEntry" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer">
                   追加
                 </button>
               </div>
@@ -390,7 +386,7 @@
                   <p id="newGrowthSizeInfo" class="text-[11px] text-gray-500"></p>
                 </div>
               </div>
-              <button onclick="clearNewGrowthPhoto()" class="text-xs text-gray-400 hover:text-red-500">取消</button>
+              <button data-action="clearNewGrowthPhoto" class="text-xs text-gray-400 hover:text-red-500">取消</button>
             </div>
           </div>
 
@@ -411,12 +407,12 @@
           <i data-lucide="sprout" class="w-5 h-5 text-sage-600"></i>
           <span>植物を登録</span>
         </h2>
-        <button onclick="closePlantFormModal()" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600">
+        <button data-action="closePlantFormModal" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <form id="plantForm" onsubmit="savePlantForm(event)" class="p-5 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm">
+      <form id="plantForm" class="p-5 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm">
         <input type="hidden" id="formPlantId" />
 
         <!-- 1. Name & Botanical SVG Silhouette Selector -->
@@ -442,12 +438,12 @@
             <label class="px-3.5 py-2 rounded-xl bg-white border border-stoneborder hover:bg-sage-50 text-xs font-medium cursor-pointer flex items-center gap-1.5 shadow-2xs transition">
               <i data-lucide="camera" class="w-4 h-4 text-sage-600"></i>
               <span>写真を選択</span>
-              <input type="file" id="formPhotoInput" accept="image/*" class="hidden" onchange="handleFormPhotoSelect(event)" />
+              <input type="file" id="formPhotoInput" accept="image/*" class="hidden" />
             </label>
             <div id="formPhotoPreviewWrap" class="hidden flex items-center gap-2">
               <img id="formPhotoPreview" src="" class="w-10 h-10 rounded-lg object-cover border border-stoneborder" />
               <span id="formPhotoSizeBadge" class="text-[11px] text-sage-700 font-medium"></span>
-              <button type="button" onclick="clearFormPhoto()" class="text-xs text-gray-400 hover:text-red-500 ml-1">削除</button>
+              <button type="button" data-action="clearFormPhoto" class="text-xs text-gray-400 hover:text-red-500 ml-1">削除</button>
             </div>
           </div>
         </div>
@@ -538,7 +534,7 @@
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2 border-t border-stoneborder">
-          <button type="button" onclick="closePlantFormModal()" class="px-4 py-2.5 rounded-xl border border-stoneborder text-xs font-medium hover:bg-gray-50">キャンセル</button>
+          <button type="button" data-action="closePlantFormModal" class="px-4 py-2.5 rounded-xl border border-stoneborder text-xs font-medium hover:bg-gray-50">キャンセル</button>
           <button type="submit" class="px-5 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold shadow-xs cursor-pointer">保存する</button>
         </div>
       </form>
@@ -909,23 +905,47 @@
         appState.selectedLocation = 'すべて';
       }
 
-      container.innerHTML = locations.map(loc => {
+      container.replaceChildren();
+      locations.forEach(loc => {
         const active = appState.selectedLocation === loc;
-        return `
-          <button
-            onclick="selectLocationTab('${loc.replace(/'/g, "\\'")}')"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition cursor-pointer ${
-              active
-                ? 'bg-sage-600 text-white shadow-2xs'
-                : 'bg-white text-gray-600 border border-stoneborder hover:bg-sage-50'
-            }"
-          >
-            <i data-lucide="${loc === 'すべて' ? 'layout-grid' : 'map-pin'}" class="w-3.5 h-3.5 ${active ? 'text-sage-200' : 'text-gray-400'}"></i>
-            <span>${escapeHtml(loc)}</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}">${counts[loc] || 0}</span>
-          </button>
-        `;
-      }).join('');
+        const button = createElement(
+          'button',
+          `px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition cursor-pointer ${
+            active ? 'bg-sage-600 text-white shadow-2xs' : 'bg-white text-gray-600 border border-stoneborder hover:bg-sage-50'
+          }`
+        );
+        button.type = 'button';
+        button.addEventListener('click', () => selectLocationTab(loc));
+        button.append(
+          createLucideIcon(loc === 'すべて' ? 'layout-grid' : 'map-pin', `w-3.5 h-3.5 ${active ? 'text-sage-200' : 'text-gray-400'}`),
+          createElement('span', '', loc),
+          createElement('span', `text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(counts[loc] || 0))
+        );
+        container.appendChild(button);
+      });
+      lucide.createIcons();
+    }
+
+    function createElement(tagName, className = '', text = null) {
+      const element = document.createElement(tagName);
+      if (className) element.className = className;
+      if (text !== null) element.textContent = text;
+      return element;
+    }
+
+    function createLucideIcon(name, className = '') {
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', name);
+      if (className) icon.className = className;
+      return icon;
+    }
+
+    function appendBotanicalSvg(container, svgMarkup) {
+      const parsed = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
+      if (parsed.documentElement.tagName !== 'svg') {
+        throw new Error('Invalid built-in botanical SVG');
+      }
+      container.replaceChildren(document.importNode(parsed.documentElement, true));
     }
 
     function getFilteredAndSortedPlants() {
@@ -979,13 +999,13 @@
       const list = getFilteredAndSortedPlants();
 
       if (list.length === 0) {
-        grid.innerHTML = '';
+        grid.replaceChildren();
         emptyState.classList.remove('hidden');
         return;
       }
       emptyState.classList.add('hidden');
 
-      grid.innerHTML = list.map(plant => {
+      const cards = list.map(plant => {
         const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
         const latestPhoto = plant.growthLogs && plant.growthLogs.length > 0
           ? plant.growthLogs[plant.growthLogs.length - 1].photoDataUrl
@@ -1000,151 +1020,106 @@
             : `${daysSinceWater}日前`;
 
         const isBatchSelected = appState.batchSelectedIds.has(plant.id);
+        const card = createElement('article', `group bg-surface rounded-2xl border shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${
+          isBatchSelected ? 'border-sage-600 ring-2 ring-sage-500/30' : needsWater ? 'border-amber-300' : 'border-stoneborder'
+        }${appState.batchMode ? ' cursor-pointer' : ''}`);
+        card.id = `card_${plant.id}`;
+        if (appState.batchMode) card.addEventListener('click', () => toggleSelectInBatch(plant.id));
 
-        return `
-          <article
-            id="card_${plant.id}"
-            onclick="${appState.batchMode ? `toggleSelectInBatch('${plant.id}')` : ''}"
-            class="group bg-surface rounded-2xl border ${
-              isBatchSelected
-                ? 'border-sage-600 ring-2 ring-sage-500/30'
-                : needsWater
-                  ? 'border-amber-300'
-                  : 'border-stoneborder'
-            } shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${appState.batchMode ? 'cursor-pointer' : ''}"
-          >
-            <!-- Top Visual Area -->
-            <div class="relative h-44 bg-sage-50/60 border-b border-stoneborder flex items-center justify-center overflow-hidden">
-              ${
-                latestPhoto
-                  ? `<img src="${latestPhoto}" alt="${escapeHtml(plant.name)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                     <div class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-1 border border-stoneborder shadow-xs" title="${svgInfo.label}">
-                       ${svgInfo.svg}
-                     </div>`
-                  : `<div class="w-24 h-24 p-2 transition-transform duration-300 group-hover:scale-110">
-                       ${svgInfo.svg}
-                     </div>`
-              }
+        const visual = createElement('div', 'relative h-28 sm:h-44 bg-sage-50/60 border-b border-stoneborder flex items-center justify-center overflow-hidden');
+        if (latestPhoto) {
+          const image = createElement('img', 'w-full h-full object-cover group-hover:scale-105 transition duration-500');
+          image.src = latestPhoto;
+          image.alt = plant.name;
+          visual.appendChild(image);
+          const svgBadge = createElement('div', 'absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-1 border border-stoneborder shadow-xs');
+          svgBadge.title = svgInfo.label;
+          appendBotanicalSvg(svgBadge, svgInfo.svg);
+          visual.appendChild(svgBadge);
+        } else {
+          const svgWrap = createElement('div', 'w-16 h-16 sm:w-24 sm:h-24 p-1 sm:p-2 transition-transform duration-300 group-hover:scale-110');
+          appendBotanicalSvg(svgWrap, svgInfo.svg);
+          visual.appendChild(svgWrap);
+        }
 
-              <!-- Top-Left Location Pill -->
-              <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                ${
-                  appState.batchMode
-                    ? `<div class="w-6 h-6 rounded-lg ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs">
-                         <i data-lucide="check" class="w-4 h-4"></i>
-                       </div>`
-                    : ''
-                }
-                <span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80 flex items-center gap-1 shadow-2xs">
-                  <i data-lucide="map-pin" class="w-3 h-3 text-sage-600"></i>
-                  ${escapeHtml(plant.location || '未設定')}
-                </span>
-              </div>
+        const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-center gap-1.5');
+        if (appState.batchMode) {
+          const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
+          checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
+          locationPill.appendChild(checkWrap);
+        }
+        const locationBadge = createElement('span', 'px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-medium bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80 flex items-center gap-1 shadow-2xs');
+        locationBadge.append(createLucideIcon('map-pin', 'w-2.5 h-2.5 sm:w-3 sm:h-3 text-sage-600'), createElement('span', '', plant.location || '未設定'));
+        locationPill.appendChild(locationBadge);
+        visual.appendChild(locationPill);
 
-              <!-- Top-Right Water Status Pill -->
-              <div class="absolute top-2.5 right-2.5">
-                <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs ${
-                  needsWater
-                    ? 'bg-amber-500 text-white'
-                    : daysSinceWater === 0
-                      ? 'bg-sky-600 text-white'
-                      : 'bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80'
-                }">
-                  <i data-lucide="droplets" class="w-3 h-3 ${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}"></i>
-                  <span>${waterBadgeText}</span>
-                </span>
-              </div>
+        const statusWrap = createElement('div', 'absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5');
+        const statusBadge = createElement('span', `px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shadow-2xs ${
+          needsWater ? 'bg-amber-500 text-white' : daysSinceWater === 0 ? 'bg-sky-600 text-white' : 'bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80'
+        }`);
+        statusBadge.append(
+          createLucideIcon('droplets', `w-2.5 h-2.5 sm:w-3 sm:h-3 ${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
+          createElement('span', '', waterBadgeText)
+        );
+        statusWrap.appendChild(statusBadge);
+        visual.appendChild(statusWrap);
 
-              ${
-                plant.growthLogs && plant.growthLogs.length > 0
-                  ? `<span class="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-medium flex items-center gap-1">
-                       <i data-lucide="images" class="w-3 h-3"></i>${plant.growthLogs.length}枚
-                     </span>`
-                  : ''
-              }
-            </div>
+        if (plant.growthLogs?.length) {
+          const logBadge = createElement('span', 'absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-black/60 text-white text-[9px] sm:text-[10px] font-medium flex items-center gap-1');
+          logBadge.append(createLucideIcon('images', 'w-3 h-3'), document.createTextNode(`${plant.growthLogs.length}枚`));
+          visual.appendChild(logBadge);
+        }
+        card.appendChild(visual);
 
-            <!-- Card Content Body -->
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <div class="flex items-start justify-between gap-2">
-                  <h3
-                    onclick="event.stopPropagation(); openDetailModal('${plant.id}')"
-                    class="font-bold text-base text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1"
-                  >
-                    ${escapeHtml(plant.name)}
-                  </h3>
-                </div>
+        const body = createElement('div', 'p-2 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3');
+        const details = createElement('div');
+        const name = createElement('h3', 'font-bold text-sm sm:text-base text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1', plant.name);
+        name.addEventListener('click', event => {
+          event.stopPropagation();
+          openDetailModal(plant.id);
+        });
+        details.appendChild(name);
 
-                <!-- Spec Badges (Soil, Light, Water Interval) -->
-                <div class="flex flex-wrap items-center gap-1.5 mt-2">
-                  ${
-                    plant.soil
-                      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-canvas border border-stoneborder text-[11px] text-gray-600">
-                           <i data-lucide="archive" class="w-3 h-3 text-sage-600"></i>${escapeHtml(plant.soil)}
-                         </span>`
-                      : ''
-                  }
-                  ${
-                    plant.lightLevel
-                      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-canvas border border-stoneborder text-[11px] text-gray-600">
-                           <i data-lucide="sun" class="w-3 h-3 text-amber-500"></i>${escapeHtml(plant.lightLevel)}
-                         </span>`
-                      : ''
-                  }
-                  ${
-                    plant.waterIntervalDays
-                      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-canvas border border-stoneborder text-[11px] text-gray-600">
-                           <i data-lucide="repeat" class="w-3 h-3 text-sky-600"></i>目安${plant.waterIntervalDays}日 (${escapeHtml(plant.waterMethod || '通常')})
-                         </span>`
-                      : ''
-                  }
-                </div>
-              </div>
+        const specs = createElement('div', 'flex flex-wrap items-center gap-1 mt-1.5 sm:gap-1.5 sm:mt-2');
+        const addSpec = (iconName, iconClass, text) => {
+          const badge = createElement('span', 'inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-canvas border border-stoneborder text-[9px] sm:text-[11px] text-gray-600');
+          badge.append(createLucideIcon(iconName, iconClass), document.createTextNode(text));
+          specs.appendChild(badge);
+        };
+        if (plant.soil) addSpec('archive', 'w-3 h-3 text-sage-600', plant.soil);
+        if (plant.lightLevel) addSpec('sun', 'w-3 h-3 text-amber-500', plant.lightLevel);
+        if (plant.waterIntervalDays) addSpec('repeat', 'w-3 h-3 text-sky-600', `目安${plant.waterIntervalDays}日 (${plant.waterMethod || '通常'})`);
+        details.appendChild(specs);
+        body.appendChild(details);
 
-              <!-- Sub Metadata Row (Purchase / Shop / Price) -->
-              <div class="pt-2 border-t border-stoneborder/60 flex items-center justify-between text-[11px] text-gray-400">
-                <span class="truncate max-w-[65%]">
-                  ${plant.shop ? `<i data-lucide="store" class="w-3 h-3 inline mr-0.5"></i>${escapeHtml(plant.shop)}` : 'コレクション株'}
-                </span>
-                <span>
-                  ${plant.price ? `¥${Number(plant.price).toLocaleString()}` : ''}
-                </span>
-              </div>
+        const metadata = createElement('div', 'pt-1.5 sm:pt-2 border-t border-stoneborder/60 flex items-center justify-between text-[9px] sm:text-[11px] text-gray-400');
+        const shop = createElement('span', 'truncate max-w-[65%]');
+        if (plant.shop) shop.append(createLucideIcon('store', 'w-3 h-3 inline mr-0.5'), document.createTextNode(plant.shop));
+        else shop.textContent = 'コレクション株';
+        metadata.append(shop, createElement('span', '', plant.price ? `¥${Number(plant.price).toLocaleString()}` : ''));
+        body.appendChild(metadata);
 
-              <!-- Quick 1-Tap Action Buttons -->
-              <div class="grid grid-cols-3 gap-1.5 pt-1" onclick="event.stopPropagation()">
-                <button
-                  onclick="quickWaterPlant('${plant.id}')"
-                  class="py-2 px-2 rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200/80 flex items-center justify-center gap-1 transition cursor-pointer"
-                  title="今日水やりしたとして記録"
-                >
-                  <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
-                  <span>水やり</span>
-                </button>
-
-                <button
-                  onclick="quickFertilizePlant('${plant.id}')"
-                  class="py-2 px-2 rounded-xl text-xs font-medium bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200/70 flex items-center justify-center gap-1 transition cursor-pointer"
-                  title="今日肥料・活力剤を与えたとして記録"
-                >
-                  <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>
-                  <span>活力剤</span>
-                </button>
-
-                <button
-                  onclick="openDetailModal('${plant.id}')"
-                  class="py-2 px-2 rounded-xl text-xs font-medium bg-canvas hover:bg-sage-600 text-charcoal hover:text-white border border-stoneborder flex items-center justify-center gap-1 transition cursor-pointer"
-                  title="成長アルバムと詳細を開く"
-                >
-                  <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-                  <span>詳細/写真</span>
-                </button>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join('');
+        const actions = createElement('div', 'grid grid-cols-3 gap-1 pt-1 sm:gap-1.5');
+        const addActionButton = (iconName, label, className, title, action) => {
+          const button = createElement('button', className);
+          button.type = 'button';
+          button.title = title;
+          button.append(createLucideIcon(iconName, 'w-3 h-3 sm:w-3.5 sm:h-3.5'), createElement('span', 'text-[9px] sm:text-xs', label));
+          button.addEventListener('click', event => {
+            event.stopPropagation();
+            action(plant.id);
+          });
+          actions.appendChild(button);
+        };
+        addActionButton('droplets', '水やり', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200/80 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日水やりしたとして記録', quickWaterPlant);
+        addActionButton('flask-conical', '活力剤', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200/70 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日肥料・活力剤を与えたとして記録', quickFertilizePlant);
+        addActionButton('camera', '詳細', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium bg-canvas hover:bg-sage-600 text-charcoal hover:text-white border border-stoneborder flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '成長アルバムと詳細を開く', openDetailModal);
+        body.appendChild(actions);
+        card.appendChild(body);
+        return card;
+      });
+      grid.replaceChildren(...cards);
+      lucide.createIcons();
     }
 
     /********************************************************************
@@ -1284,7 +1259,7 @@
       if (!plant) return;
 
       const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-      document.getElementById('detailSvgBadge').innerHTML = svgInfo.svg;
+      appendBotanicalSvg(document.getElementById('detailSvgBadge'), svgInfo.svg);
       document.getElementById('detailLocationBadge').textContent = plant.location || '場所未設定';
       document.getElementById('detailPlantName').textContent = plant.name;
 
@@ -1365,31 +1340,38 @@
       // Timeline Grid (Newest first)
       const timelineGrid = document.getElementById('growthTimelineGrid');
       const reversed = [...logs].reverse();
+      timelineGrid.replaceChildren();
       if (reversed.length === 0) {
-        timelineGrid.innerHTML = `
-          <div class="col-span-full py-8 text-center text-xs text-gray-400 border border-dashed border-stoneborder rounded-2xl">
-            まだ成長写真が登録されていません。上の「写真を選択」から1枚目を記録してみましょう。
-          </div>
-        `;
+        timelineGrid.appendChild(createElement(
+          'div',
+          'col-span-full py-8 text-center text-xs text-gray-400 border border-dashed border-stoneborder rounded-2xl',
+          'まだ成長写真が登録されていません。上の「写真を選択」から1枚目を記録してみましょう。'
+        ));
       } else {
-        timelineGrid.innerHTML = reversed.map(entry => `
-          <div class="bg-canvas rounded-2xl border border-stoneborder overflow-hidden flex flex-col justify-between group">
-            <div class="aspect-square bg-gray-100 relative overflow-hidden">
-              <img src="${entry.photoDataUrl}" alt="Growth log" class="w-full h-full object-cover" />
-              <button
-                onclick="deleteGrowthLogEntry('${plant.id}', '${entry.id}')"
-                class=" opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600"
-                title="この写真を削除"
-              >
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-            <div class="p-2.5">
-              <p class="text-[11px] font-bold text-charcoal">${escapeHtml(entry.date || '')}</p>
-              <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">${escapeHtml(entry.note || '記録のみ')}</p>
-            </div>
-          </div>
-        `).join('');
+        reversed.forEach(entry => {
+          const item = createElement('div', 'bg-canvas rounded-2xl border border-stoneborder overflow-hidden flex flex-col justify-between group');
+          const imageWrap = createElement('div', 'aspect-square bg-gray-100 relative overflow-hidden');
+          const image = createElement('img', 'w-full h-full object-cover');
+          image.src = entry.photoDataUrl;
+          image.alt = 'Growth log';
+          imageWrap.appendChild(image);
+
+          const deleteButton = createElement('button', 'opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600');
+          deleteButton.type = 'button';
+          deleteButton.title = 'この写真を削除';
+          deleteButton.appendChild(createLucideIcon('trash-2', 'w-3.5 h-3.5'));
+          deleteButton.addEventListener('click', () => deleteGrowthLogEntry(plant.id, entry.id));
+          imageWrap.appendChild(deleteButton);
+          item.appendChild(imageWrap);
+
+          const caption = createElement('div', 'p-2.5');
+          caption.append(
+            createElement('p', 'text-[11px] font-bold text-charcoal', entry.date || ''),
+            createElement('p', 'text-xs text-gray-600 mt-0.5 line-clamp-2', entry.note || '記録のみ')
+          );
+          item.appendChild(caption);
+          timelineGrid.appendChild(item);
+        });
       }
       lucide.createIcons();
     }
@@ -1464,23 +1446,19 @@
      ********************************************************************/
     function renderSvgSelector() {
       const grid = document.getElementById('svgSelectorGrid');
-      grid.innerHTML = Object.entries(BOTANICAL_SVGS).map(([key, item]) => {
+      const buttons = Object.entries(BOTANICAL_SVGS).map(([key, item]) => {
         const active = appState.selectedFormSvgType === key;
-        return `
-          <button
-            type="button"
-            onclick="selectFormSvg('${key}')"
-            class="p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
-              active
-                ? 'border-sage-600 bg-sage-50 ring-2 ring-sage-500/20'
-                : 'border-stoneborder bg-white hover:bg-gray-50'
-            }"
-          >
-            <div class="w-9 h-9">${item.svg}</div>
-            <span class="text-[10px] font-medium text-charcoal text-center leading-tight">${item.label}</span>
-          </button>
-        `;
-      }).join('');
+        const button = createElement('button', `p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+          active ? 'border-sage-600 bg-sage-50 ring-2 ring-sage-500/20' : 'border-stoneborder bg-white hover:bg-gray-50'
+        }`);
+        button.type = 'button';
+        button.addEventListener('click', () => selectFormSvg(key));
+        const illustration = createElement('div', 'w-9 h-9');
+        appendBotanicalSvg(illustration, item.svg);
+        button.append(illustration, createElement('span', 'text-[10px] font-medium text-charcoal text-center leading-tight', item.label));
+        return button;
+      });
+      grid.replaceChildren(...buttons);
     }
 
     function selectFormSvg(typeKey) {
@@ -1496,7 +1474,7 @@
       if (editPlantId) {
         const p = appState.plants.find(x => x.id === editPlantId);
         if (!p) return;
-        document.getElementById('formModalTitle').innerHTML = `<i data-lucide="pencil" class="w-5 h-5 text-sage-600"></i><span>「${escapeHtml(p.name)}」を編集</span>`;
+        setPlantFormTitle('pencil', `「${p.name}」を編集`);
         document.getElementById('formPlantId').value = p.id;
         document.getElementById('formName').value = p.name || '';
         appState.selectedFormSvgType = p.svgType || 'agave';
@@ -1510,7 +1488,7 @@
         document.getElementById('formShop').value = p.shop || '';
         document.getElementById('formNotes').value = p.notes || '';
       } else {
-        document.getElementById('formModalTitle').innerHTML = `<i data-lucide="sprout" class="w-5 h-5 text-sage-600"></i><span>新しい株を追加</span>`;
+        setPlantFormTitle('sprout', '新しい株を追加');
         document.getElementById('formPlantId').value = '';
         appState.selectedFormSvgType = 'agave';
         document.getElementById('formPurchaseDate').value = getTodayStr();
@@ -1522,6 +1500,13 @@
       renderSvgSelector();
       document.getElementById('formModal').classList.remove('hidden');
       lucide.createIcons();
+    }
+
+    function setPlantFormTitle(iconName, title) {
+      const heading = document.getElementById('formModalTitle');
+      const icon = createLucideIcon(iconName, 'w-5 h-5 text-sage-600');
+      const label = createElement('span', '', title);
+      heading.replaceChildren(icon, label);
     }
 
     function closePlantFormModal() {
@@ -1677,15 +1662,15 @@
     function handleImportFile(event) {
       const file = event.target.files[0];
       if (!file) return;
+      if (file.size > 100 * 1024 * 1024) {
+        showToast('JSONファイルが大きすぎます（上限100MB）');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const parsed = JSON.parse(e.target.result);
-          const importedPlants = Array.isArray(parsed) ? parsed : parsed.plants;
-          if (!Array.isArray(importedPlants)) {
-            showToast('有効な植物データが見つかりませんでした');
-            return;
-          }
+          const importedPlants = validatePlantRecords(Array.isArray(parsed) ? parsed : parsed?.plants);
           openConfirmDialog(
             'データの読み込み（復元）',
             `JSONファイルから ${importedPlants.length}株 のデータ（成長写真を含む）を読み込み、現在のデータを上書きしますか？`,
@@ -1698,10 +1683,113 @@
             }
           );
         } catch (err) {
-          showToast('JSONファイルの解析に失敗しました');
+          console.error('Import data validation failed:', err);
+          showToast('JSONの解析またはデータ検証に失敗しました。形式を確認してください');
         }
       };
+      reader.onerror = () => showToast('JSONファイルを読み込めませんでした');
       reader.readAsText(file);
+    }
+
+    function validatePlantRecords(records) {
+      if (!Array.isArray(records) || records.length > 10000) {
+        throw new Error('Plant data must be an array');
+      }
+
+      const usedPlantIds = new Set();
+      const safeId = (value, prefix, index, usedIds) => {
+        if (typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) && !usedIds.has(value)) {
+          usedIds.add(value);
+          return value;
+        }
+        let id;
+        do {
+          id = `${prefix}_${index}_${Math.random().toString(36).slice(2, 10)}`;
+        } while (usedIds.has(id));
+        usedIds.add(id);
+        return id;
+      };
+      const readString = (value, field, maxLength, fallback = '') => {
+        if (value === undefined || value === null) return fallback;
+        if (typeof value !== 'string' || value.length > maxLength) {
+          throw new Error(`Invalid ${field}`);
+        }
+        return value;
+      };
+      const readDate = (value, field) => {
+        const date = readString(value, field, 10);
+        if (!date) return '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          throw new Error(`Invalid ${field}`);
+        }
+        const parsedDate = new Date(`${date}T00:00:00Z`);
+        if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+          throw new Error(`Invalid ${field}`);
+        }
+        return date;
+      };
+      const readNumber = (value, field, min, max) => {
+        if (value === undefined || value === null || value === '') return null;
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
+          throw new Error(`Invalid ${field}`);
+        }
+        return value;
+      };
+      const readPhoto = (value) => {
+        if (typeof value !== 'string' || value.length > 10_000_000 ||
+            !/^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/]*={0,2}$/.test(value)) {
+          throw new Error('Invalid growth photo');
+        }
+        return value;
+      };
+
+      return records.map((record, plantIndex) => {
+        if (!record || typeof record !== 'object' || Array.isArray(record)) {
+          throw new Error(`Invalid plant at index ${plantIndex}`);
+        }
+        const name = readString(record.name, 'plant name', 200);
+        if (!name.trim()) throw new Error(`Missing plant name at index ${plantIndex}`);
+
+        const usedLogIds = new Set();
+        const growthLogs = record.growthLogs === undefined || record.growthLogs === null
+          ? []
+          : record.growthLogs;
+        if (!Array.isArray(growthLogs) || growthLogs.length > 1000) {
+          throw new Error(`Invalid growth logs at index ${plantIndex}`);
+        }
+
+        return {
+          id: safeId(record.id, 'p_import', plantIndex, usedPlantIds),
+          name,
+          svgType: typeof record.svgType === 'string' &&
+            Object.prototype.hasOwnProperty.call(BOTANICAL_SVGS, record.svgType)
+            ? record.svgType
+            : 'agave',
+          location: readString(record.location, 'location', 200),
+          soil: readString(record.soil, 'soil', 300),
+          lightLevel: readString(record.lightLevel, 'light level', 300),
+          waterIntervalDays: readNumber(record.waterIntervalDays, 'water interval', 1, 90),
+          waterMethod: readString(record.waterMethod, 'water method', 100),
+          purchaseDate: readDate(record.purchaseDate, 'purchase date'),
+          price: readNumber(record.price, 'price', 0, 1_000_000_000),
+          shop: readString(record.shop, 'shop', 300),
+          lastWatered: readDate(record.lastWatered, 'last watered date'),
+          lastFertilized: readDate(record.lastFertilized, 'last fertilized date'),
+          lastRepotted: readDate(record.lastRepotted, 'last repotted date'),
+          notes: readString(record.notes, 'notes', 5000),
+          growthLogs: growthLogs.map((entry, logIndex) => {
+            if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+              throw new Error(`Invalid growth log at plant ${plantIndex}, index ${logIndex}`);
+            }
+            return {
+              id: safeId(entry.id, 'g_import', logIndex, usedLogIds),
+              date: readDate(entry.date, 'growth log date'),
+              photoDataUrl: readPhoto(entry.photoDataUrl),
+              note: readString(entry.note, 'growth log note', 1000)
+            };
+          })
+        };
+      });
     }
 
     /********************************************************************
@@ -1757,26 +1845,60 @@
       }, 2600);
     }
 
-    function escapeHtml(str) {
-      if (str === null || str === undefined) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    function initializeUIEvents() {
+      const actions = {
+        toggleBatchMode,
+        exportData,
+        triggerImport,
+        openPlantFormModal,
+        selectAllVisibleInBatch,
+        executeBatchWater,
+        executeBatchFertilizer,
+        clearSearch,
+        toggleNeedsWaterFilter,
+        resetFilters,
+        closeDetailModal,
+        addGrowthLogEntry,
+        clearNewGrowthPhoto,
+        closePlantFormModal,
+        clearFormPhoto
+      };
+
+      document.addEventListener('click', event => {
+        if (!(event.target instanceof Element)) return;
+        const actionElement = event.target.closest('[data-action]');
+        if (!actionElement) return;
+        const actionName = actionElement.dataset.action;
+        if (Object.prototype.hasOwnProperty.call(actions, actionName)) {
+          actions[actionName]();
+        }
+      });
+
+      document.getElementById('searchInput').addEventListener('input', renderApp);
+      document.getElementById('sortSelect').addEventListener('change', renderApp);
+      document.getElementById('plantForm').addEventListener('submit', savePlantForm);
+      document.getElementById('importFileInput').addEventListener('change', handleImportFile);
+      document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);
+      document.getElementById('newGrowthPhotoInput').addEventListener('change', previewGrowthPhoto);
     }
 
     /********************************************************************
      * 11. INITIALIZATION ON WINDOW LOAD
      ********************************************************************/
     window.onload = async function () {
-      const storedPlants = await loadFromDB();
-      if (storedPlants && storedPlants.length > 0) {
-        appState.plants = storedPlants;
-      } else {
-        appState.plants = getInitialSamplePlants();
-        await saveToDB();
+      initializeUIEvents();
+      try {
+        const storedPlants = await loadFromDB();
+        if (storedPlants && storedPlants.length > 0) {
+          appState.plants = validatePlantRecords(storedPlants);
+        } else {
+          appState.plants = getInitialSamplePlants();
+          await saveToDB();
+        }
+      } catch (err) {
+        console.error('Stored plant data validation failed:', err);
+        appState.plants = [];
+        showToast('保存データの検証に失敗しました。バックアップから復元してください');
       }
       renderApp();
     };
