@@ -146,15 +146,6 @@
     .animate-pop {
       animation: pop 0.25s ease-out;
     }
-    .modal-body-scroll {
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-    @supports (height: 100dvh) {
-      .modal-dynamic-height {
-        max-height: calc(100dvh - 1.5rem) !important;
-      }
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-sage-200 selection:text-sage-800 pb-24">
@@ -294,8 +285,8 @@
   </main>
 
   <!-- ================= MODAL 1: PLANT DETAIL & GROWTH ALBUM ================= -->
-  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-    <div class="bg-white border border-stoneborder rounded-3xl max-w-3xl w-full max-h-[85vh] modal-dynamic-height flex flex-col shadow-2xl overflow-hidden animate-fade-in my-2 sm:my-auto">
+  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain"></div>
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto shrink-0">
       <!-- Modal Header -->
       <div class="px-3 sm:px-5 py-4 border-b border-stoneborder bg-canvas">
         <!-- Top row: Icon + Name + Close button -->
@@ -327,7 +318,7 @@
       </div>
 
       <!-- Modal Scrollable Body -->
-      <div class="p-4 sm:p-5 overflow-y-auto space-y-6 flex-1 modal-body-scroll">
+      <div class="p-4 sm:p-5 overflow-y-auto space-y-6 flex-1 min-h-0 overscroll-contain"></div>
         <!-- Quick Care Status Row -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <div class="p-2.5 sm:p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex flex-row sm:flex-col justify-between">
@@ -488,8 +479,8 @@
   </div>
 
   <!-- ================= MODAL 2: ADD / EDIT PLANT FORM ================= -->
-  <div id="formModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-    <div class="bg-white border border-stoneborder rounded-3xl max-w-2xl w-full max-h-[85vh] modal-dynamic-height flex flex-col shadow-2xl overflow-hidden animate-fade-in my-2 sm:my-auto">
+  <div id="formModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain">
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto shrink-0"></div>
       <div class="px-5 py-4 border-b border-stoneborder flex items-center justify-between bg-canvas">
         <h2 id="formModalTitle" class="font-bold text-base sm:text-lg text-charcoal flex items-center gap-2">
           <span data-icon="sprout" data-icon-class="w-5 h-5 text-sage-600"></span>
@@ -500,9 +491,8 @@
         </button>
       </div>
 
-      <form id="plantForm" class="p-5 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm modal-body-scroll">
-        <input type="hidden" id="formPlantId" />
-
+      <form id="plantForm" class="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1 min-h-0 overscroll-contain text-xs sm:text-sm"></form>
+        
         <!-- 1. Name & Botanical SVG Silhouette Selector -->
         <div class="space-y-3">
           <div>
@@ -616,6 +606,7 @@
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2 border-t border-stoneborder">
+          <input type="hidden" id="formPlantId" />
           <button type="button" data-action="closePlantFormModal" class="px-4 py-2.5 rounded-xl border border-stoneborder text-xs font-medium hover:bg-gray-50">キャンセル</button>
           <button type="submit" class="px-5 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold shadow-xs cursor-pointer">保存する</button>
         </div>
