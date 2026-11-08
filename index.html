@@ -1246,8 +1246,8 @@
           });
           actions.appendChild(button);
         };
-        addActionButton('droplets', '水やり', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200/80 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日水やりしたとして記録', quickWaterPlant);
-        addActionButton('flask-conical', '活力剤', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200/70 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日肥料・活力剤を与えたとして記録', quickFertilizePlant);
+        addActionButton('droplets', '水やり', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200/80 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日水やりしたとして記録', (pId) => recordPlantCare(pId, 'lastWatered', `💧 「${appState.plants.find(p => p.id === pId)?.name}」の水やりを記録しました`));
+        addActionButton('flask-conical', '活力剤', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200/70 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日肥料・活力剤を与えたとして記録', (pId) => recordPlantCare(pId, 'lastFertilized', `🧪 「${appState.plants.find(p => p.id === pId)?.name}」の活力剤・肥料を記録しました`));
         body.appendChild(actions);
         card.appendChild(body);
         return card;
@@ -1258,40 +1258,16 @@
     /********************************************************************
      * 6. ONE-TAP QUICK CARE & BATCH ACTIONS
      ********************************************************************/
-    async function quickWaterPlant(plantId) {
+    async function recordPlantCare(plantId, careType, toastMessage) {
       const plant = appState.plants.find(p => p.id === plantId);
       if (!plant) return;
-      plant.lastWatered = getTodayStr();
+      plant[careType] = getTodayStr();
       await saveToDB();
       renderApp();
       if (appState.activeDetailPlantId === plantId) {
         populateDetailModal(plantId);
       }
-      showToast(`💧 「${plant.name}」の水やりを記録しました`);
-    }
-
-    async function quickFertilizePlant(plantId) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-      plant.lastFertilized = getTodayStr();
-      await saveToDB();
-      renderApp();
-      if (appState.activeDetailPlantId === plantId) {
-        populateDetailModal(plantId);
-      }
-      showToast(`🧪 「${plant.name}」の活力剤・肥料を記録しました`);
-    }
-
-    async function quickRepotPlant(plantId) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-      plant.lastRepotted = getTodayStr();
-      await saveToDB();
-      renderApp();
-      if (appState.activeDetailPlantId === plantId) {
-        populateDetailModal(plantId);
-      }
-      showToast(`🪴 「${plant.name}」の植え替え日を更新しました`);
+      showToast(toastMessage);
     }
 
     // Batch Watering Mode
@@ -1330,40 +1306,24 @@
       document.getElementById('batchSelectedCount').textContent = appState.batchSelectedIds.size;
     }
 
-    async function executeBatchWater() {
+    async function executeBatchCare(careFields, toastMessage) {
       if (appState.batchSelectedIds.size === 0) {
-        showToast('水やりする株カードをタップして選択してください');
+        showToast('ケア対象の株カードをタップして選択してください');
         return;
       }
       const today = getTodayStr();
       let count = 0;
       appState.plants.forEach(p => {
         if (appState.batchSelectedIds.has(p.id)) {
-          p.lastWatered = today;
+          careFields.forEach(field => {
+            p[field] = today;
+          });
           count++;
         }
       });
       await saveToDB();
-      showToast(`💧 ${count}株の一括水やりを記録しました`);
-      toggleBatchMode();
-    }
-
-    async function executeBatchFertilizer() {
-      if (appState.batchSelectedIds.size === 0) {
-        showToast('株カードをタップして選択してください');
-        return;
-      }
-      const today = getTodayStr();
-      let count = 0;
-      appState.plants.forEach(p => {
-        if (appState.batchSelectedIds.has(p.id)) {
-          p.lastWatered = today;
-          p.lastFertilized = today;
-          count++;
-        }
-      });
-      await saveToDB();
-      showToast(`🧪 ${count}株に水やり＋活力剤を一括記録しました`);
+      renderApp();
+      showToast(toastMessage.replace('{count}', count));
       toggleBatchMode();
     }
 
@@ -1423,9 +1383,9 @@
       document.getElementById('detailSoilSub').textContent = plant.soil || '用土未設定';
 
       // Bind quick buttons inside modal
-      document.getElementById('detailQuickWaterBtn').onclick = () => quickWaterPlant(plant.id);
-      document.getElementById('detailQuickFertBtn').onclick = () => quickFertilizePlant(plant.id);
-      document.getElementById('detailQuickRepotBtn').onclick = () => quickRepotPlant(plant.id);
+      document.getElementById('detailQuickWaterBtn').onclick = () => recordPlantCare(plant.id, 'lastWatered', `💧 「${plant.name}」の水やりを記録しました`);
+      document.getElementById('detailQuickFertBtn').onclick = () => recordPlantCare(plant.id, 'lastFertilized', `🧪 「${plant.name}」の活力剤・肥料を記録しました`);
+      document.getElementById('detailQuickRepotBtn').onclick = () => recordPlantCare(plant.id, 'lastRepotted', `🪴 「${plant.name}」の植え替え日を更新しました`);
       document.getElementById('detailEditBtn').onclick = () => {
         closeDetailModal();
         openPlantFormModal(plant.id);
@@ -2008,8 +1968,8 @@
         triggerImport,
         openPlantFormModal,
         selectAllVisibleInBatch,
-        executeBatchWater,
-        executeBatchFertilizer,
+        executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
+        executeBatchFertilizer: () => executeBatchCare(['lastWatered', 'lastFertilized'], '🧪 {count}株に水やり＋活力剤を一括記録しました'),
         clearSearch,
         toggleNeedsWaterFilter,
         resetFilters,
