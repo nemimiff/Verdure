@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
   <title>VERDURE — Botanical Collection & Care Log</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <!-- Tailwind CSS CDN -->
@@ -119,6 +119,10 @@
   </script>
 
   <style>
+    /* この直下に追加 */
+    .modal-box-responsive {
+      max-height: calc(var(--modal-viewport-height, 100dvh) - 1.5rem);
+    }
     body {
       background-color: #F9F9F8;
       color: #2F3E46;
@@ -285,8 +289,8 @@
   </main>
 
   <!-- ================= MODAL 1: PLANT DETAIL & GROWTH ALBUM ================= -->
-  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-hidden">
-    <div class="bg-white border border-stoneborder rounded-3xl max-w-3xl w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain">
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-3xl w-full modal-box-responsive sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto">
       <!-- Modal Header -->
       <div class="px-3 sm:px-5 py-4 border-b border-stoneborder bg-canvas">
         <!-- Top row: Icon + Name + Close button -->
@@ -479,8 +483,8 @@
   </div>
 
   <!-- ================= MODAL 2: ADD / EDIT PLANT FORM ================= -->
-  <div id="formModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-hidden">
-    <div class="bg-white border border-stoneborder rounded-3xl max-w-2xl w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+  <div id="formModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain">
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-2xl w-full modal-box-responsive sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto">
       <div class="px-5 py-4 border-b border-stoneborder flex items-center justify-between bg-canvas">
         <h2 id="formModalTitle" class="font-bold text-base sm:text-lg text-charcoal flex items-center gap-2">
           <span data-icon="sprout" data-icon-class="w-5 h-5 text-sage-600"></span>
@@ -1962,6 +1966,19 @@
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => func(...args), delay);
         };
+      }
+
+      // Visual Viewport によるモーダル高さ自動制御
+      function updateModalViewport() {
+        const vv = window.visualViewport;
+        const h = vv ? Math.min(window.innerHeight, vv.height) : window.innerHeight;
+        document.documentElement.style.setProperty('--modal-viewport-height', `${h}px`);
+      }
+      updateModalViewport();
+      window.addEventListener('resize', updateModalViewport, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateModalViewport, { passive: true });
+        window.visualViewport.addEventListener('scroll', updateModalViewport, { passive: true });
       }
 
       document.addEventListener('click', event => {
