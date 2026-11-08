@@ -1041,6 +1041,13 @@
       }
     }
 
+    function prependIconToButton(elementId, iconName, iconClasses) {
+      const element = document.getElementById(elementId);
+      if (element && element.firstChild) {
+        element.insertBefore(createLucideIcon(iconName, iconClasses), element.firstChild);
+      }
+    }
+
     function replaceElementWithIconAndPreserveLastChild(elementId, iconName, iconClasses, textContent) {
       const element = document.getElementById(elementId);
       if (element) {
