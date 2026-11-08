@@ -1030,6 +1030,45 @@
       container.replaceChildren(document.importNode(parsed.documentElement, true));
     }
 
+    function replaceElementWithIcon(elementId, iconName, iconClasses, textContent = null) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        const children = [createLucideIcon(iconName, iconClasses)];
+        if (textContent) {
+          children.push(document.createTextNode(textContent));
+        }
+        element.replaceChildren(...children);
+      }
+    }
+
+    function replaceElementWithIconAndPreserveLastChild(elementId, iconName, iconClasses, textContent) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        const lastChild = element.lastChild;
+        const children = [createLucideIcon(iconName, iconClasses), document.createTextNode(textContent)];
+        if (lastChild) {
+          children.push(lastChild);
+        }
+        element.replaceChildren(...children);
+      }
+    }
+
+    function replaceElementWithIconAndPreserveInput(elementId, iconName, iconClasses) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        const textNode = element.querySelector('span');
+        const inputNode = element.querySelector('input');
+        const children = [createLucideIcon(iconName, iconClasses)];
+        if (textNode) {
+          children.push(textNode.cloneNode(true));
+        }
+        if (inputNode) {
+          children.push(inputNode);
+        }
+        element.replaceChildren(...children);
+      }
+    }
+
     function getFilteredAndSortedPlants() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const clearBtn = document.getElementById('clearSearchBtn');
@@ -1332,17 +1371,10 @@
       document.getElementById('newGrowthPreviewBox').classList.add('hidden');
       document.getElementById('newGrowthPhotoLabel').textContent = '写真を選択 (自動圧縮)';
 
-      // Populate modal header buttons with ICON_PATHS-based SVGs
-      document.getElementById('detailCloseBtn').replaceChildren(
-        createLucideIcon('x', 'w-4 h-4')
-      );
-      document.getElementById('detailEditBtn').replaceChildren(
-        createLucideIcon('pencil', 'w-4 h-4'),
-        document.createTextNode('編集')
-      );
-      document.getElementById('detailDeleteBtn').replaceChildren(
-        createLucideIcon('trash-2', 'w-4 h-4')
-      );
+      // Populate modal header buttons with ICON_PATHS-based SVGs using shared functions
+      replaceElementWithIcon('detailCloseBtn', 'x', 'w-4 h-4');
+      replaceElementWithIcon('detailEditBtn', 'pencil', 'w-4 h-4', '編集');
+      replaceElementWithIcon('detailDeleteBtn', 'trash-2', 'w-4 h-4');
 
       populateDetailModal(plantId);
       document.getElementById('detailModal').classList.remove('hidden');
@@ -1402,56 +1434,19 @@
       document.getElementById('specPrice').textContent = plant.price ? `¥${Number(plant.price).toLocaleString()}` : '未設定';
       document.getElementById('specPurchaseDate').textContent = plant.purchaseDate || '未設定';
 
-      // Populate spec labels with ICON_PATHS-based SVGs
-      const specPriceLabel = document.getElementById('specPriceLabel');
-      specPriceLabel.replaceChildren(
-        createLucideIcon('japanese-yen', 'w-3.5 h-3.5 text-sage-600'),
-        document.createTextNode('購入価格')
-      );
-      const specPurchaseDateLabel = document.getElementById('specPurchaseDateLabel');
-      specPurchaseDateLabel.replaceChildren(
-        createLucideIcon('calendar', 'w-3.5 h-3.5 text-sage-600'),
-        document.createTextNode('お迎え日')
-      );
-      const specLightLabel = document.getElementById('specLightLabel');
-      specLightLabel.replaceChildren(
-        createLucideIcon('sun', 'w-3.5 h-3.5 text-amber-500'),
-        document.createTextNode('光量・ライト')
-      );
-      const specSoilLabel = document.getElementById('specSoilLabel');
-      specSoilLabel.replaceChildren(
-        createLucideIcon('sprout', 'w-3.5 h-3.5 text-sage-600'),
-        document.createTextNode('用土・鉢')
-      );
-      const specWaterIntervalLabel = document.getElementById('specWaterIntervalLabel');
-      specWaterIntervalLabel.replaceChildren(
-        createLucideIcon('timer', 'w-3.5 h-3.5 text-sky-600'),
-        document.createTextNode('水やり目安・方法')
-      );
-      const specShopLabel = document.getElementById('specShopLabel');
-      specShopLabel.replaceChildren(
-        createLucideIcon('store', 'w-3.5 h-3.5 text-sage-600'),
-        document.createTextNode('購入店・入手先')
-      );
+      // Populate spec labels with ICON_PATHS-based SVGs using shared function
+      replaceElementWithIcon('specPriceLabel', 'japanese-yen', 'w-3.5 h-3.5 text-sage-600', '購入価格');
+      replaceElementWithIcon('specPurchaseDateLabel', 'calendar', 'w-3.5 h-3.5 text-sage-600', 'お迎え日');
+      replaceElementWithIcon('specLightLabel', 'sun', 'w-3.5 h-3.5 text-amber-500', '光量・ライト');
+      replaceElementWithIcon('specSoilLabel', 'sprout', 'w-3.5 h-3.5 text-sage-600', '用土・鉢');
+      replaceElementWithIcon('specWaterIntervalLabel', 'timer', 'w-3.5 h-3.5 text-sky-600', '水やり目安・方法');
+      replaceElementWithIcon('specShopLabel', 'store', 'w-3.5 h-3.5 text-sage-600', '購入店・入手先');
 
-      // Populate growth album title with camera icon
-      const growthAlbumTitle = document.getElementById('growthAlbumTitle');
-      growthAlbumTitle.replaceChildren(
-        createLucideIcon('images', 'w-4 h-4 text-sage-600'),
-        document.createTextNode('成長記録アルバム'),
-        document.getElementById('growthCountBadge')
-      );
+      // Populate growth album title with icon (preserve badge)
+      replaceElementWithIconAndPreserveLastChild('growthAlbumTitle', 'images', 'w-4 h-4 text-sage-600', '成長記録アルバム');
 
-      // Populate new growth photo label with upload icon
-      const newGrowthPhotoLabelWrap = document.getElementById('newGrowthPhotoLabelWrap');
-      const newGrowthPhotoLabel = newGrowthPhotoLabelWrap.querySelector('span');
-      if (newGrowthPhotoLabel) {
-        newGrowthPhotoLabelWrap.replaceChildren(
-          createLucideIcon('upload', 'w-4 h-4'),
-          newGrowthPhotoLabel.cloneNode(true),
-          newGrowthPhotoLabelWrap.querySelector('input')
-        );
-      }
+      // Populate new growth photo label with icon (preserve input)
+      replaceElementWithIconAndPreserveInput('newGrowthPhotoLabelWrap', 'upload', 'w-4 h-4');
 
       const notesBox = document.getElementById('specNotesBox');
       if (plant.notes) {
@@ -2035,35 +2030,14 @@
       document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);
       document.getElementById('newGrowthPhotoInput').addEventListener('change', previewGrowthPhoto);
 
-      // Populate buttons with ICON_PATHS-based SVGs
-      const addPlantBtn = document.getElementById('addPlantBtn');
-      if (addPlantBtn && addPlantBtn.firstChild) {
-        addPlantBtn.insertBefore(createLucideIcon('plus', 'w-4 h-4'), addPlantBtn.firstChild);
-      }
-      const batchWaterBtn = document.getElementById('batchWaterBtn');
-      if (batchWaterBtn && batchWaterBtn.firstChild) {
-        batchWaterBtn.insertBefore(createLucideIcon('droplets', 'w-4 h-4'), batchWaterBtn.firstChild);
-      }
-      const batchFertilizerBtn = document.getElementById('batchFertilizerBtn');
-      if (batchFertilizerBtn && batchFertilizerBtn.firstChild) {
-        batchFertilizerBtn.insertBefore(createLucideIcon('flask-conical', 'w-3.5 h-3.5'), batchFertilizerBtn.firstChild);
-      }
-      const batchModeBtnHeader = document.getElementById('batchModeBtnHeader');
-      if (batchModeBtnHeader && batchModeBtnHeader.firstChild) {
-        batchModeBtnHeader.insertBefore(createLucideIcon('layers', 'w-4 h-4 text-sage-600'), batchModeBtnHeader.firstChild);
-      }
-      const exportDataBtn = document.getElementById('exportDataBtn');
-      if (exportDataBtn && exportDataBtn.firstChild) {
-        exportDataBtn.insertBefore(createLucideIcon('download', 'w-4 h-4 text-gray-600'), exportDataBtn.firstChild);
-      }
-      const importDataBtn = document.getElementById('importDataBtn');
-      if (importDataBtn && importDataBtn.firstChild) {
-        importDataBtn.insertBefore(createLucideIcon('upload', 'w-4 h-4 text-gray-600'), importDataBtn.firstChild);
-      }
-      const formPhotoLabel = document.getElementById('formPhotoLabel');
-      if (formPhotoLabel && formPhotoLabel.firstChild) {
-        formPhotoLabel.insertBefore(createLucideIcon('camera', 'w-4 h-4 text-sage-600'), formPhotoLabel.firstChild);
-      }
+      // Populate all buttons with ICON_PATHS-based SVGs using shared function
+      prependIconToButton('addPlantBtn', 'plus', 'w-4 h-4');
+      prependIconToButton('batchWaterBtn', 'droplets', 'w-4 h-4');
+      prependIconToButton('batchFertilizerBtn', 'flask-conical', 'w-3.5 h-3.5');
+      prependIconToButton('batchModeBtnHeader', 'layers', 'w-4 h-4 text-sage-600');
+      prependIconToButton('exportDataBtn', 'download', 'w-4 h-4 text-gray-600');
+      prependIconToButton('importDataBtn', 'upload', 'w-4 h-4 text-gray-600');
+      prependIconToButton('formPhotoLabel', 'camera', 'w-4 h-4 text-sage-600');
     }
 
     /********************************************************************
