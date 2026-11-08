@@ -1039,18 +1039,13 @@
     }
 
     function initializeIconPlaceholders() {
-      document.querySelectorAll('[data-icon]').forEach(element => {
+      document.querySelectorAll('span[data-icon]').forEach(element => {
         const iconName = element.dataset.icon;
         const iconClasses = element.dataset.iconClass || '';
-        const textContent = element.dataset.iconText || '';
         
         if (iconName && ICON_PATHS[iconName]) {
           const icon = createLucideIcon(iconName, iconClasses);
-          if (textContent) {
-            element.replaceChildren(icon, document.createTextNode(textContent));
-          } else {
-            element.replaceChildren(icon);
-          }
+          element.replaceWith(icon);
         }
       });
     }
@@ -1376,7 +1371,7 @@
           }
         }
 
-        document.getElementById(careButtonId).onclick = () => recordPlantCare(plant.id, card.careType, `「${plant.name}」${card.message.split('「')[1].split('」')[0]}を記録しました`);
+        document.getElementById(careButtonId).onclick = () => recordPlantCare(plant.id, card.careType, `${card.message}（${plant.name}）`);
       });
 
       // Populate spec information using SPEC_DEFINITIONS
