@@ -45,19 +45,49 @@
 
     // Spec Definitions for detail modal
     const SPEC_DEFINITIONS = [
-      { key: 'lightLevel', label: '光量・ライト', icon: 'sun', iconClasses: 'w-3.5 h-3.5 text-amber-500' },
-      { key: 'soil', label: '用土・鉢', icon: 'sprout', iconClasses: 'w-3.5 h-3.5 text-sage-600' },
-      { key: 'waterIntervalDays', label: '水やり目安・方法', icon: 'timer', iconClasses: 'w-3.5 h-3.5 text-sky-600', formatValue: (plant) => plant.waterIntervalDays ? `${plant.waterIntervalDays}日ごと / ${plant.waterMethod || '通常'}` : (plant.waterMethod || '未設定') },
-      { key: 'shop', label: '購入店・入手先', icon: 'store', iconClasses: 'w-3.5 h-3.5 text-sage-600' },
-      { key: 'price', label: '購入価格', icon: 'japanese-yen', iconClasses: 'w-3.5 h-3.5 text-sage-600', formatValue: (plant) => plant.price ? `¥${Number(plant.price).toLocaleString()}` : '未設定' },
-      { key: 'purchaseDate', label: 'お迎え日', icon: 'calendar', iconClasses: 'w-3.5 h-3.5 text-sage-600' },
+      { key: 'lightLevel', id: 'specLight', label: '光量・ライト' },
+      { key: 'soil', id: 'specSoil', label: '用土・鉢' },
+      { key: 'waterIntervalDays', id: 'specWaterInterval', label: '水やり目安・方法', formatValue: (plant) => plant.waterIntervalDays ? `${plant.waterIntervalDays}日ごと / ${plant.waterMethod || '通常'}` : (plant.waterMethod || '未設定') },
+      { key: 'shop', id: 'specShop', label: '購入店・入手先' },
+      { key: 'price', id: 'specPrice', label: '購入価格', formatValue: (plant) => plant.price ? `¥${Number(plant.price).toLocaleString()}` : '未設定' },
+      { key: 'purchaseDate', id: 'specPurchaseDate', label: 'お迎え日' }
     ];
 
-    // Quick Care Cards Definition
+    // Quick Care Cards Definition (Data-Driven)
     const QUICK_CARE_CARDS = [
-      { icon: 'droplets', label: '水やり', lastCareKey: 'lastWatered', careType: 'lastWatered', message: '💧 水やりを記録しました', badgeClass: 'bg-sky-100 text-sky-800' },
-      { icon: 'flask-conical', label: '肥料・活力剤', lastCareKey: 'lastFertilized', careType: 'lastFertilized', message: '🧪 肥料・活力剤を記録しました', badgeClass: 'bg-emerald-100 text-emerald-800' },
-      { icon: 'shovel', label: '最終植替え', lastCareKey: 'lastRepotted', careType: 'lastRepotted', message: '🌱 植替えを記録しました', badgeClass: 'bg-orange-100 text-orange-800' },
+      { 
+        careType: 'lastWatered', 
+        label: '水やり', 
+        icon: 'droplets', 
+        badgeText: '💧 水やり',
+        boxId: 'detailLastWatered', 
+        subId: 'detailWaterSub', 
+        btnId: 'detailQuickWaterBtn',
+        btnClass: 'bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border-sky-200/80',
+        formatSub: (p) => p.waterIntervalDays ? `目安: ${p.waterIntervalDays}日ごと (${p.waterMethod || '通常'})` : (p.waterMethod || '目安未設定')
+      },
+      { 
+        careType: 'lastFertilized', 
+        label: '活力剤', 
+        icon: 'flask-conical', 
+        badgeText: '🧪 活力剤・肥料',
+        boxId: 'detailLastFertilized', 
+        subId: null, 
+        btnId: 'detailQuickFertBtn',
+        btnClass: 'bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border-emerald-200/70',
+        formatSub: () => '定期ケア'
+      },
+      { 
+        careType: 'lastRepotted', 
+        label: '植替え', 
+        icon: 'shovel', 
+        badgeText: '🪴 植え替え',
+        boxId: 'detailLastRepotted', 
+        subId: 'detailSoilSub', 
+        btnId: 'detailQuickRepotBtn',
+        btnClass: 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border-amber-200/70',
+        formatSub: (p) => p.soil || '用土未設定'
+      }
     ];
 
     tailwind.config = {
@@ -93,7 +123,6 @@
       color: #2F3E46;
       -webkit-tap-highlight-color: transparent;
     }
-    /* Custom Scrollbar for horizontal pills */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -101,7 +130,6 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* Subtle animations */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -141,23 +169,27 @@
       <!-- Right Action Buttons -->
       <div class="flex items-center gap-1.5 sm:gap-2">
         <!-- Batch Watering Mode Toggle -->
-        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="px-3 py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shadow-2xs" title="複数の鉢にまとめて水やりを記録します" data-icon="layers" data-icon-class="w-4 h-4 text-sage-600">
+        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="px-3 py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shadow-2xs" title="複数の鉢にまとめて水やりを記録します">
+          <span data-icon="layers" data-icon-class="w-4 h-4 text-sage-600"></span>
           <span class="hidden md:inline">一括水やり</span>
         </button>
 
         <!-- Export JSON -->
-        <button id="exportDataBtn" data-action="exportData" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="写真を含む全データをJSONファイルに書き出し" data-icon="download" data-icon-class="w-4 h-4 text-gray-600">
+        <button id="exportDataBtn" data-action="exportData" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="写真を含む全データをJSONファイルに書き出し">
+          <span data-icon="download" data-icon-class="w-4 h-4 text-gray-600"></span>
           <span class="hidden lg:inline">保存(Export)</span>
         </button>
 
         <!-- Import JSON -->
-        <button id="importDataBtn" data-action="triggerImport" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="JSONファイルからデータを復元" data-icon="upload" data-icon-class="w-4 h-4 text-gray-600">
+        <button id="importDataBtn" data-action="triggerImport" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition" title="JSONファイルからデータを復元">
+          <span data-icon="upload" data-icon-class="w-4 h-4 text-gray-600"></span>
           <span class="hidden lg:inline">読込(Import)</span>
         </button>
         <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
         <!-- Add New Plant Button -->
-        <button data-action="openPlantFormModal" id="addPlantBtn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-600 hover:bg-sage-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer" data-icon="plus" data-icon-class="w-4 h-4">
+        <button data-action="openPlantFormModal" id="addPlantBtn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-600 hover:bg-sage-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+          <span data-icon="plus" data-icon-class="w-4 h-4"></span>
           <span>株を追加</span>
         </button>
       </div>
@@ -173,10 +205,12 @@
         <button data-action="selectAllVisibleInBatch" class="text-xs underline text-sage-200 hover:text-white ml-2">表示中の株をすべて選択</button>
       </div>
       <div class="flex items-center gap-2">
-        <button data-action="executeBatchWater" id="batchWaterBtn" class="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition" data-icon="droplets" data-icon-class="w-4 h-4">
+        <button data-action="executeBatchWater" id="batchWaterBtn" class="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition">
+          <span data-icon="droplets" data-icon-class="w-4 h-4"></span>
           <span>今日水やり完了にする</span>
         </button>
-        <button data-action="executeBatchFertilizer" id="batchFertilizerBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition" data-icon="flask-conical" data-icon-class="w-3.5 h-3.5">
+        <button data-action="executeBatchFertilizer" id="batchFertilizerBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
+          <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5"></span>
           <span>＋活力剤も記録</span>
         </button>
         <button data-action="toggleBatchMode" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs">完了</button>
@@ -187,9 +221,7 @@
   <!-- ================= FILTER & SEARCH CONTROLS ================= -->
   <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-2 space-y-3">
     <!-- Top Row: Location Filter Pills -->
-    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1" id="locationTabsContainer">
-      <!-- Dynamically populated location pills -->
-    </div>
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1" id="locationTabsContainer"></div>
 
     <!-- Second Row: Search, Needs-Water Toggle, Sort, Stats -->
     <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -238,9 +270,7 @@
 
   <!-- ================= MAIN PLANT GRID ================= -->
   <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 flex-1">
-    <div id="plantGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
-      <!-- Populated by JavaScript -->
-    </div>
+    <div id="plantGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4"></div>
 
     <!-- Empty State -->
     <div id="emptyState" class="hidden bg-white border border-stoneborder rounded-2xl p-10 text-center max-w-md mx-auto my-8">
@@ -267,7 +297,8 @@
             <div id="detailSvgBadge" class="w-9 sm:w-10 h-9 sm:h-10 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-center shrink-0"></div>
             <h2 id="detailPlantName" class="font-bold text-base sm:text-lg text-charcoal truncate"></h2>
           </div>
-          <button data-action="closeDetailModal" class="p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 shrink-0" id="detailCloseBtn" data-icon="x" data-icon-class="w-4 h-4">
+          <button data-action="closeDetailModal" class="p-1.5 sm:p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 shrink-0" id="detailCloseBtn">
+            <span data-icon="x" data-icon-class="w-4 h-4"></span>
           </button>
         </div>
         <!-- Bottom row: Location badge + Days owned + Edit/Delete buttons -->
@@ -277,10 +308,12 @@
             <span id="detailDaysOwnedBadge" class="text-[10px] sm:text-[11px] text-gray-500 truncate"></span>
           </div>
           <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button id="detailEditBtn" class="p-1.5 sm:p-2 rounded-xl border border-stoneborder bg-white hover:bg-gray-50 text-gray-700 text-xs flex items-center gap-1" title="編集" data-icon="pencil" data-icon-class="w-4 h-4" data-icon-text="編集">
-              <span class="hidden sm:inline"></span>
+            <button id="detailEditBtn" class="p-1.5 sm:p-2 rounded-xl border border-stoneborder bg-white hover:bg-gray-50 text-gray-700 text-xs flex items-center gap-1" title="編集">
+              <span data-icon="pencil" data-icon-class="w-4 h-4"></span>
+              <span class="hidden sm:inline">編集</span>
             </button>
-            <button id="detailDeleteBtn" class="p-1.5 sm:p-2 rounded-xl border border-stoneborder bg-white hover:bg-red-50 text-red-600 text-xs flex items-center gap-1" title="削除" data-icon="trash-2" data-icon-class="w-4 h-4">
+            <button id="detailDeleteBtn" class="p-1.5 sm:p-2 rounded-xl border border-stoneborder bg-white hover:bg-red-50 text-red-600 text-xs flex items-center gap-1" title="削除">
+              <span data-icon="trash-2" data-icon-class="w-4 h-4"></span>
             </button>
           </div>
         </div>
@@ -290,10 +323,10 @@
       <div class="p-5 overflow-y-auto space-y-6 flex-1">
         <!-- Quick Care Status Row -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex flex-row sm:flex-col justify-between sm:justify-between">
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex flex-row sm:flex-col justify-between">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-sky-800 font-medium mb-1 sm:mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>最終水やり</span>
+              <div class="flex items-center justify-between text-xs text-sky-800 font-medium mb-1">
+                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="droplets" data-icon-class="w-3.5 h-3.5"></span>最終水やり</span>
               </div>
               <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5"></p>
@@ -301,10 +334,10 @@
             <button id="detailQuickWaterBtn" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
           </div>
 
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-row sm:flex-col justify-between sm:justify-between">
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-row sm:flex-col justify-between">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-emerald-800 font-medium mb-1 sm:mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></svg>肥料・活力剤</span>
+              <div class="flex items-center justify-between text-xs text-emerald-800 font-medium mb-1">
+                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5"></span>肥料・活力剤</span>
               </div>
               <p id="detailLastFertilized" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">定期ケア</p>
@@ -312,10 +345,10 @@
             <button id="detailQuickFertBtn" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
           </div>
 
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-row sm:flex-col justify-between sm:justify-between">
+          <div class="p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-row sm:flex-col justify-between">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-amber-900 font-medium mb-1 sm:mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 sm:w-3.5 sm:h-3.5"><path d="M21.56 4.56a1.5 1.5 0 0 1 0 2.122l-.47.47a3 3 0 0 1-4.212-.03 3 3 0 0 1 0-4.243l.44-.44a1.5 1.5 0 0 1 2.121 0z"/><path d="M3 22a1 1 0 0 1-1-1v-3.586a1 1 0 0 1 .293-.707l3.355-3.355a1.205 1.205 0 0 1 1.704 0l3.296 3.296a1.205 1.205 0 0 1 0 1.704l-3.355 3.355a1 1 0 0 1-.707.293z"/><path d="m9 15 7.879-7.878"/></svg>最終植替え</span>
+              <div class="flex items-center justify-between text-xs text-amber-900 font-medium mb-1">
+                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="shovel" data-icon-class="w-3.5 h-3.5"></span>最終植替え</span>
               </div>
               <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
@@ -327,32 +360,32 @@
         <!-- Environment & Collection Spec Grid -->
         <div class="bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
           <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>
+            <span data-icon="sliders-horizontal" data-icon-class="w-3.5 h-3.5"></span>
             育成環境・コレクション情報
           </h3>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-2 sm:gap-y-3 gap-x-2 sm:gap-x-4 text-xs">
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specLightLabel" data-icon="sun" data-icon-class="w-3.5 h-3.5 text-amber-500" data-icon-text="光量・ライト">光量・ライト</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sun" data-icon-class="w-3.5 h-3.5 text-amber-500"></span>光量・ライト</span>
               <p id="specLight" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specSoilLabel" data-icon="sprout" data-icon-class="w-3.5 h-3.5 text-sage-600" data-icon-text="用土・鉢">用土・鉢</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sprout" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>用土・鉢</span>
               <p id="specSoil" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specWaterIntervalLabel" data-icon="timer" data-icon-class="w-3.5 h-3.5 text-sky-600" data-icon-text="水やり目安・方法">水やり目安・方法</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="timer" data-icon-class="w-3.5 h-3.5 text-sky-600"></span>水やり目安・方法</span>
               <p id="specWaterInterval" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specShopLabel" data-icon="store" data-icon-class="w-3.5 h-3.5 text-sage-600" data-icon-text="購入店・入手先">購入店・入手先</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="store" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入店・入手先</span>
               <p id="specShop" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specPriceLabel" data-icon="japanese-yen" data-icon-class="w-3.5 h-3.5 text-sage-600" data-icon-text="購入価格">購入価格</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="japanese-yen" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入価格</span>
               <p id="specPrice" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
             <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]" id="specPurchaseDateLabel" data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600" data-icon-text="お迎え日">お迎え日</span>
+              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>お迎え日</span>
               <p id="specPurchaseDate" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
             </div>
           </div>
@@ -362,11 +395,11 @@
           </div>
         </div>
 
-        <!-- Growth Comparison Banner (Shown automatically when >= 2 photos exist) -->
+        <!-- Growth Comparison Banner -->
         <div id="growthComparisonSection" class="hidden bg-sage-50/70 border border-sage-200 rounded-2xl p-4">
           <div class="flex items-center justify-between mb-2.5">
             <h3 class="text-xs font-bold text-sage-800 flex items-center gap-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-sage-600"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+              <span data-icon="sparkles" data-icon-class="w-4 h-4 text-sage-600"></span>
               成長ビフォーアフター比較（初回記録 vs 最新）
             </h3>
             <span id="comparisonSpanBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white text-sage-700 border border-sage-200"></span>
@@ -394,8 +427,9 @@
         <!-- Growth Photo Album & Add Log Section -->
         <div>
           <div class="flex items-center justify-between mb-3">
-            <h3 id="growthAlbumTitle" class="text-sm font-bold text-charcoal flex items-center gap-1.5" data-icon="images" data-icon-class="w-4 h-4 text-sage-600" data-icon-text="成長記録アルバム">
-              成長記録アルバム
+            <h3 id="growthAlbumTitle" class="text-sm font-bold text-charcoal flex items-center gap-1.5">
+              <span data-icon="images" data-icon-class="w-4 h-4 text-sage-600"></span>
+              <span>成長記録アルバム</span>
               <span id="growthCountBadge" class="text-xs font-normal text-gray-500"></span>
             </h3>
           </div>
@@ -405,7 +439,8 @@
             <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2.5 items-stretch sm:items-center">
               <!-- Photo picker -->
               <div class="sm:col-span-4">
-                <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full" data-icon="upload" data-icon-class="w-4 h-4">
+                <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full">
+                  <span data-icon="upload" data-icon-class="w-4 h-4"></span>
                   <span id="newGrowthPhotoLabel">写真を選択 (自動圧縮)</span>
                   <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
                 </label>
@@ -439,9 +474,7 @@
           </div>
 
           <!-- Chronological Photo Timeline Grid -->
-          <div id="growthTimelineGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <!-- Populated by JS -->
-          </div>
+          <div id="growthTimelineGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
         </div>
       </div>
     </div>
@@ -452,11 +485,11 @@
     <div class="bg-white border border-stoneborder rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto">
       <div class="px-5 py-4 border-b border-stoneborder flex items-center justify-between bg-canvas">
         <h2 id="formModalTitle" class="font-bold text-base sm:text-lg text-charcoal flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-sage-600"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/></svg>
+          <span data-icon="sprout" data-icon-class="w-5 h-5 text-sage-600"></span>
           <span>植物を登録</span>
         </h2>
         <button data-action="closePlantFormModal" class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <span data-icon="x" data-icon-class="w-4 h-4"></span>
         </button>
       </div>
 
@@ -472,9 +505,7 @@
 
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1.5">植物アイコン (SVGシルエット)</label>
-            <div id="svgSelectorGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <!-- Populated by JS -->
-            </div>
+            <div id="svgSelectorGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
           </div>
         </div>
 
@@ -483,7 +514,8 @@
           <label class="block text-xs font-bold text-charcoal mb-1">現在の写真（任意・自動WebP軽量化）</label>
           <p class="text-[11px] text-gray-500 mb-2">登録するとカードのサムネイルになり、成長記録の1枚目としても保存されます。</p>
           <div class="flex items-center gap-3">
-            <label id="formPhotoLabel" class="px-3.5 py-2 rounded-xl bg-white border border-stoneborder hover:bg-sage-50 text-xs font-medium cursor-pointer flex items-center gap-1.5 shadow-2xs transition" data-icon="camera" data-icon-class="w-4 h-4 text-sage-600">
+            <label id="formPhotoLabel" class="px-3.5 py-2 rounded-xl bg-white border border-stoneborder hover:bg-sage-50 text-xs font-medium cursor-pointer flex items-center gap-1.5 shadow-2xs transition">
+              <span data-icon="camera" data-icon-class="w-4 h-4 text-sage-600"></span>
               <span>写真を選択</span>
               <input type="file" id="formPhotoInput" accept="image/*" class="hidden" />
             </label>
@@ -497,7 +529,6 @@
 
         <!-- 3. Environment & Care Settings -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-          <!-- Location -->
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">置き場所</label>
             <input type="text" id="formLocation" list="locationPresets" placeholder="選択または自由入力..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
@@ -511,7 +542,6 @@
             </datalist>
           </div>
 
-          <!-- Soil -->
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">用土・鉢スペック（任意）</label>
             <input type="text" id="formSoil" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
@@ -524,7 +554,6 @@
             </datalist>
           </div>
 
-          <!-- Light Level -->
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">光量目安（任意）</label>
             <input type="text" id="formLight" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
@@ -536,7 +565,6 @@
             </datalist>
           </div>
 
-          <!-- Water Interval & Method -->
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs font-bold text-charcoal mb-1">水やり頻度目安</label>
@@ -606,7 +634,7 @@
   <!-- ================= APPLICATION JAVASCRIPT ================= -->
   <script>
     /********************************************************************
-     * 1. CUSTOM BOTANICAL SVG ARTWORKS (Minimalist Vector Illustrations)
+     * 1. CUSTOM BOTANICAL SVG ARTWORKS
      ********************************************************************/
     const BOTANICAL_SVGS = {
       agave: {
@@ -701,9 +729,7 @@
     let cachedDB = null;
 
     function openDB() {
-      if (cachedDB) {
-        return Promise.resolve(cachedDB);
-      }
+      if (cachedDB) return Promise.resolve(cachedDB);
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
         req.onupgradeneeded = (e) => {
@@ -715,13 +741,8 @@
         req.onsuccess = () => {
           const db = req.result;
           cachedDB = db;
-          db.onversionchange = () => {
-            db.close();
-            cachedDB = null;
-          };
-          db.onclose = () => {
-            cachedDB = null;
-          };
+          db.onversionchange = () => { db.close(); cachedDB = null; };
+          db.onclose = () => { cachedDB = null; };
           resolve(db);
         };
         req.onerror = () => reject(req.error);
@@ -740,15 +761,9 @@
         };
         store.put(payload, STATE_KEY);
         return new Promise((res, rej) => {
-          tx.oncomplete = () => {
-            res();
-          };
-          tx.onerror = () => {
-            rej(tx.error);
-          };
-          tx.onabort = () => {
-            rej(new Error('Transaction aborted'));
-          };
+          tx.oncomplete = () => res();
+          tx.onerror = () => rej(tx.error);
+          tx.onabort = () => rej(new Error('Transaction aborted'));
         });
       } catch (err) {
         console.error('IndexedDB Save Error:', err);
@@ -769,14 +784,9 @@
         const req = store.get(STATE_KEY);
         return new Promise((resolve) => {
           req.onsuccess = () => {
-            try {
-              if (req.result && Array.isArray(req.result.plants)) {
-                resolve(req.result.plants);
-              } else {
-                resolve(null);
-              }
-            } catch (parseErr) {
-              console.error('Error processing IndexedDB result:', parseErr);
+            if (req.result && Array.isArray(req.result.plants)) {
+              resolve(req.result.plants);
+            } else {
               resolve(null);
             }
           };
@@ -798,7 +808,7 @@
     }
 
     /********************************************************************
-     * 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION (HTML5 Canvas -> WebP/JPEG)
+     * 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION
      ********************************************************************/
     function compressImageFile(file, maxDim = 800, quality = 0.76) {
       return new Promise((resolve, reject) => {
@@ -825,7 +835,6 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Try WebP first for high compression, fallback to JPEG
             let dataUrl = canvas.toDataURL('image/webp', quality);
             if (!dataUrl.startsWith('data:image/webp')) {
               dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -947,7 +956,7 @@
     }
 
     /********************************************************************
-     * 5. RENDERING ENGINE
+     * 5. RENDERING ENGINE & HELPERS
      ********************************************************************/
     function renderApp() {
       renderLocationTabs();
@@ -957,8 +966,6 @@
 
     function updateHeaderBadges() {
       document.getElementById('totalPlantBadge').textContent = `${appState.plants.length}株`;
-
-      // Count plants needing water
       const needsWaterCount = appState.plants.filter(isPlantNeedingWater).length;
       const badge = document.getElementById('needsWaterCountBadge');
       badge.textContent = needsWaterCount;
@@ -1020,7 +1027,6 @@
       return element;
     }
 
-/* LucideアイコンのDOM要素を生成する関数 */
     function createLucideIcon(name, className = '') {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
@@ -1042,7 +1048,6 @@
       document.querySelectorAll('span[data-icon]').forEach(element => {
         const iconName = element.dataset.icon;
         const iconClasses = element.dataset.iconClass || '';
-        
         if (iconName && ICON_PATHS[iconName]) {
           const icon = createLucideIcon(iconName, iconClasses);
           element.replaceWith(icon);
@@ -1057,7 +1062,6 @@
       }
       container.replaceChildren(document.importNode(parsed.documentElement, true));
     }
-
 
     function getFilteredAndSortedPlants() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -1181,7 +1185,6 @@
           visual.appendChild(logBadge);
         }
 
-        // Make thumbnail clickable to open detail modal
         visual.addEventListener('click', event => {
           event.stopPropagation();
           openDetailModal(plant.id);
@@ -1217,21 +1220,21 @@
         metadata.append(shop, createElement('span', '', plant.price ? `¥${Number(plant.price).toLocaleString()}` : ''));
         body.appendChild(metadata);
 
+        // Quick Care Action Buttons (水やり / 活力剤)
         const actions = createElement('div', 'grid grid-cols-2 gap-1 pt-1 sm:gap-1.5');
-        const addActionButton = (iconName, label, className, title, action) => {
-          const button = createElement('button', className);
+        QUICK_CARE_CARDS.slice(0, 2).forEach(cardDef => {
+          const button = createElement('button', `py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
           button.type = 'button';
-          button.title = title;
-          button.append(createLucideIcon(iconName, 'w-3 h-3 sm:w-3.5 sm:h-3.5'), createElement('span', 'text-[9px] sm:text-xs', label));
+          button.title = `今日${cardDef.label}したとして記録`;
+          button.append(createLucideIcon(cardDef.icon, 'w-3 h-3 sm:w-3.5 sm:h-3.5'), createElement('span', 'text-[9px] sm:text-xs', cardDef.label));
           button.addEventListener('click', event => {
             event.stopPropagation();
-            action(plant.id);
+            recordPlantCare(plant.id, cardDef.careType, `${cardDef.badgeText}を記録しました`);
           });
           actions.appendChild(button);
-        };
-        addActionButton('droplets', '水やり', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200/80 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日水やりしたとして記録', (pId) => recordPlantCare(pId, 'lastWatered', `💧 「${appState.plants.find(p => p.id === pId)?.name}」の水やりを記録しました`));
-        addActionButton('flask-conical', '活力剤', 'py-1 sm:py-2 px-0.5 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200/70 flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer', '今日肥料・活力剤を与えたとして記録', (pId) => recordPlantCare(pId, 'lastFertilized', `🧪 「${appState.plants.find(p => p.id === pId)?.name}」の活力剤・肥料を記録しました`));
+        });
         body.appendChild(actions);
+
         card.appendChild(body);
         return card;
       });
@@ -1239,7 +1242,7 @@
     }
 
     /********************************************************************
-     * 7. ONE-TAP QUICK CARE & BATCH ACTIONS
+     * 6. ONE-TAP QUICK CARE & BATCH ACTIONS
      ********************************************************************/
     async function recordPlantCare(plantId, careType, toastMessage) {
       const plant = appState.plants.find(p => p.id === plantId);
@@ -1250,15 +1253,14 @@
       if (appState.activeDetailPlantId === plantId) {
         populateDetailModal(plantId);
       }
-      showToast(toastMessage);
+      showToast(`「${plant.name}」の${toastMessage}`);
     }
 
-    // Batch Watering Mode
     function toggleBatchMode() {
       appState.batchMode = !appState.batchMode;
       appState.batchSelectedIds.clear();
       document.getElementById('batchActionBar').classList.toggle('hidden', !appState.batchMode);
-      const btn = document.getElementById('batchModeBtn');
+      const btn = document.getElementById('batchModeBtnHeader');
       if (appState.batchMode) {
         btn.className = 'px-3 py-2 rounded-xl text-xs font-semibold border border-sage-700 bg-sage-600 text-white flex items-center gap-1.5 transition shadow-xs';
       } else {
@@ -1311,7 +1313,7 @@
     }
 
     /********************************************************************
-     * 8. PLANT DETAIL & GROWTH COMPARISON MODAL
+     * 7. PLANT DETAIL & GROWTH COMPARISON MODAL
      ********************************************************************/
     function openDetailModal(plantId) {
       appState.activeDetailPlantId = plantId;
@@ -1339,61 +1341,44 @@
       document.getElementById('detailLocationBadge').textContent = plant.location || '場所未設定';
       document.getElementById('detailPlantName').textContent = plant.name;
 
-      // Days owned calculation
       const daysOwned = plant.purchaseDate ? calcDaysBetween(plant.purchaseDate) : null;
       document.getElementById('detailDaysOwnedBadge').textContent =
         daysOwned !== null && daysOwned >= 0 ? `お迎えから ${daysOwned}日目` : '';
 
-      // Bind edit and delete buttons
       document.getElementById('detailEditBtn').onclick = () => {
         closeDetailModal();
         openPlantFormModal(plant.id);
       };
       document.getElementById('detailDeleteBtn').onclick = () => confirmDeletePlant(plant.id);
 
-      // Populate quick care cards using QUICK_CARE_CARDS
-      QUICK_CARE_CARDS.forEach((card, index) => {
-        const careValue = plant[card.lastCareKey];
-        const daysBetween = careValue ? calcDaysBetween(careValue) : null;
-        const careBoxId = ['detailLastWatered', 'detailLastFertilized', 'detailLastRepotted'][index];
-        const careSubId = ['detailWaterSub', '', 'detailSoilSub'][index];
-        const careButtonId = ['detailQuickWaterBtn', 'detailQuickFertBtn', 'detailQuickRepotBtn'][index];
+      // Populate Quick Care Cards (Data-driven)
+      QUICK_CARE_CARDS.forEach(card => {
+        const careDate = plant[card.careType];
+        const daysAgo = careDate ? calcDaysBetween(careDate) : null;
+        const text = careDate ? `${careDate} (${daysAgo === 0 ? '今日' : daysAgo + '日前'})` : '未記録';
+        
+        const boxEl = document.getElementById(card.boxId);
+        if (boxEl) boxEl.textContent = text;
 
-        const displayText = careValue ? `${careValue} (${daysBetween === 0 ? '今日' : daysBetween + '日前'})` : '未記録';
-        document.getElementById(careBoxId).textContent = displayText;
-
-        if (careSubId) {
-          if (index === 0) {
-            document.getElementById(careSubId).textContent =
-              plant.waterIntervalDays ? `目安: ${plant.waterIntervalDays}日ごと (${plant.waterMethod || '通常'})` : (plant.waterMethod || '目安未設定');
-          } else if (index === 2) {
-            document.getElementById(careSubId).textContent = plant.soil || '用土未設定';
-          }
+        if (card.subId) {
+          const subEl = document.getElementById(card.subId);
+          if (subEl) subEl.textContent = card.formatSub(plant);
         }
 
-        document.getElementById(careButtonId).onclick = () => recordPlantCare(plant.id, card.careType, `${card.message}（${plant.name}）`);
+        const btnEl = document.getElementById(card.btnId);
+        if (btnEl) {
+          btnEl.onclick = () => recordPlantCare(plant.id, card.careType, `${card.badgeText}を記録しました`);
+        }
       });
 
-      // Populate spec information using SPEC_DEFINITIONS
+      // Populate Spec Grid
       SPEC_DEFINITIONS.forEach(spec => {
-        let value;
+        const specEl = document.getElementById(spec.id);
+        if (!specEl) return;
         if (spec.formatValue) {
-          value = spec.formatValue(plant);
+          specEl.textContent = spec.formatValue(plant);
         } else {
-          value = plant[spec.key] || '未設定';
-        }
-        
-        const specValueId = {
-          lightLevel: 'specLight',
-          soil: 'specSoil',
-          waterIntervalDays: 'specWaterInterval',
-          shop: 'specShop',
-          price: 'specPrice',
-          purchaseDate: 'specPurchaseDate'
-        }[spec.key];
-
-        if (specValueId) {
-          document.getElementById(specValueId).textContent = value;
+          specEl.textContent = plant[spec.key] || '未設定';
         }
       });
 
@@ -1405,7 +1390,7 @@
         notesBox.classList.add('hidden');
       }
 
-      // Growth Logs & Before/After Comparison
+      // Growth Logs & Comparison
       const logs = Array.isArray(plant.growthLogs) ? [...plant.growthLogs] : [];
       logs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
@@ -1431,7 +1416,7 @@
         compSec.classList.add('hidden');
       }
 
-      // Timeline Grid (Newest first)
+      // Timeline Grid
       const timelineGrid = document.getElementById('growthTimelineGrid');
       const reversed = [...logs].reverse();
       timelineGrid.replaceChildren();
@@ -1535,7 +1520,7 @@
     }
 
     /********************************************************************
-     * 9. ADD / EDIT PLANT FORM MODAL
+     * 8. ADD / EDIT PLANT FORM MODAL
      ********************************************************************/
     function renderSvgSelector() {
       const grid = document.getElementById('svgSelectorGrid');
@@ -1644,7 +1629,6 @@
       const notes = document.getElementById('formNotes').value.trim();
 
       if (id) {
-        // Edit existing
         const plant = appState.plants.find(p => p.id === id);
         if (plant) {
           plant.name = name;
@@ -1670,7 +1654,6 @@
         }
         showToast(`🌿 「${name}」の情報を更新しました`);
       } else {
-        // New plant
         const newPlant = {
           id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           name,
@@ -1701,7 +1684,6 @@
         showToast(`🌱 「${name}」をコレクションに追加しました`);
       }
 
-      // 新規追加・編集ともに、保存した株がフィルタで消えないよう調整
       if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== location) {
         appState.selectedLocation = 'すべて';
       }
@@ -1729,7 +1711,7 @@
     }
 
     /********************************************************************
-     * 10. JSON EXPORT & IMPORT (Including Compressed Photos)
+     * 9. JSON EXPORT & IMPORT
      ********************************************************************/
     function exportData() {
       const payload = {
@@ -1891,7 +1873,7 @@
     }
 
     /********************************************************************
-     * 11. FILTER HELPERS, DIALOG & TOAST UI
+     * 10. FILTER HELPERS, DIALOG & TOAST UI
      ********************************************************************/
     function selectLocationTab(loc) {
       appState.selectedLocation = loc;
@@ -1983,7 +1965,7 @@
     }
 
     /********************************************************************
-     * 12. INITIALIZATION ON WINDOW LOAD
+     * 11. INITIALIZATION ON WINDOW LOAD
      ********************************************************************/
     window.onload = async function () {
       try {
@@ -1998,7 +1980,7 @@
       } catch (err) {
         console.error('Stored plant data validation failed:', err);
         appState.plants = getInitialSamplePlants();
-        showToast('エラーが発生しました: ' + err.message);
+        showToast('データの読み込みで警告が発生しました: ' + err.message);
       }
       renderApp();
     };
