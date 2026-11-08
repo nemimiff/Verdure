@@ -947,7 +947,61 @@
     }
 
     /********************************************************************
-     * 5. RENDERING ENGINE
+     * 5. DATA-DRIVEN DEFINITIONS (Specs & Quick Care Cards)
+     ********************************************************************/
+    const SPEC_DEFINITIONS = [
+      { key: 'lightLevel', label: '光量・ライト', icon: 'sun', iconClasses: 'w-3.5 h-3.5 text-amber-500' },
+      { key: 'soil', label: '用土・鉢', icon: 'sprout', iconClasses: 'w-3.5 h-3.5 text-sage-600' },
+      {
+        key: 'waterIntervalDays',
+        label: '水やり目安・方法',
+        icon: 'timer',
+        iconClasses: 'w-3.5 h-3.5 text-sky-600',
+        formatValue: (plant) =>
+          plant.waterIntervalDays
+            ? `${plant.waterIntervalDays}日ごと / ${plant.waterMethod || '通常'}`
+            : plant.waterMethod || '未設定'
+      },
+      { key: 'shop', label: '購入店・入手先', icon: 'store', iconClasses: 'w-3.5 h-3.5 text-sage-600' },
+      {
+        key: 'price',
+        label: '購入価格',
+        icon: 'japanese-yen',
+        iconClasses: 'w-3.5 h-3.5 text-sage-600',
+        formatValue: (plant) => (plant.price ? `¥${Number(plant.price).toLocaleString()}` : '未設定')
+      },
+      { key: 'purchaseDate', label: 'お迎え日', icon: 'calendar', iconClasses: 'w-3.5 h-3.5 text-sage-600' }
+    ];
+
+    const QUICK_CARE_CARDS = [
+      {
+        icon: 'droplets',
+        label: '水やり',
+        lastCareKey: 'lastWatered',
+        careType: 'lastWatered',
+        message: '水やりを記録しました',
+        badgeClass: 'bg-sky-100 text-sky-800'
+      },
+      {
+        icon: 'flask-conical',
+        label: '肥料・活力剤',
+        lastCareKey: 'lastFertilized',
+        careType: 'lastFertilized',
+        message: '肥料・活力剤を記録しました',
+        badgeClass: 'bg-emerald-100 text-emerald-800'
+      },
+      {
+        icon: 'shovel',
+        label: '植替え',
+        lastCareKey: 'lastRepotted',
+        careType: 'lastRepotted',
+        message: '植替えを記録しました',
+        badgeClass: 'bg-orange-100 text-orange-800'
+      }
+    ];
+
+    /********************************************************************
+     * 6. RENDERING ENGINE
      ********************************************************************/
     function renderApp() {
       renderLocationTabs();
@@ -1244,7 +1298,7 @@
     }
 
     /********************************************************************
-     * 6. ONE-TAP QUICK CARE & BATCH ACTIONS
+     * 7. ONE-TAP QUICK CARE & BATCH ACTIONS
      ********************************************************************/
     async function recordPlantCare(plantId, careType, toastMessage) {
       const plant = appState.plants.find(p => p.id === plantId);
@@ -1316,7 +1370,7 @@
     }
 
     /********************************************************************
-     * 7. PLANT DETAIL & GROWTH COMPARISON MODAL
+     * 8. PLANT DETAIL & GROWTH COMPARISON MODAL
      ********************************************************************/
     function openDetailModal(plantId) {
       appState.activeDetailPlantId = plantId;
@@ -1378,12 +1432,6 @@
 
         document.getElementById(careButtonId).onclick = () => recordPlantCare(plant.id, card.careType, `「${plant.name}」${card.message.split('「')[1].split('」')[0]}を記録しました`);
       });
-
-      document.getElementById('detailEditBtn').onclick = () => {
-        closeDetailModal();
-        openPlantFormModal(plant.id);
-      };
-      document.getElementById('detailDeleteBtn').onclick = () => confirmDeletePlant(plant.id);
 
       // Populate spec information using SPEC_DEFINITIONS
       SPEC_DEFINITIONS.forEach(spec => {
@@ -1546,7 +1594,7 @@
     }
 
     /********************************************************************
-     * 8. ADD / EDIT PLANT FORM MODAL
+     * 9. ADD / EDIT PLANT FORM MODAL
      ********************************************************************/
     function renderSvgSelector() {
       const grid = document.getElementById('svgSelectorGrid');
@@ -1740,7 +1788,7 @@
     }
 
     /********************************************************************
-     * 9. JSON EXPORT & IMPORT (Including Compressed Photos)
+     * 10. JSON EXPORT & IMPORT (Including Compressed Photos)
      ********************************************************************/
     function exportData() {
       const payload = {
@@ -1902,7 +1950,7 @@
     }
 
     /********************************************************************
-     * 10. FILTER HELPERS, DIALOG & TOAST UI
+     * 11. FILTER HELPERS, DIALOG & TOAST UI
      ********************************************************************/
     function selectLocationTab(loc) {
       appState.selectedLocation = loc;
@@ -1994,7 +2042,7 @@
     }
 
     /********************************************************************
-     * 11. INITIALIZATION ON WINDOW LOAD
+     * 12. INITIALIZATION ON WINDOW LOAD
      ********************************************************************/
     window.onload = async function () {
       initializeUIEvents();
