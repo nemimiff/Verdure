@@ -135,6 +135,29 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    .marker-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 1px 5px;
+      border-width: 1px;
+      border-style: solid;
+      border-radius: 0.375rem;
+      font-size: 9px;
+      line-height: 1.5;
+    }
+    .marker-badge svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      .marker-badge {
+        padding-left: 7px;
+        padding-right: 7px;
+        font-size: 10px;
+      }
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -310,7 +333,7 @@
         <!-- Bottom row: Location badge + Days owned + Edit/Delete buttons -->
         <div class="flex items-center justify-between gap-2 sm:gap-1.5">
           <div class="flex items-center gap-2 min-w-0">
-            <span id="detailLocationBadge" class="text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md bg-sage-100 text-sage-700 shrink-0"></span>
+            <span class="marker-badge font-medium bg-sage-100 text-sage-700 border-transparent shrink-0"><span data-icon="map-pin" data-icon-class="text-sage-600"></span><span id="detailLocationBadge"></span></span>
             <span id="detailDaysOwnedBadge" class="text-[10px] sm:text-[11px] text-gray-500 truncate"></span>
           </div>
           <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -408,13 +431,13 @@
               <span data-icon="sparkles" data-icon-class="w-4 h-4 text-sage-600"></span>
               成長ビフォーアフター比較（初回記録 vs 最新）
             </h3>
-            <span id="comparisonSpanBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white text-sage-700 border border-sage-200"></span>
+            <span id="comparisonSpanBadge" class="marker-badge font-medium bg-white text-sage-700 border-sage-200"></span>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
                 <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover" />
-                <span class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md">BEFORE</span>
+                <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
               </div>
               <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
               <p id="compareFirstNote" class="text-[11px] text-gray-500 truncate"></p>
@@ -422,7 +445,7 @@
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
                 <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover" />
-                <span class="absolute top-2 left-2 bg-sage-600 text-white text-[10px] px-2 py-0.5 rounded-md">NOW (最新)</span>
+                <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
               </div>
               <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
               <p id="compareLatestNote" class="text-[11px] text-gray-500 truncate"></p>
@@ -1164,31 +1187,31 @@
           visual.appendChild(svgWrap);
         }
 
-        const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-center gap-1.5');
+        const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-start gap-1.5');
         if (appState.batchMode) {
           const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
           checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
           locationPill.appendChild(checkWrap);
         }
-        const locationBadge = createElement('span', 'px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-medium bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80 flex items-center gap-1 shadow-2xs');
-        locationBadge.append(createLucideIcon('map-pin', 'w-2.5 h-2.5 sm:w-3 sm:h-3 text-sage-600'), createElement('span', '', plant.location || '未設定'));
+        const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs');
+        locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', '', plant.location || '未設定'));
         locationPill.appendChild(locationBadge);
         visual.appendChild(locationPill);
 
         const statusWrap = createElement('div', 'absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5');
-        const statusBadge = createElement('span', `px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-bold flex items-center gap-1 shadow-2xs ${
-          needsWater ? 'bg-amber-500 text-white' : daysSinceWater === 0 ? 'bg-sky-600 text-white' : 'bg-white/90 backdrop-blur-xs text-charcoal border border-stoneborder/80'
+        const statusBadge = createElement('span', `marker-badge font-bold shadow-2xs ${
+          needsWater ? 'bg-amber-500 text-white border-transparent' : daysSinceWater === 0 ? 'bg-sky-600 text-white border-transparent' : 'bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80'
         }`);
         statusBadge.append(
-          createLucideIcon('droplets', `w-2.5 h-2.5 sm:w-3 sm:h-3 ${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
+          createLucideIcon('droplets', `${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
           createElement('span', '', waterBadgeText)
         );
         statusWrap.appendChild(statusBadge);
         visual.appendChild(statusWrap);
 
         if (plant.growthLogs?.length) {
-          const logBadge = createElement('span', 'absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-black/60 text-white text-[9px] sm:text-[10px] font-medium flex items-center gap-1');
-          logBadge.append(createLucideIcon('images', 'w-3 h-3'), document.createTextNode(`${plant.growthLogs.length}枚`));
+          const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
+          logBadge.append(createLucideIcon('images'), document.createTextNode(`${plant.growthLogs.length}枚`));
           visual.appendChild(logBadge);
         }
 
@@ -1210,7 +1233,7 @@
 
         const specs = createElement('div', 'flex flex-wrap items-center gap-1 mt-1.5 sm:gap-1.5 sm:mt-2');
         const addSpec = (iconName, iconClass, text) => {
-          const badge = createElement('span', 'inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-canvas border border-stoneborder text-[9px] sm:text-[11px] text-gray-600');
+          const badge = createElement('span', 'marker-badge bg-canvas border-stoneborder text-gray-600');
           badge.append(createLucideIcon(iconName, iconClass), document.createTextNode(text));
           specs.appendChild(badge);
         };
