@@ -724,6 +724,84 @@
           <path d="M22 44H42L39 55H25L22 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
         </svg>`
       },
+      conophytum: {
+        label: 'コノフィツム',
+        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 24 44 C 21 32 22 23 27 23 C 30 23 32 26 32 28 C 32 26 34 23 37 23 C 42 23 43 32 40 44 Z" fill="#588157" fill-opacity="0.2" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 32 28 V 30" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 20 38 H 44 L 41 55 H 23 L 20 38 Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
+        </svg>`
+      },
+      echeveria: {
+        label: 'エケベリア系',
+        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- 葉っぱ1枚ごとに適用するグラデーション（上端=葉先がピンク、下端=根元が緑） -->
+            <linearGradient id="eke-leaf-grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="17%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="20%" stop-color="#789977" stop-opacity="1" />
+            </linearGradient>
+            <linearGradient id="eke-leaf-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="20%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="23%" stop-color="#789977" stop-opacity="1" />
+            </linearGradient>
+            <linearGradient id="eke-leaf-grad3" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="28%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="31%" stop-color="#789977" stop-opacity="1" />
+            </linearGradient>
+          </defs>
+
+          <g transform="translate(12.8, 12.8) scale(0.6)">
+            
+            <!-- 第1層: 外側の大きな葉 -->
+            <g fill="url(#eke-leaf-grad1)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
+              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(0 32 32)"/>
+              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(72 32 32)"/>
+              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(144 32 32)"/>
+              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(216 32 32)"/>
+              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(288 32 32)"/>
+            </g>
+
+            <!-- 第2層: 中段の葉 -->
+            <g fill="url(#eke-leaf-grad2)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
+              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(36 32 32)"/>
+              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(108 32 32)"/>
+              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(180 32 32)"/>
+              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(252 32 32)"/>
+              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(324 32 32)"/>
+            </g>
+
+            <!-- 第3層: 内側の葉 -->
+            <g fill="url(#eke-leaf-grad3)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
+              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(15 32 32)"/>
+              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(87 32 32)"/>
+              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(159 32 32)"/>
+              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(231 32 32)"/>
+              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(303 32 32)"/>
+            </g>
+          </g>
+        </svg>`
+      },
+      haworthia: {
+        label: 'ハオルチア',
+        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="haworthia-window" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#E3EAE5" stop-opacity="0.9" />
+            <stop offset="30%" stop-color="#E3EAE5" stop-opacity="0.9" />
+            <stop offset="31%" stop-color="#789977" stop-opacity="1" />
+          </linearGradient>
+        </defs>
+
+          <!-- 後列の葉 -->
+          <path d="M20 38 C15 35 16 28 19 28 C22 28 24 32 25 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M44 38 C49 35 48 28 45 28 C42 28 40 32 39 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
+          <!-- 中列の葉  -->
+          <path d="M24 38 C20 30 20 25 24 25 C28 25 28 30 29 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M40 38 C44 30 44 25 40 25 C36 25 36 30 35 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
+          <!-- 最前列・中央の葉 -->
+          <path d="M28 38 C29 27 28 22 32 22 C36 22 35 27 36 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
+          <!-- 共通の鉢 -->
+          <path d="M 20 38 H 44 L 41 55 H 23 L 20 38 Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
+        </svg>`
+      },
       cactus: {
         label: 'サボテン・ユーフォルビア',
         svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -1177,7 +1255,7 @@
           image.src = latestPhoto;
           image.alt = plant.name;
           visual.appendChild(image);
-          const svgBadge = createElement('div', 'absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-1 border border-stoneborder shadow-xs');
+          const svgBadge = createElement('div', 'absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-0.3 border border-stoneborder shadow-xs');
           svgBadge.title = svgInfo.label;
           appendBotanicalSvg(svgBadge, svgInfo.svg);
           visual.appendChild(svgBadge);
