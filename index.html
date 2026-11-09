@@ -436,7 +436,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover" />
+                <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-pointer" data-action="viewImageFullscreen" />
                 <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
               </div>
               <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
@@ -444,7 +444,7 @@
             </div>
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover" />
+                <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-pointer" data-action="viewImageFullscreen" />
                 <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
               </div>
               <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
@@ -484,11 +484,16 @@
               </div>
               <!-- Submit -->
               <div class="sm:col-span-2">
-                <button data-action="addGrowthLogEntry" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer h-full">
+                <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer h-full">
                   追加
+                </button>
+                <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden w-full py-2 px-3 rounded-xl border border-stoneborder bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold transition cursor-pointer flex-1">
+                  キャンセル
                 </button>
               </div>
             </div>
+            <input type="hidden" id="editGrowthLogId" value="">
+            
             <!-- Preview of compressed image before adding -->
             <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder flex items-center justify-between">
               <div class="flex items-center gap-2.5">
@@ -646,7 +651,7 @@
   </div>
 
   <!-- ================= CUSTOM CONFIRM / MESSAGE DIALOG ================= -->
-  <div id="confirmDialog" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+  <div id="confirmDialog" class="fixed inset-0 z-[60] hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white border border-stoneborder rounded-2xl max-w-sm w-full p-5 shadow-xl animate-fade-in">
       <h3 id="confirmTitle" class="font-bold text-base text-charcoal mb-1.5">確認</h3>
       <p id="confirmMessage" class="text-xs text-gray-600 leading-relaxed mb-5"></p>
@@ -657,8 +662,16 @@
     </div>
   </div>
 
+  <!-- ================= FULLSCREEN IMAGE VIEWER ================= -->
+  <div id="imageViewerModal" class="fixed inset-0 z-[70] hidden bg-black/95 flex items-center justify-center p-2 sm:p-5">
+    <button data-action="closeImageViewer" class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white z-10 transition">
+      <span data-icon="x" data-icon-class="w-6 h-6"></span>
+    </button>
+    <img id="imageViewerImg" src="" class="max-w-full max-h-full object-contain select-none" />
+  </div>
+
   <!-- ================= TOAST NOTIFICATION ================= -->
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ================= APPLICATION JAVASCRIPT ================= -->
   <script>
@@ -1436,11 +1449,7 @@
      ********************************************************************/
     function openDetailModal(plantId) {
       appState.activeDetailPlantId = plantId;
-      appState.tempGrowthPhotoDataUrl = null;
-      document.getElementById('newGrowthDateInput').value = getTodayStr();
-      document.getElementById('newGrowthNoteInput').value = '';
-      document.getElementById('newGrowthPreviewBox').classList.add('hidden');
-      document.getElementById('newGrowthPhotoLabel').textContent = '写真を選択 (自動圧縮)';
+      cancelEditGrowthLog();
 
       populateDetailModal(plantId);
       document.getElementById('detailModal').classList.remove('hidden');
@@ -1538,17 +1547,30 @@
         reversed.forEach(entry => {
           const item = createElement('div', 'bg-canvas rounded-2xl border border-stoneborder overflow-hidden flex flex-col justify-between group');
           const imageWrap = createElement('div', 'aspect-square bg-gray-100 relative overflow-hidden');
-          const image = createElement('img', 'w-full h-full object-cover');
+          const image = createElement('img', 'w-full h-full object-cover cursor-pointer');
           image.src = entry.photoDataUrl;
           image.alt = 'Growth log';
+          image.dataset.action = 'viewImageFullscreen'; // Expand image
           imageWrap.appendChild(image);
 
-          const deleteButton = createElement('button', 'opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600');
+          const controlsWrap = createElement('div', 'opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 flex items-center gap-1.5');
+
+          const editButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-amber-500');
+          editButton.type = 'button';
+          editButton.title = 'この記録を編集';
+          editButton.appendChild(createLucideIcon('pencil', 'w-3.5 h-3.5'));
+          editButton.addEventListener('click', () => editGrowthLogEntry(plant.id, entry.id));
+          
+          const deleteButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600');
           deleteButton.type = 'button';
           deleteButton.title = 'この写真を削除';
           deleteButton.appendChild(createLucideIcon('trash-2', 'w-3.5 h-3.5'));
           deleteButton.addEventListener('click', () => deleteGrowthLogEntry(plant.id, entry.id));
-          imageWrap.appendChild(deleteButton);
+          
+          controlsWrap.appendChild(editButton);
+          controlsWrap.appendChild(deleteButton);
+          imageWrap.appendChild(controlsWrap);
+
           item.appendChild(imageWrap);
 
           const caption = createElement('div', 'p-2.5');
@@ -1584,34 +1606,88 @@
       document.getElementById('newGrowthPhotoLabel').textContent = '写真を選択 (自動圧縮)';
     }
 
+    function editGrowthLogEntry(plantId, logId) {
+       const plant = appState.plants.find(p => p.id === plantId);
+       if (!plant || !Array.isArray(plant.growthLogs)) return;
+       const log = plant.growthLogs.find(g => g.id === logId);
+       if (!log) return;
+
+       document.getElementById('editGrowthLogId').value = log.id;
+       document.getElementById('newGrowthDateInput').value = log.date || getTodayStr();
+       document.getElementById('newGrowthNoteInput').value = log.note || '';
+       
+       appState.tempGrowthPhotoDataUrl = log.photoDataUrl;
+       document.getElementById('newGrowthPreviewImg').src = log.photoDataUrl;
+       document.getElementById('newGrowthSizeInfo').textContent = '現在の写真 (変更可能)';
+       document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
+       document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
+
+       const addBtn = document.getElementById('addGrowthLogBtn');
+       addBtn.textContent = '更新';
+       addBtn.classList.remove('bg-sage-600', 'hover:bg-sage-700');
+       addBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+       
+       document.getElementById('cancelEditGrowthLogBtn').classList.remove('hidden');
+
+       // Scroll to the edit form
+       document.getElementById('growthAlbumTitle').scrollIntoView({ behavior: 'smooth' });
+    }
+    function cancelEditGrowthLog() {
+      clearNewGrowthPhoto();
+      document.getElementById('newGrowthDateInput').value = getTodayStr();
+      document.getElementById('newGrowthNoteInput').value = '';
+      document.getElementById('editGrowthLogId').value = '';
+      
+      const addBtn = document.getElementById('addGrowthLogBtn');
+      addBtn.textContent = '追加';
+      addBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+      addBtn.classList.add('bg-sage-600', 'hover:bg-sage-700');
+      
+      // キャンセルボタンを隠す
+      document.getElementById('cancelEditGrowthLogBtn').classList.add('hidden');
+    }
+
     async function addGrowthLogEntry() {
       const plantId = appState.activeDetailPlantId;
       const plant = appState.plants.find(p => p.id === plantId);
       if (!plant) return;
 
       if (!appState.tempGrowthPhotoDataUrl) {
-        showToast('追加する写真を選択してください');
+        showToast('追加・更新する写真を選択してください');
         return;
       }
 
       const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
       const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
+      const editLogId = document.getElementById('editGrowthLogId').value;
 
       if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
-      plant.growthLogs.push({
-        id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        date: dateVal,
-        photoDataUrl: appState.tempGrowthPhotoDataUrl,
-        note: noteVal
-      });
 
-      clearNewGrowthPhoto();
-      document.getElementById('newGrowthNoteInput').value = '';
+      if (editLogId) {
+        const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
+        if (logIndex !== -1) {
+            plant.growthLogs[logIndex] = {
+                id: editLogId,
+                date: dateVal,
+                photoDataUrl: appState.tempGrowthPhotoDataUrl,
+                note: noteVal
+            };
+            showToast('📷 成長記録を更新しました');
+        }
+      } else {
+        plant.growthLogs.push({
+          id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          date: dateVal,
+          photoDataUrl: appState.tempGrowthPhotoDataUrl,
+          note: noteVal
+        });
+        showToast('📷 成長アルバムに写真を追加しました');
+      }
 
+      cancelEditGrowthLog();
       await saveToDB();
       populateDetailModal(plantId);
       renderApp();
-      showToast('📷 成長アルバムに写真を追加しました');
     }
 
     async function deleteGrowthLogEntry(plantId, logId) {
@@ -1620,6 +1696,12 @@
 
       openConfirmDialog('写真の削除', 'この成長記録写真を削除しますか？', async () => {
         plant.growthLogs = plant.growthLogs.filter(g => g.id !== logId);
+        
+        // If the currently edited log is deleted, reset the edit form
+        if (document.getElementById('editGrowthLogId').value === logId) {
+           cancelEditGrowthLog();
+        }
+
         await saveToDB();
         populateDetailModal(plantId);
         renderApp();
@@ -2035,6 +2117,18 @@
         setTimeout(() => toast.remove(), 250);
       }, 2600);
     }
+    
+    function viewImageFullscreen(event) {
+        const imgSrc = event.target.src;
+        if (!imgSrc) return;
+        document.getElementById('imageViewerImg').src = imgSrc;
+        document.getElementById('imageViewerModal').classList.remove('hidden');
+    }
+    
+    function closeImageViewer() {
+        document.getElementById('imageViewerModal').classList.add('hidden');
+        document.getElementById('imageViewerImg').src = '';
+    }
 
     function initializeUIEvents() {
       const actions = {
@@ -2069,9 +2163,12 @@
         resetFilters,
         closeDetailModal,
         addGrowthLogEntry,
+        cancelEditGrowthLog,
         clearNewGrowthPhoto,
         closePlantFormModal,
-        clearFormPhoto
+        clearFormPhoto,
+        viewImageFullscreen,
+        closeImageViewer
       };
 
       function debounce(func, delay = 150) {
