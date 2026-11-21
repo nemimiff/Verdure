@@ -238,23 +238,23 @@
 
       <!-- Right Action Buttons -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="ui-btn ui-md" title="複数の鉢にまとめて水やりを記録します">
+        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="ui-btn ui-lg" title="複数の鉢にまとめて水やりを記録します">
           <span data-icon="layers" data-icon-class="text-sage-600"></span>
           <span class="hidden md:inline">一括水やり</span>
         </button>
 
-        <button id="exportDataBtn" data-action="exportData" class="ui-btn ui-md" title="写真を含む全データをJSONファイルに書き出し">
+        <button id="exportDataBtn" data-action="exportData" class="ui-btn ui-lg" title="写真を含む全データをJSONファイルに書き出し">
           <span data-icon="download" data-icon-class="text-gray-600"></span>
           <span class="hidden lg:inline">保存(Export)</span>
         </button>
 
-        <button id="importDataBtn" data-action="triggerImport" class="ui-btn ui-md" title="JSONファイルからデータを復元">
+        <button id="importDataBtn" data-action="triggerImport" class="ui-btn ui-lg" title="JSONファイルからデータを復元">
           <span data-icon="upload" data-icon-class="text-gray-600"></span>
           <span class="hidden lg:inline">読込(Import)</span>
         </button>
         <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
-        <button data-action="openPlantFormModal" id="addPlantBtn" class="ui-btn ui-md ui-soft" title="株を追加">
+        <button data-action="openPlantFormModal" id="addPlantBtn" class="ui-btn ui-lg ui-soft" title="株を追加">
           <span data-icon="plant-plus" data-icon-class="text-sage-700"></span>
           <span class="hidden sm:inline">株を追加</span>
         </button>
@@ -467,6 +467,18 @@
           </div>
         </div>
 
+        <!-- Cultivation Calendar Section -->
+        <div id="detailCalendarSection" class="hidden bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+              <span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
+              <span>栽培カレンダー</span>
+            </h3>
+            <span id="detailCalendarCurrentMonthBadge" class="text-[10px] font-semibold text-sage-700 bg-sage-100 px-2 py-0.5 rounded-full"></span>
+          </div>
+          <div id="detailCalendarGrid" class="overflow-x-auto no-scrollbar"></div>
+        </div>
+
         <!-- Growth Comparison Banner -->
         <div id="growthComparisonSection" class="hidden bg-sage-50/70 border border-sage-200 rounded-2xl p-4">
           <div class="flex items-center justify-between mb-2.5">
@@ -545,6 +557,8 @@
             </div>
             <input type="hidden" id="editGrowthLogId" value="">
             
+            <p id="newGrowthDateHint" class="hidden mt-2 text-[11px] text-sage-700 font-medium"></p>
+
             <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder">
               <div class="flex items-center justify-between mb-2">
                 <p id="newGrowthSizeInfo" class="text-[11px] font-medium text-sage-700"></p>
@@ -600,6 +614,10 @@
               <span id="formPhotoSizeBadge" class="text-[11px] text-sage-700 font-medium"></span>
               <button type="button" data-action="clearFormPhoto" class="text-xs text-gray-400 hover:text-red-500 ml-1">削除</button>
             </div>
+          </div>
+          <div id="formPhotoDateHintWrap" class="hidden mt-2 flex flex-wrap items-center gap-2 text-[11px] text-sage-700">
+            <span id="formPhotoDateHintText"></span>
+            <button type="button" id="applyFormPhotoDateBtn" data-action="applyFormPhotoDate" class="hidden px-2 py-0.5 rounded-md bg-sage-100 hover:bg-sage-200 text-sage-800 font-semibold transition cursor-pointer">お迎え日に反映</button>
           </div>
         </div>
 
@@ -675,6 +693,14 @@
         </div>
 
         <div class="border-t border-stoneborder pt-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">栽培カレンダー（月ベース・任意）</h3>
+            <span class="text-[10px] text-gray-400">該当する月をタップしてON/OFF</span>
+          </div>
+          <div id="formCalendarGrid" class="space-y-2.5 bg-canvas p-3 rounded-2xl border border-stoneborder"></div>
+        </div>
+
+        <div class="border-t border-stoneborder pt-4">
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">購入・コレクション記録（任意）</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -744,6 +770,7 @@
             <span id="quickLogPhotoLabel">写真を選択（最大6枚）</span>
             <input type="file" id="quickLogPhotoInput" accept="image/*" multiple class="hidden" />
           </label>
+          <p id="quickLogDateHint" class="hidden mt-1.5 text-[11px] text-sage-700 font-medium"></p>
           <div id="quickLogPreviewWrap" class="hidden mt-2.5">
             <div class="flex items-center justify-between mb-1.5">
               <span id="quickLogPhotoCount" class="text-[11px] font-medium text-sage-700"></span>
@@ -818,6 +845,20 @@
               <option value="normal">通常</option>
               <option value="rooting">発根管理中</option>
               <option value="curing">養生中</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-charcoal mb-1.5">今月の作業適期（栽培カレンダー）</label>
+          <div class="ui-field ui-lg">
+            <span data-icon="calendar" data-icon-class="text-gray-400"></span>
+            <select id="calendarFilterSelect" class="font-medium text-charcoal cursor-pointer">
+              <option value="all">指定なし</option>
+              <option value="repot">今月が植替え適期</option>
+              <option value="fertilizer">今月が肥料・追肥</option>
+              <option value="prune">今月が剪定・胴切り</option>
+              <option value="dormant">今月が休眠期</option>
             </select>
           </div>
         </div>

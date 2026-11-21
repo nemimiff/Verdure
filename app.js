@@ -63,6 +63,7 @@ const appState = {
   selectedLocation: 'すべて',
   onlyNeedsWater: false,
   selectedStatus: 'all',
+  selectedCalendarTask: 'all',
   batchMode: false,
   batchSelectedIds: new Set(),
   batchSelectedMaterials: new Set(),
@@ -70,11 +71,15 @@ const appState = {
   returnToDetailPlantId: null,
   selectedFormSvgType: 'agave',
   tempFormPhotoDataUrl: null,
+  tempFormPhotoDate: null,
+  formPhotoSelectionId: 0,
   tempGrowthPhotos: [],
   growthPhotoSelectionId: 0,
+  growthAutoDetectedDate: null,
   activeQuickLogPlantId: null,
   tempQuickLogPhotos: [],
   quickLogPhotoSelectionId: 0,
+  quickLogAutoDetectedDate: null,
   dbLoadError: true
 };
 
@@ -100,6 +105,13 @@ const MATERIAL_DEFS = {
   fruit_fert:  { label: '果樹の肥料', group: 'solid', updatesWatered: false },
   ortran:      { label: 'オルトラン', group: 'solid', updatesWatered: false },
   benika:      { label: 'ベニカ',     group: 'solid', updatesWatered: false }
+};
+
+const CALENDAR_TASK_DEFS = {
+  repot:      { label: '植替', cellClass: 'bg-sage-500/80',  btnActiveClass: 'bg-sage-600 text-white border-sage-600' },
+  fertilizer: { label: '肥料', cellClass: 'bg-rose-400/80',  btnActiveClass: 'bg-rose-500 text-white border-rose-500' },
+  prune:      { label: '剪定', cellClass: 'bg-amber-400/80', btnActiveClass: 'bg-amber-500 text-white border-amber-500' },
+  dormant:    { label: '休眠',     cellClass: 'bg-stone-400/80', btnActiveClass: 'bg-stone-500 text-white border-stone-500' }
 };
 
 const LOG_TAGS = {
@@ -206,6 +218,96 @@ async function loadFromDB() {
 /********************************************************************
 - 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION
  ********************************************************************/
+function parseExifDateStr(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  const m = raw.match(/(\d{4}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  const year = Number(y), month = Number(mo), day = Number(d);
+  if (year < 1970 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${y}-${mo}-${d}`;
+}
+
+function readExifDateFromBuffer(buffer) {
+  const view = new DataView(buffer);
+  if (view.byteLength < 12 || view.getUint16(0, false) !== 0xFFD8) return null;
+
+  let offset = 2;
+  while (offset + 4 <= view.byteLength) {
+    const marker = view.getUint16(offset, false);
+    offset += 2;
+    if (marker === 0xFFDA || marker === 0xFFD9) break;
+    if ((marker & 0xFF00) !== 0xFF00) break;
+    const size = view.getUint16(offset, false);
+    if (size < 2 || offset + size > view.byteLength) break;
+
+    if (marker === 0xFFE1 && size >= 14) {
+      const headerOffset = offset + 2;
+      if (view.getUint32(headerOffset, false) === 0x45786966 && view.getUint16(headerOffset + 4, false) === 0x0000) {
+        const tiffStart = headerOffset + 6;
+        const endian = view.getUint16(tiffStart, false);
+        const little = endian === 0x4949;
+        if (!little && endian !== 0x4D4D) return null;
+
+        const readAscii = (valOffset, count) => {
+          if (valOffset < 0 || valOffset + count > view.byteLength) return '';
+          let out = '';
+          for (let i = 0; i < count; i++) {
+            const c = view.getUint8(valOffset + i);
+            if (c === 0) break;
+            out += String.fromCharCode(c);
+          }
+          return out;
+        };
+
+        const scanIfd = (ifdOffset) => {
+          if (ifdOffset <= 0 || ifdOffset + 2 > view.byteLength) return {};
+          const entries = view.getUint16(ifdOffset, little);
+          const found = {};
+          for (let i = 0; i < entries; i++) {
+            const entryOff = ifdOffset + 2 + i * 12;
+            if (entryOff + 12 > view.byteLength) break;
+            const tag = view.getUint16(entryOff, little);
+            const type = view.getUint16(entryOff + 2, little);
+            const count = view.getUint32(entryOff + 4, little);
+            if (tag === 0x8769) {
+              found.exifIfdPtr = tiffStart + view.getUint32(entryOff + 8, little);
+            } else if ((tag === 0x9003 || tag === 0x9004 || tag === 0x0132) && type === 2 && count >= 10) {
+              const valOff = count <= 4 ? entryOff + 8 : tiffStart + view.getUint32(entryOff + 8, little);
+              const parsed = parseExifDateStr(readAscii(valOff, Math.min(count, 32)));
+              if (parsed) found[tag] = parsed;
+            }
+          }
+          return found;
+        };
+
+        const firstIfdOffset = tiffStart + view.getUint32(tiffStart + 4, little);
+        const ifd0 = scanIfd(firstIfdOffset);
+        const exifIfd = ifd0.exifIfdPtr ? scanIfd(ifd0.exifIfdPtr) : {};
+        return exifIfd[0x9003] || exifIfd[0x9004] || ifd0[0x0132] || null;
+      }
+    }
+    offset += size;
+  }
+  return null;
+}
+
+async function extractPhotoDate(file) {
+  if (!file) return null;
+  try {
+    const slice = file.slice(0, 131072);
+    const buffer = await slice.arrayBuffer();
+    const exifDate = readExifDateFromBuffer(buffer);
+    if (exifDate) return { date: exifDate, source: 'exif' };
+  } catch (e) {
+    // Fallback to file.lastModified
+  }
+  if (typeof file.lastModified === 'number' && file.lastModified > 0) {
+    return { date: formatLocalDate(new Date(file.lastModified)), source: 'file' };
+  }
+  return null;
+}
+
 function compressImageFile(file, maxDim = 800, quality = 0.76) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -506,6 +608,11 @@ function getFilteredAndSortedPlants() {
     if (appState.onlyNeedsWater && !isPlantNeedingWater(p)) return false;
     const plantStatus = p.status || 'normal';
     if (appState.selectedStatus !== 'all' && plantStatus !== appState.selectedStatus) return false;
+    if (appState.selectedCalendarTask !== 'all') {
+      const currentMonth = new Date().getMonth() + 1;
+      const months = p.careCalendar?.[appState.selectedCalendarTask];
+      if (!Array.isArray(months) || !months.includes(currentMonth)) return false;
+    }
     if (q) {
       const hay = `${p.name || ''} ${p.soil || ''} ${p.shop || ''} ${p.location || ''} ${p.notes || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -1002,6 +1109,63 @@ function closeDetailModal() {
   document.getElementById('detailModal').classList.add('hidden');
 }
 
+function renderDetailCalendar(plant) {
+  const sec = document.getElementById('detailCalendarSection');
+  const grid = document.getElementById('detailCalendarGrid');
+  const badge = document.getElementById('detailCalendarCurrentMonthBadge');
+  if (!sec || !grid) return;
+
+  const cal = plant.careCalendar || {};
+  const activeEntries = Object.entries(CALENDAR_TASK_DEFS).filter(
+    ([key]) => Array.isArray(cal[key]) && cal[key].length > 0
+  );
+
+  if (activeEntries.length === 0) {
+    sec.classList.add('hidden');
+    grid.replaceChildren();
+    return;
+  }
+
+  const currentMonth = new Date().getMonth() + 1;
+  if (badge) badge.textContent = `今月: ${currentMonth}月`;
+  sec.classList.remove('hidden');
+
+  const table = createElement('table', 'w-full table-fixed border-collapse text-[10px] sm:text-[11px] min-w-[320px]');
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.appendChild(createElement('th', 'text-left font-semibold text-gray-400 pb-1.5 pr-2 w-10 sm:w-24', '作業'));
+
+  for (let m = 1; m <= 12; m++) {
+    const isNow = m === currentMonth;
+    headRow.appendChild(createElement(
+      'th',
+      `text-center pb-1.5 font-semibold tabular-nums ${isNow ? 'text-sage-700 bg-sage-100/80 rounded-t-md' : 'text-gray-400'}`,
+      `${m}`
+    ));
+  }
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  activeEntries.forEach(([key, def]) => {
+    const months = new Set(cal[key]);
+    const tr = createElement('tr', 'border-t border-stoneborder/70');
+    tr.appendChild(createElement('td', 'py-1.5 pr-2 font-medium text-charcoal whitespace-nowrap', def.label));
+
+    for (let m = 1; m <= 12; m++) {
+      const isNow = m === currentMonth;
+      const td = createElement('td', `py-1.5 px-0.5 text-center ${isNow ? 'bg-sage-100/50' : ''}`);
+      if (months.has(m)) {
+        td.appendChild(createElement('span', `block h-3.5 sm:h-4 rounded-sm ${def.cellClass}`));
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  grid.replaceChildren(table);
+}
+
 function populateDetailModal(plantId) {
   const plant = appState.plants.find(p => p.id === plantId);
   if (!plant) return;
@@ -1054,6 +1218,8 @@ function populateDetailModal(plantId) {
   } else {
     notesBox.classList.add('hidden');
   }
+
+  renderDetailCalendar(plant);
 
 const todayStr = getTodayStr();
   const waterBtnEl = document.getElementById('detailQuickWaterBtn');
@@ -1307,8 +1473,14 @@ async function previewGrowthPhoto(event) {
     showToast(`最大${MAX_PHOTOS_PER_LOG}枚までのため、先頭${remain}枚を読み込みます`);
   }
 
+  const wasEmpty = appState.tempGrowthPhotos.length === 0;
+  let detectedDateInfo = null;
+
   for (const file of targets) {
     try {
+      if (wasEmpty && !detectedDateInfo) {
+        detectedDateInfo = await extractPhotoDate(file);
+      }
       const { dataUrl } = await compressImageFile(file);
       if (selectionId !== appState.growthPhotoSelectionId) return;
       if (appState.tempGrowthPhotos.length >= MAX_PHOTOS_PER_LOG) {
@@ -1321,6 +1493,19 @@ async function previewGrowthPhoto(event) {
       showToast('一部の画像の読み込みに失敗しました');
     }
   }
+  if (wasEmpty && detectedDateInfo && !document.getElementById('editGrowthLogId').value) {
+    const dateInput = document.getElementById('newGrowthDateInput');
+    const hintEl = document.getElementById('newGrowthDateHint');
+    if (dateInput && (!dateInput.value || dateInput.value === getTodayStr() || dateInput.value === appState.growthAutoDetectedDate)) {
+      dateInput.value = detectedDateInfo.date;
+      appState.growthAutoDetectedDate = detectedDateInfo.date;
+      if (hintEl) {
+        const srcLabel = detectedDateInfo.source === 'exif' ? '撮影日' : 'ファイル日時';
+        hintEl.textContent = `📅 写真の${srcLabel}（${detectedDateInfo.date}）を日付に自動反映しました`;
+        hintEl.classList.remove('hidden');
+      }
+    }
+  }
   updateGrowthPhotoPreviewUI();
 }
 
@@ -1329,6 +1514,12 @@ function clearNewGrowthPhoto() {
   appState.tempGrowthPhotos = [];
   const input = document.getElementById('newGrowthPhotoInput');
   if (input) input.value = '';
+  const dateInput = document.getElementById('newGrowthDateInput');
+  if (dateInput && appState.growthAutoDetectedDate && dateInput.value === appState.growthAutoDetectedDate) {
+    dateInput.value = getTodayStr();
+  }
+  appState.growthAutoDetectedDate = null;
+  document.getElementById('newGrowthDateHint')?.classList.add('hidden');
   updateGrowthPhotoPreviewUI();
 }
 
@@ -1338,6 +1529,8 @@ function editGrowthLogEntry(plantId, logId) {
   const log = plant.growthLogs.find(g => g.id === logId);
   if (!log) return;
 
+  appState.growthAutoDetectedDate = null;
+  document.getElementById('newGrowthDateHint')?.classList.add('hidden');
   document.getElementById('editGrowthLogId').value = log.id;
   document.getElementById('newGrowthTagInput').value = LOG_TAGS[log.tag] ? log.tag : 'growth';
   document.getElementById('newGrowthDateInput').value = log.date || getTodayStr();
@@ -1477,7 +1670,8 @@ function updateActiveFilterDot() {
   const searchVal = (document.getElementById('searchInput')?.value || '').trim();
   const sortVal = document.getElementById('sortSelect')?.value || 'water_priority';
   const statusVal = document.getElementById('statusFilterSelect')?.value || 'all';
-  const isActive = Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all';
+  const calVal = document.getElementById('calendarFilterSelect')?.value || 'all';
+  const isActive = Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all' || calVal !== 'all';
   dot.classList.toggle('hidden', !isActive);
 }
 
@@ -1516,8 +1710,14 @@ async function previewQuickLogPhoto(event) {
     showToast(`最大${MAX_PHOTOS_PER_LOG}枚までのため、先頭${remain}枚を読み込みます`);
   }
 
+  const wasEmpty = appState.tempQuickLogPhotos.length === 0;
+  let detectedDateInfo = null;
+
   for (const file of targets) {
     try {
+      if (wasEmpty && !detectedDateInfo) {
+        detectedDateInfo = await extractPhotoDate(file);
+      }
       const { dataUrl } = await compressImageFile(file);
       if (selectionId !== appState.quickLogPhotoSelectionId) return;
       if (appState.tempQuickLogPhotos.length >= MAX_PHOTOS_PER_LOG) {
@@ -1530,6 +1730,19 @@ async function previewQuickLogPhoto(event) {
       showToast('一部の画像の読み込みに失敗しました');
     }
   }
+  if (wasEmpty && detectedDateInfo) {
+    const dateInput = document.getElementById('quickLogDateInput');
+    const hintEl = document.getElementById('quickLogDateHint');
+    if (dateInput && (!dateInput.value || dateInput.value === getTodayStr() || dateInput.value === appState.quickLogAutoDetectedDate)) {
+      dateInput.value = detectedDateInfo.date;
+      appState.quickLogAutoDetectedDate = detectedDateInfo.date;
+      if (hintEl) {
+        const srcLabel = detectedDateInfo.source === 'exif' ? '撮影日' : 'ファイル日時';
+        hintEl.textContent = `📅 写真の${srcLabel}（${detectedDateInfo.date}）を日付に自動反映しました`;
+        hintEl.classList.remove('hidden');
+      }
+    }
+  }
   updateQuickLogPhotoPreviewUI();
 }
 
@@ -1538,6 +1751,12 @@ function clearQuickLogPhoto() {
   appState.tempQuickLogPhotos = [];
   const input = document.getElementById('quickLogPhotoInput');
   if (input) input.value = '';
+  const dateInput = document.getElementById('quickLogDateInput');
+  if (dateInput && appState.quickLogAutoDetectedDate && dateInput.value === appState.quickLogAutoDetectedDate) {
+    dateInput.value = getTodayStr();
+  }
+  appState.quickLogAutoDetectedDate = null;
+  document.getElementById('quickLogDateHint')?.classList.add('hidden');
   updateQuickLogPhotoPreviewUI();
 }
 
@@ -1654,6 +1873,58 @@ function renderFormMaterialAutoLogGrid(selectedCodes = []) {
   });
 }
 
+function renderFormCalendarGrid(careCalendar = {}) {
+  const grid = document.getElementById('formCalendarGrid');
+  if (!grid) return;
+  grid.replaceChildren();
+
+  Object.entries(CALENDAR_TASK_DEFS).forEach(([taskKey, def]) => {
+    const selectedMonths = new Set(Array.isArray(careCalendar?.[taskKey]) ? careCalendar[taskKey] : []);
+    const row = createElement('div', 'space-y-1');
+    row.appendChild(createElement('p', 'text-[11px] font-semibold text-charcoal', def.label));
+
+    const btnGrid = createElement('div', 'grid grid-cols-6 sm:grid-cols-12 gap-1');
+    for (let m = 1; m <= 12; m++) {
+      const active = selectedMonths.has(m);
+      const btn = createElement(
+        'button',
+        `h-7 rounded-lg border text-[11px] font-semibold tabular-nums transition cursor-pointer ${
+          active ? def.btnActiveClass : 'bg-white text-gray-500 border-stoneborder hover:bg-gray-50'
+        }`,
+        `${m}月`
+      );
+      btn.type = 'button';
+      btn.dataset.calTask = taskKey;
+      btn.dataset.calMonth = String(m);
+      btn.dataset.active = active ? '1' : '0';
+      btn.addEventListener('click', () => {
+        const nextActive = btn.dataset.active !== '1';
+        btn.dataset.active = nextActive ? '1' : '0';
+        btn.className = `h-7 rounded-lg border text-[11px] font-semibold tabular-nums transition cursor-pointer ${
+          nextActive ? def.btnActiveClass : 'bg-white text-gray-500 border-stoneborder hover:bg-gray-50'
+        }`;
+      });
+      btnGrid.appendChild(btn);
+    }
+    row.appendChild(btnGrid);
+    grid.appendChild(row);
+  });
+}
+
+function readFormCalendarData() {
+  const result = {};
+  Object.keys(CALENDAR_TASK_DEFS).forEach(key => { result[key] = []; });
+  document.querySelectorAll('#formCalendarGrid button[data-cal-task][data-active="1"]').forEach(btn => {
+    const task = btn.dataset.calTask;
+    const month = Number(btn.dataset.calMonth);
+    if (result[task] && month >= 1 && month <= 12 && !result[task].includes(month)) {
+      result[task].push(month);
+    }
+  });
+  Object.keys(result).forEach(key => result[key].sort((a, b) => a - b));
+  return result;
+}
+
 function openPlantFormModal(editPlantId = null) {
   const form = document.getElementById('plantForm');
   form.reset();
@@ -1679,6 +1950,7 @@ function openPlantFormModal(editPlantId = null) {
     document.getElementById('formStatus').value = PLANT_STATUSES[p.status] ? p.status : 'normal';
     document.getElementById('formMaterialAutoLogWrap')?.classList.remove('hidden');
     renderFormMaterialAutoLogGrid(Array.isArray(p.materialAutoLog) ? p.materialAutoLog : []);
+    renderFormCalendarGrid(p.careCalendar || {});
   } else {
     setPlantFormTitle('sprout', '新しい株を追加');
     document.getElementById('formPlantId').value = '';
@@ -1687,6 +1959,7 @@ function openPlantFormModal(editPlantId = null) {
     document.getElementById('formStatus').value = 'normal';
     document.getElementById('formMaterialAutoLogWrap')?.classList.add('hidden');
     renderFormMaterialAutoLogGrid([]);
+    renderFormCalendarGrid({});
     if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== '未設定') {
       document.getElementById('formLocation').value = appState.selectedLocation;
     }
@@ -1705,6 +1978,7 @@ function setPlantFormTitle(iconName, title) {
 }
 
 function closePlantFormModal() {
+  clearFormPhoto();
   document.getElementById('formModal').classList.add('hidden');
   const returnId = appState.returnToDetailPlantId;
   appState.returnToDetailPlantId = null;
@@ -1716,21 +1990,58 @@ function closePlantFormModal() {
 async function handleFormPhotoSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
+  const selectionId = ++appState.formPhotoSelectionId;
   try {
+    const dateInfo = await extractPhotoDate(file);
     const { dataUrl, approxKB } = await compressImageFile(file);
+    if (selectionId !== appState.formPhotoSelectionId) return;
     appState.tempFormPhotoDataUrl = dataUrl;
+    appState.tempFormPhotoDate = dateInfo?.date || null;
     document.getElementById('formPhotoPreview').src = dataUrl;
     document.getElementById('formPhotoSizeBadge').textContent = `約${approxKB}KBに自動圧縮済`;
     document.getElementById('formPhotoPreviewWrap').classList.remove('hidden');
+
+    const hintWrap = document.getElementById('formPhotoDateHintWrap');
+    const hintText = document.getElementById('formPhotoDateHintText');
+    const applyBtn = document.getElementById('applyFormPhotoDateBtn');
+    if (dateInfo && hintWrap && hintText) {
+      const srcLabel = dateInfo.source === 'exif' ? '撮影日' : 'ファイル日時';
+      const isNew = !document.getElementById('formPlantId').value;
+      const purchaseInput = document.getElementById('formPurchaseDate');
+      if (isNew && purchaseInput && (!purchaseInput.value || purchaseInput.value === getTodayStr())) {
+        purchaseInput.value = dateInfo.date;
+        hintText.textContent = `📅 写真の${srcLabel}（${dateInfo.date}）をお迎え日に自動反映しました`;
+        applyBtn?.classList.add('hidden');
+      } else {
+        hintText.textContent = `📅 写真の${srcLabel}: ${dateInfo.date}`;
+        applyBtn?.classList.remove('hidden');
+      }
+      hintWrap.classList.remove('hidden');
+    } else {
+      hintWrap?.classList.add('hidden');
+    }
   } catch (e) {
+    if (selectionId !== appState.formPhotoSelectionId) return;
     showToast('画像の圧縮に失敗しました');
   }
 }
 
+function applyFormPhotoDate() {
+  if (!appState.tempFormPhotoDate) return;
+  const purchaseInput = document.getElementById('formPurchaseDate');
+  if (purchaseInput) {
+    purchaseInput.value = appState.tempFormPhotoDate;
+    showToast(`お迎え日を ${appState.tempFormPhotoDate} に設定しました`);
+  }
+}
+
 function clearFormPhoto() {
+  appState.formPhotoSelectionId++;
   appState.tempFormPhotoDataUrl = null;
+  appState.tempFormPhotoDate = null;
   document.getElementById('formPhotoInput').value = '';
   document.getElementById('formPhotoPreviewWrap').classList.add('hidden');
+  document.getElementById('formPhotoDateHintWrap')?.classList.add('hidden');
 }
 
 async function savePlantForm(event) {
@@ -1760,6 +2071,7 @@ async function savePlantForm(event) {
     const materialAutoLog = Array.from(document.querySelectorAll('input[name="materialAutoLog"]:checked'))
       .map(el => el.value)
       .filter(code => Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code));
+    const careCalendar = readFormCalendarData();
 
     if (id) {
       const plant = appState.plants.find(p => p.id === id);
@@ -1790,7 +2102,8 @@ async function savePlantForm(event) {
         shop,
         notes,
         status,
-        materialAutoLog
+        materialAutoLog,
+        careCalendar
       });
       if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
       if (autoChanges.length > 0) {
@@ -1810,7 +2123,7 @@ async function savePlantForm(event) {
         plant.growthLogs.push({
           id: createId('g'),
           tag: 'growth',
-          date: getTodayStr(),
+          date: appState.tempFormPhotoDate || getTodayStr(),
           photos: [appState.tempFormPhotoDataUrl],
           photoDataUrl: '',
           note: '写真追加'
@@ -1833,6 +2146,7 @@ async function savePlantForm(event) {
         status,
         materialLogs: {},
         materialAutoLog,
+        careCalendar,
         lastWatered: null,
         lastFertilized: null,
         lastRepotted: purchaseDate || getTodayStr(),
@@ -1842,7 +2156,7 @@ async function savePlantForm(event) {
         newPlant.growthLogs.push({
           id: createId('g'),
           tag: 'growth',
-          date: purchaseDate || getTodayStr(),
+          date: purchaseDate || appState.tempFormPhotoDate || getTodayStr(),
           photos: [appState.tempFormPhotoDataUrl],
           photoDataUrl: '',
           note: 'お迎え・初回記録'
@@ -2108,6 +2422,30 @@ function validatePlantRecords(records) {
         });
         return out;
       })(),
+      careCalendar: (() => {
+        if (record.careCalendar == null) return {};
+        if (typeof record.careCalendar !== 'object' || Array.isArray(record.careCalendar)) {
+          throw new Error(`${name}の栽培カレンダーが不正です`);
+        }
+        const out = {};
+        Object.entries(record.careCalendar).forEach(([taskKey, months]) => {
+          if (!Object.prototype.hasOwnProperty.call(CALENDAR_TASK_DEFS, taskKey)) return;
+          if (!Array.isArray(months)) {
+            throw new Error(`${name}の栽培カレンダー(${taskKey})が配列ではありません`);
+          }
+          const validMonths = [];
+          months.forEach(m => {
+            if (typeof m !== 'number' || !Number.isInteger(m) || m < 1 || m > 12) {
+              throw new Error(`${name}の栽培カレンダー(${taskKey})の月指定が不正です`);
+            }
+            if (!validMonths.includes(m)) validMonths.push(m);
+          });
+          if (validMonths.length > 0) {
+            out[taskKey] = validMonths.sort((a, b) => a - b);
+          }
+        });
+        return out;
+      })(),
       careUndo: readCareUndo(record.careUndo, name),
       growthLogs: logs.map((entry, j) => {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
@@ -2333,6 +2671,9 @@ function resetFilters() {
   appState.selectedStatus = 'all';
   const stSelect = document.getElementById('statusFilterSelect');
   if (stSelect) stSelect.value = 'all';
+  appState.selectedCalendarTask = 'all';
+  const calSelect = document.getElementById('calendarFilterSelect');
+  if (calSelect) calSelect.value = 'all';
   document.getElementById('sortSelect').value = 'water_priority';
   document.getElementById('searchInput').value = '';
   renderApp();
@@ -2436,6 +2777,7 @@ function initializeUIEvents() {
     submitQuickLog,
     closePlantFormModal,
     clearFormPhoto,
+    applyFormPhotoDate,
     viewImageFullscreen,
     closeImageViewer,
     zoomInImage: () => setImageZoom(imageViewerState.scale + 0.5, true),
@@ -2494,6 +2836,10 @@ function initializeUIEvents() {
   document.getElementById('sortSelect').addEventListener('change', renderApp);
   document.getElementById('statusFilterSelect').addEventListener('change', (e) => {
     appState.selectedStatus = e.target.value || 'all';
+    renderApp();
+  });
+  document.getElementById('calendarFilterSelect')?.addEventListener('change', (e) => {
+    appState.selectedCalendarTask = e.target.value || 'all';
     renderApp();
   });
   renderBatchMaterialChips();
