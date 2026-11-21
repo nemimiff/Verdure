@@ -76,8 +76,9 @@ const appState = {
   plants: [],
   selectedLocations: new Set(),
   onlyNeedsWater: false,
-  selectedStatus: 'all',
-  selectedCalendarTask: 'all',
+  selectedStatuses: new Set(),
+  selectedCalendarTasks: new Set(),
+  selectedSort: 'water_priority',
   batchMode: false,
   batchSelectedIds: new Set(),
   batchSelectedMaterials: new Set(),
@@ -108,6 +109,15 @@ let activeConfirmCleanup = null;
 function createId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
+
+const SORT_OPTIONS = [
+  { value: 'water_priority', label: '水やりが必要な順（目安基準）' },
+  { value: 'water_desc', label: '水やり経過が長い順' },
+  { value: 'name_asc', label: '植物名順 (A-Z)' },
+  { value: 'purchase_desc', label: 'お迎えが新しい順' },
+  { value: 'purchase_asc', label: 'お迎えが古い順' },
+  { value: 'price_desc', label: '価格が高い順' }
+];
 
 const PLANT_STATUSES = {
   normal:  { label: '通常', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
@@ -567,7 +577,9 @@ function appendBotanicalSvg(container, svgMarkup) {
 }
 
 function renderApp() {
+  renderStatusFilterChips();
   renderLocationTabs();
+  renderCalendarFilterChips();
   renderPlantGrid();
   updateHeaderBadges();
   updateActiveFilterDot();
@@ -695,6 +707,60 @@ function renderLocationTabs() {
   });
 }
 
+function renderStatusFilterChips() {
+  const container = document.getElementById('statusFilterChips');
+  if (!container) return;
+  container.replaceChildren();
+
+  const isAll = appState.selectedStatuses.size === 0;
+  const allBtn = createElement('button', isAll ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md', 'すべて');
+  allBtn.type = 'button';
+  allBtn.addEventListener('click', () => {
+    appState.selectedStatuses.clear();
+    renderApp();
+  });
+  container.appendChild(allBtn);
+
+  Object.entries(PLANT_STATUSES).forEach(([key, info]) => {
+    const active = appState.selectedStatuses.has(key);
+    const btn = createElement('button', active ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md', info.label);
+    btn.type = 'button';
+    btn.addEventListener('click', () => {
+      if (appState.selectedStatuses.has(key)) appState.selectedStatuses.delete(key);
+      else appState.selectedStatuses.add(key);
+      renderApp();
+    });
+    container.appendChild(btn);
+  });
+}
+
+function renderCalendarFilterChips() {
+  const container = document.getElementById('calendarFilterChips');
+  if (!container) return;
+  container.replaceChildren();
+
+  const isAll = appState.selectedCalendarTasks.size === 0;
+  const allBtn = createElement('button', isAll ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md', '指定なし');
+  allBtn.type = 'button';
+  allBtn.addEventListener('click', () => {
+    appState.selectedCalendarTasks.clear();
+    renderApp();
+  });
+  container.appendChild(allBtn);
+
+  Object.entries(CALENDAR_TASK_DEFS).forEach(([key, def]) => {
+    const active = appState.selectedCalendarTasks.has(key);
+    const btn = createElement('button', active ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md', def.label);
+    btn.type = 'button';
+    btn.addEventListener('click', () => {
+      if (appState.selectedCalendarTasks.has(key)) appState.selectedCalendarTasks.delete(key);
+      else appState.selectedCalendarTasks.add(key);
+      renderApp();
+    });
+    container.appendChild(btn);
+  });
+}
+
 function getFilteredAndSortedPlants() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   document.getElementById('clearSearchBtn').classList.toggle('hidden', !q);
@@ -706,11 +772,14 @@ function getFilteredAndSortedPlants() {
     }
     if (appState.onlyNeedsWater && !isPlantNeedingWater(p)) return false;
     const plantStatus = p.status || 'normal';
-    if (appState.selectedStatus !== 'all' && plantStatus !== appState.selectedStatus) return false;
-    if (appState.selectedCalendarTask !== 'all') {
+    if (appState.selectedStatuses.size > 0 && !appState.selectedStatuses.has(plantStatus)) return false;
+    if (appState.selectedCalendarTasks.size > 0) {
       const currentMonth = new Date().getMonth() + 1;
-      const months = p.careCalendar?.[appState.selectedCalendarTask];
-      if (!Array.isArray(months) || !months.includes(currentMonth)) return false;
+      const matched = Array.from(appState.selectedCalendarTasks).some(taskKey => {
+        const months = p.careCalendar?.[taskKey];
+        return Array.isArray(months) && months.includes(currentMonth);
+      });
+      if (!matched) return false;
     }
     if (q) {
       const hay = `${p.name || ''} ${p.soil || ''} ${p.shop || ''} ${p.location || ''} ${p.notes || ''}`.toLowerCase();
@@ -719,7 +788,7 @@ function getFilteredAndSortedPlants() {
     return true;
   });
 
-  const sortVal = document.getElementById('sortSelect').value;
+  const sortVal = appState.selectedSort || 'water_priority';
   list.sort((a, b) => {
     if (sortVal === 'water_priority') {
       const ma = getWaterMarginDays(a) ?? 9999;
@@ -2247,15 +2316,60 @@ function closeFilterModal() {
   updateActiveFilterDot();
 }
 
+function renderSortOptions() {
+  const list = document.getElementById('sortOptionsList');
+  if (!list) return;
+  list.replaceChildren();
+
+  SORT_OPTIONS.forEach(opt => {
+    const active = appState.selectedSort === opt.value;
+    const btn = createElement(
+      'button',
+      `w-full px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between gap-2 transition cursor-pointer ${
+        active
+          ? 'border-sage-600 bg-sage-50 text-sage-800 font-bold'
+          : 'border-stoneborder bg-white text-charcoal hover:bg-gray-50 font-medium'
+      }`
+    );
+    btn.type = 'button';
+    btn.appendChild(createElement('span', '', opt.label));
+    if (active) {
+      btn.appendChild(createLucideIcon('check', 'w-4 h-4 text-sage-600 shrink-0'));
+    }
+    btn.addEventListener('click', () => {
+      appState.selectedSort = opt.value;
+      renderApp();
+      closeSortModal();
+    });
+    list.appendChild(btn);
+  });
+}
+
+function openSortModal() {
+  renderSortOptions();
+  document.getElementById('sortModal')?.classList.remove('hidden');
+}
+
+function closeSortModal() {
+  document.getElementById('sortModal')?.classList.add('hidden');
+  updateActiveFilterDot();
+}
+
 function updateActiveFilterDot() {
-  const dot = document.getElementById('activeFilterDot');
-  if (!dot) return;
-  const searchVal = (document.getElementById('searchInput')?.value || '').trim();
-  const sortVal = document.getElementById('sortSelect')?.value || 'water_priority';
-  const statusVal = document.getElementById('statusFilterSelect')?.value || 'all';
-  const calVal = document.getElementById('calendarFilterSelect')?.value || 'all';
-  const isActive = appState.selectedLocations.size > 0 || Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all' || calVal !== 'all';
-  dot.classList.toggle('hidden', !isActive);
+  const filterDot = document.getElementById('activeFilterDot');
+  if (filterDot) {
+    const searchVal = (document.getElementById('searchInput')?.value || '').trim();
+    const isFilterActive =
+      appState.selectedLocations.size > 0 ||
+      appState.selectedStatuses.size > 0 ||
+      appState.selectedCalendarTasks.size > 0 ||
+      Boolean(searchVal);
+    filterDot.classList.toggle('hidden', !isFilterActive);
+  }
+  const sortDot = document.getElementById('activeSortDot');
+  if (sortDot) {
+    sortDot.classList.toggle('hidden', appState.selectedSort === 'water_priority');
+  }
 }
 
 function openQuickLogModal(plantId) {
@@ -3254,14 +3368,9 @@ function clearSearch() {
 
 function resetFilters() {
   appState.selectedLocations.clear();
+  appState.selectedStatuses.clear();
+  appState.selectedCalendarTasks.clear();
   appState.onlyNeedsWater = false;
-  appState.selectedStatus = 'all';
-  const stSelect = document.getElementById('statusFilterSelect');
-  if (stSelect) stSelect.value = 'all';
-  appState.selectedCalendarTask = 'all';
-  const calSelect = document.getElementById('calendarFilterSelect');
-  if (calSelect) calSelect.value = 'all';
-  document.getElementById('sortSelect').value = 'water_priority';
   document.getElementById('searchInput').value = '';
   renderApp();
 }
@@ -3361,6 +3470,8 @@ function initializeUIEvents() {
     resetFilters,
     openFilterModal,
     closeFilterModal,
+    openSortModal,
+    closeSortModal,
     closeDetailModal,
     addGrowthLogEntry,
     cancelEditGrowthLog,
@@ -3418,6 +3529,8 @@ function initializeUIEvents() {
       closeBatchMaterialModal();
     } else if (!document.getElementById('batchEditModal').classList.contains('hidden')) {
       closeBatchEditModal();
+    } else if (!document.getElementById('sortModal').classList.contains('hidden')) {
+      closeSortModal();
     } else if (!document.getElementById('filterModal').classList.contains('hidden')) {
       closeFilterModal();
     } else if (!document.getElementById('quickLogModal').classList.contains('hidden')) {
@@ -3430,15 +3543,6 @@ function initializeUIEvents() {
   });
 
   document.getElementById('searchInput').addEventListener('input', debounce(renderApp, 150));
-  document.getElementById('sortSelect').addEventListener('change', renderApp);
-  document.getElementById('statusFilterSelect').addEventListener('change', (e) => {
-    appState.selectedStatus = e.target.value || 'all';
-    renderApp();
-  });
-  document.getElementById('calendarFilterSelect')?.addEventListener('change', (e) => {
-    appState.selectedCalendarTask = e.target.value || 'all';
-    renderApp();
-  });
   renderBatchMaterialChips();
   document.getElementById('plantForm').addEventListener('submit', savePlantForm);
   document.getElementById('importFileInput').addEventListener('change', handleImportFile);
@@ -3447,6 +3551,9 @@ function initializeUIEvents() {
   document.getElementById('quickLogPhotoInput').addEventListener('change', previewQuickLogPhoto);
   document.getElementById('filterModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'filterModal') closeFilterModal();
+  });
+  document.getElementById('sortModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'sortModal') closeSortModal();
   });
   document.getElementById('batchMaterialModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'batchMaterialModal') closeBatchMaterialModal();
