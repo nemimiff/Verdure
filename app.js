@@ -1,7 +1,7 @@
 'use strict';
 
 /********************************************************************
- * 1. STATIC DEFINITIONS (ICONS, SPECS, CARE CARDS, BOTANICAL SVGS)
+- 1. STATIC DEFINITIONS (ICONS, SPECS, CARE CARDS, BOTANICAL SVGS)
  ********************************************************************/
 const ICON_PATHS = {
   'sprout': '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>',
@@ -226,7 +226,7 @@ const BOTANICAL_SVGS = {
 };
 
 /********************************************************************
- * 2. STATE & INDEXED-DB STORAGE ENGINE
+- 2. STATE & INDEXED-DB STORAGE ENGINE
  ********************************************************************/
 const DB_NAME = 'BotanicalLogDB';
 const DB_VERSION = 1;
@@ -248,18 +248,21 @@ const appState = {
 };
 
 let cachedDB = null;
-let startupPending = true;
-let recoveryInProgress = false;
-let editSaveInProgress = false;
 
 function canEditData() {
-  if (editSaveInProgress) {
-    showToast('保存処理が完了するまでお待ちください');
-    return false;
-  }
-  if (!appState.dbLoadError && !startupPending && !recoveryInProgress) return true;
+  if (!appState.dbLoadError) return true;
   showToast('データ保護モード中のため変更できません（JSON読込で復元してください）');
   return false;
+}
+
+async function runWithButtonDisabled(button, task) {
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
+  try {
+    await task();
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function openDB() {
@@ -273,14 +276,9 @@ function openDB() {
       }
     };
     req.onsuccess = () => {
-      const db = req.result;
-      cachedDB = db;
-      db.onversionchange = () => { db.close(); if (cachedDB === db) cachedDB = null; };
-      db.onclose = () => { if (cachedDB === db) cachedDB = null; };
-      resolve(db);
-    };
-    req.onblocked = () => {
-      showToast('データベースを開けません。他のタブを閉じてください');
+      cachedDB = req.result;
+      cachedDB.onclose = () => { cachedDB = null; };
+      resolve(cachedDB);
     };
     req.onerror = () => reject(req.error);
   });
@@ -288,15 +286,9 @@ function openDB() {
 
 function waitForTransaction(tx, getResult = () => undefined) {
   return new Promise((resolve, reject) => {
-    tx.oncomplete = () => {
-      resolve(getResult());
-    };
-    tx.onerror = () => {
-      reject(tx.error);
-    };
-    tx.onabort = () => {
-      reject(tx.error || new Error('Transaction aborted'));
-    };
+    tx.oncomplete = () => resolve(getResult());
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
   });
 }
 
@@ -316,7 +308,7 @@ async function saveToDB(plants = appState.plants, allowRecovery = false) {
     await waitForTransaction(tx);
   } catch (err) {
     console.error('IndexedDB Save Error:', err);
-    showToast(`保存に失敗しました: ${err.message || err.name}。画面を閉じる前に再試行するかJSONに書き出してください`, true);
+    showToast(`保存に失敗しました: ${err.message || err.name}。画面を閉じる前にJSONに書き出してください`, true);
     throw err;
   }
 }
@@ -330,7 +322,7 @@ async function loadFromDB() {
 }
 
 /********************************************************************
- * 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION
+- 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION
  ********************************************************************/
 function compressImageFile(file, maxDim = 800, quality = 0.76) {
   return new Promise((resolve, reject) => {
@@ -372,7 +364,7 @@ function compressImageFile(file, maxDim = 800, quality = 0.76) {
 }
 
 /********************************************************************
- * 4. DATE UTILITIES & SAMPLE DATA
+- 4. DATE UTILITIES & SAMPLE DATA
  ********************************************************************/
 function formatLocalDate(dateObj) {
   const y = dateObj.getFullYear();
@@ -477,7 +469,7 @@ function getInitialSamplePlants() {
 }
 
 /********************************************************************
- * 5. DOM HELPERS & RENDERING ENGINE
+- 5. DOM HELPERS & RENDERING ENGINE
  ********************************************************************/
 function createElement(tagName, className = '', text = null) {
   const element = document.createElement(tagName);
@@ -760,7 +752,7 @@ function renderPlantGrid() {
 }
 
 /********************************************************************
- * 6. ONE-TAP QUICK CARE & BATCH ACTIONS
+- 6. ONE-TAP QUICK CARE & BATCH ACTIONS
  ********************************************************************/
 async function recordPlantCare(plantId, careType, toastMessage) {
   if (!canEditData()) return;
@@ -837,7 +829,7 @@ async function executeBatchCare(careFields, toastMessage) {
 }
 
 /********************************************************************
- * 7. PLANT DETAIL & GROWTH COMPARISON MODAL
+- 7. PLANT DETAIL & GROWTH COMPARISON MODAL
  ********************************************************************/
 function openDetailModal(plantId) {
   appState.activeDetailPlantId = plantId;
@@ -1035,77 +1027,62 @@ function cancelEditGrowthLog() {
 
 async function addGrowthLogEntry() {
   if (!canEditData()) return;
-  const plantId = appState.activeDetailPlantId;
-  const plants = structuredClone(appState.plants);
-  const plant = plants.find(p => p.id === plantId);
-  if (!plant) return;
+  const addBtn = document.getElementById('addGrowthLogBtn');
+  await runWithButtonDisabled(addBtn, async () => {
+    const plantId = appState.activeDetailPlantId;
+    const plant = appState.plants.find(p => p.id === plantId);
+    if (!plant) return;
 
-  if (!appState.tempGrowthPhotoDataUrl) {
-    showToast('追加・更新する写真を選択してください');
-    return;
-  }
-
-  const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
-  const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
-  const editLogId = document.getElementById('editGrowthLogId').value;
-
-  try {
-    validatePlantRecords([{
-      name: plant.name,
-      growthLogs: [{ date: dateVal, note: noteVal, photoDataUrl: appState.tempGrowthPhotoDataUrl }]
-    }]);
-  } catch (err) {
-    console.error('Growth log validation failed:', err);
-    showToast(`成長記録を保存できません: ${err.message}`, true);
-    return;
-  }
-
-  if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
-  if (!editLogId && plant.growthLogs.length >= 200) {
-    showToast('成長記録は1株あたり200枚まで登録できます');
-    return;
-  }
-
-  let successMessage;
-  if (editLogId) {
-    const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
-    if (logIndex === -1) {
-      showToast('更新する成長記録が見つかりません');
+    if (!appState.tempGrowthPhotoDataUrl) {
+      showToast('追加・更新する写真を選択してください');
       return;
     }
-    plant.growthLogs[logIndex] = {
-      id: editLogId,
-      date: dateVal,
-      photoDataUrl: appState.tempGrowthPhotoDataUrl,
-      note: noteVal
-    };
-    successMessage = '📷 成長記録を更新しました';
-  } else {
-    plant.growthLogs.push({
-      id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      date: dateVal,
-      photoDataUrl: appState.tempGrowthPhotoDataUrl,
-      note: noteVal
-    });
-    successMessage = '📷 成長アルバムに写真を追加しました';
-  }
 
-  editSaveInProgress = true;
-  try {
-    await saveToDB(plants);
-  } catch (err) {
-    appState.plants = plants;
+    const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
+    const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
+    const editLogId = document.getElementById('editGrowthLogId').value;
+
+    if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+
+    let successMessage;
+    if (editLogId) {
+      const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
+      if (logIndex === -1) {
+        showToast('更新する成長記録が見つかりません');
+        return;
+      }
+      plant.growthLogs[logIndex] = {
+        id: editLogId,
+        date: dateVal,
+        photoDataUrl: appState.tempGrowthPhotoDataUrl,
+        note: noteVal
+      };
+      successMessage = '📷 成長記録を更新しました';
+    } else {
+      const newLogId = `g_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      plant.growthLogs.push({
+        id: newLogId,
+        date: dateVal,
+        photoDataUrl: appState.tempGrowthPhotoDataUrl,
+        note: noteVal
+      });
+      document.getElementById('editGrowthLogId').value = newLogId;
+      successMessage = '📷 成長アルバムに写真を追加しました';
+    }
+
+    try {
+      await saveToDB();
+    } catch (err) {
+      populateDetailModal(plantId);
+      renderApp();
+      return;
+    }
+
+    cancelEditGrowthLog();
     populateDetailModal(plantId);
     renderApp();
-    return;
-  } finally {
-    editSaveInProgress = false;
-  }
-  appState.plants = plants;
-  cancelEditGrowthLog();
-  populateDetailModal(plantId);
-  renderApp();
-  showToast(successMessage);
+    showToast(successMessage);
+  });
 }
 
 async function deleteGrowthLogEntry(plantId, logId) {
@@ -1127,7 +1104,7 @@ async function deleteGrowthLogEntry(plantId, logId) {
 }
 
 /********************************************************************
- * 8. ADD / EDIT PLANT FORM MODAL
+- 8. ADD / EDIT PLANT FORM MODAL
  ********************************************************************/
 function renderSvgSelector() {
   const grid = document.getElementById('svgSelectorGrid');
@@ -1222,121 +1199,102 @@ function clearFormPhoto() {
 async function savePlantForm(event) {
   event.preventDefault();
   if (!canEditData()) return;
-  const id = document.getElementById('formPlantId').value;
-  const name = document.getElementById('formName').value.trim();
-  if (!name) return;
-  if (!id && appState.plants.length >= 1000) {
-    showToast('株データは1,000株まで登録できます');
-    return;
-  }
+  const submitBtn = event.submitter || event.target.querySelector('button[type="submit"]');
 
-  const location = document.getElementById('formLocation').value.trim() || '未設定';
-  const soil = document.getElementById('formSoil').value.trim();
-  const lightLevel = document.getElementById('formLight').value.trim();
-  const waterIntervalDays = document.getElementById('formWaterInterval').value
-    ? Number(document.getElementById('formWaterInterval').value)
-    : null;
-  const waterMethod = document.getElementById('formWaterMethod').value;
-  const purchaseDate = document.getElementById('formPurchaseDate').value;
-  const price = document.getElementById('formPrice').value ? Number(document.getElementById('formPrice').value) : null;
-  const shop = document.getElementById('formShop').value.trim();
-  const notes = document.getElementById('formNotes').value.trim();
-  const plants = structuredClone(appState.plants);
+  await runWithButtonDisabled(submitBtn, async () => {
+    const id = document.getElementById('formPlantId').value;
+    const name = document.getElementById('formName').value.trim();
+    if (!name) return;
 
-  try {
-    validatePlantRecords([{
-      name, location, soil, lightLevel, waterIntervalDays, waterMethod, purchaseDate, price, shop, notes,
-      growthLogs: appState.tempFormPhotoDataUrl
-        ? [{ date: purchaseDate || getTodayStr(), photoDataUrl: appState.tempFormPhotoDataUrl }]
-        : []
-    }]);
-  } catch (err) {
-    console.error('Plant form validation failed:', err);
-    showToast(`株を保存できません: ${err.message}`, true);
-    return;
-  }
+    const location = document.getElementById('formLocation').value.trim() || '未設定';
+    const soil = document.getElementById('formSoil').value.trim();
+    const lightLevel = document.getElementById('formLight').value.trim();
+    const waterIntervalDays = document.getElementById('formWaterInterval').value
+      ? Number(document.getElementById('formWaterInterval').value)
+      : null;
+    const waterMethod = document.getElementById('formWaterMethod').value;
+    const purchaseDate = document.getElementById('formPurchaseDate').value;
+    const price = document.getElementById('formPrice').value ? Number(document.getElementById('formPrice').value) : null;
+    const shop = document.getElementById('formShop').value.trim();
+    const notes = document.getElementById('formNotes').value.trim();
 
-  if (id) {
-    const plant = plants.find(p => p.id === id);
-    if (!plant) {
-      showToast('更新する株が見つかりません');
+    if (id) {
+      const plant = appState.plants.find(p => p.id === id);
+      if (!plant) {
+        showToast('更新する株が見つかりません');
+        return;
+      }
+      Object.assign(plant, {
+        name,
+        svgType: appState.selectedFormSvgType,
+        location,
+        soil,
+        lightLevel,
+        waterIntervalDays,
+        waterMethod,
+        purchaseDate,
+        price,
+        shop,
+        notes
+      });
+      if (appState.tempFormPhotoDataUrl) {
+        if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+        plant.growthLogs.push({
+          id: `g_${Date.now()}`,
+          date: getTodayStr(),
+          photoDataUrl: appState.tempFormPhotoDataUrl,
+          note: '写真追加'
+        });
+      }
+    } else {
+      const newPlant = {
+        id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name,
+        svgType: appState.selectedFormSvgType,
+        location,
+        soil,
+        lightLevel,
+        waterIntervalDays,
+        waterMethod,
+        purchaseDate,
+        price,
+        shop,
+        notes,
+        lastWatered: null,
+        lastFertilized: null,
+        lastRepotted: purchaseDate || getTodayStr(),
+        growthLogs: []
+      };
+      if (appState.tempFormPhotoDataUrl) {
+        newPlant.growthLogs.push({
+          id: `g_${Date.now()}`,
+          date: purchaseDate || getTodayStr(),
+          photoDataUrl: appState.tempFormPhotoDataUrl,
+          note: 'お迎え・初回記録'
+        });
+      }
+      appState.plants.unshift(newPlant);
+      document.getElementById('formPlantId').value = newPlant.id;
+    }
+
+    if (appState.tempFormPhotoDataUrl) clearFormPhoto();
+
+    try {
+      await saveToDB();
+    } catch (err) {
+      renderApp();
       return;
     }
-    if (appState.tempFormPhotoDataUrl &&
-        Array.isArray(plant.growthLogs) && plant.growthLogs.length >= 200) {
-      showToast('成長記録は1株あたり200枚まで登録できます');
-      return;
-    }
-    plant.name = name;
-    plant.svgType = appState.selectedFormSvgType;
-    plant.location = location;
-    plant.soil = soil;
-    plant.lightLevel = lightLevel;
-    plant.waterIntervalDays = waterIntervalDays;
-    plant.waterMethod = waterMethod;
-    plant.purchaseDate = purchaseDate;
-    plant.price = price;
-    plant.shop = shop;
-    plant.notes = notes;
-    if (appState.tempFormPhotoDataUrl) {
-      if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
-      plant.growthLogs.push({
-        id: `g_${Date.now()}`,
-        date: getTodayStr(),
-        photoDataUrl: appState.tempFormPhotoDataUrl,
-        note: '写真追加'
-      });
-    }
-  } else {
-    const newPlant = {
-      id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      name,
-      svgType: appState.selectedFormSvgType,
-      location,
-      soil,
-      lightLevel,
-      waterIntervalDays,
-      waterMethod,
-      purchaseDate,
-      price,
-      shop,
-      notes,
-      lastWatered: null,
-      lastFertilized: null,
-      lastRepotted: purchaseDate || getTodayStr(),
-      growthLogs: []
-    };
-    if (appState.tempFormPhotoDataUrl) {
-      newPlant.growthLogs.push({
-        id: `g_${Date.now()}`,
-        date: purchaseDate || getTodayStr(),
-        photoDataUrl: appState.tempFormPhotoDataUrl,
-        note: 'お迎え・初回記録'
-      });
-    }
-    plants.unshift(newPlant);
-  }
 
-  editSaveInProgress = true;
-  try {
-    await saveToDB(plants);
-  } catch (err) {
-    appState.plants = plants;
-    if (!id) document.getElementById('formPlantId').value = plants[0].id;
+    if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== location) {
+      appState.selectedLocation = 'すべて';
+    }
+    appState.onlyNeedsWater = false;
+
+    closePlantFormModal();
     renderApp();
-    return;
-  } finally {
-    editSaveInProgress = false;
-  }
-  appState.plants = plants;
-  if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== location) {
-    appState.selectedLocation = 'すべて';
-  }
-  appState.onlyNeedsWater = false;
-
-  closePlantFormModal();
-  renderApp();
-  showToast(id ? `🌿 「${name}」の情報を更新しました` : `🌱 「${name}」をコレクションに追加しました`);
+    showToast(id ? `🌿 「${name}」の情報を更新しました` : `🌱 「${name}」をコレクションに追加しました`);
+  });
 }
 
 function confirmDeletePlant(plantId) {
@@ -1358,7 +1316,7 @@ function confirmDeletePlant(plantId) {
 }
 
 /********************************************************************
- * 9. JSON EXPORT & IMPORT (STRICT VALIDATION)
+- 9. JSON EXPORT & IMPORT (SIMPLE VALIDATION)
  ********************************************************************/
 function createExportJSON(plants) {
   const validPlants = validatePlantRecords(plants);
@@ -1376,10 +1334,6 @@ function createExportJSON(plants) {
 }
 
 function exportData() {
-  if (startupPending || recoveryInProgress) {
-    showToast('データの読み込みまたは復元が完了するまで書き出せません');
-    return;
-  }
   if (appState.dbLoadError) {
     showToast('保存データを読み込めなかったためJSONに書き出せません', true);
     return;
@@ -1388,7 +1342,6 @@ function exportData() {
   try {
     jsonStr = createExportJSON(appState.plants);
   } catch (err) {
-    console.error('Export validation failed:', err);
     showToast(`JSONを書き出せません: ${err.message}`, true);
     return;
   }
@@ -1405,10 +1358,6 @@ function exportData() {
 }
 
 function triggerImport() {
-  if (startupPending || recoveryInProgress || editSaveInProgress) {
-    showToast('処理が完了するまでお待ちください');
-    return;
-  }
   document.getElementById('importFileInput').value = '';
   document.getElementById('importFileInput').click();
 }
@@ -1428,33 +1377,26 @@ function handleImportFile(event) {
         throw new Error('VERDUREのバックアップではありません');
       }
       const importedPlants = validatePlantRecords(Array.isArray(parsed) ? parsed : parsed?.plants);
-      createExportJSON(importedPlants);
       openConfirmDialog(
         'データの読み込み（復元）',
         `JSONファイルから ${importedPlants.length}株 のデータ（成長写真を含む）を読み込み、現在のデータを上書きしますか？`,
         async () => {
-          if (recoveryInProgress) {
-            showToast('データの復元処理が進行中です');
-            return;
-          }
-          recoveryInProgress = true;
-          try {
-            await saveToDB(importedPlants, true);
-          } catch (err) {
-            recoveryInProgress = false;
-            return;
-          }
-          appState.plants = importedPlants;
-          appState.selectedLocation = 'すべて';
-          appState.dbLoadError = false;
-          startupPending = false;
-          recoveryInProgress = false;
-          renderApp();
-          showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
+          const importBtn = document.querySelector('[data-action="triggerImport"]');
+          await runWithButtonDisabled(importBtn, async () => {
+            try {
+              await saveToDB(importedPlants, true);
+            } catch (err) {
+              return;
+            }
+            appState.plants = importedPlants;
+            appState.selectedLocation = 'すべて';
+            appState.dbLoadError = false;
+            renderApp();
+            showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
+          });
         }
       );
     } catch (err) {
-      console.error('Import data validation failed:', err);
       showToast(err instanceof SyntaxError
         ? `JSONの形式が正しくありません: ${err.message}`
         : `JSONを読み込めません: ${err.message}`, true);
@@ -1465,98 +1407,72 @@ function handleImportFile(event) {
 }
 
 function validatePlantRecords(records) {
-  if (!Array.isArray(records) || records.length > 1000) {
-    throw new Error('植物データは1000株以内の配列にしてください');
+  if (!Array.isArray(records)) {
+    throw new Error('植物データが配列形式ではありません');
   }
 
-  const usedPlantIds = new Set();
-  const safeId = (value, prefix, index, usedIds) => {
-    if (typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) && !usedIds.has(value)) {
-      usedIds.add(value);
-      return value;
+  const readStr = (val, label, max) => {
+    if (val == null) return '';
+    if (typeof val !== 'string' || val.length > max) {
+      throw new Error(`${label}は${max}文字以内の文字列にしてください`);
     }
-    let id;
-    do {
-      id = `${prefix}_${index}_${Math.random().toString(36).slice(2, 10)}`;
-    } while (usedIds.has(id));
-    usedIds.add(id);
-    return id;
+    return val;
   };
-  const readString = (value, field, maxLength, fallback = '') => {
-    if (value === undefined || value === null) return fallback;
-    if (typeof value !== 'string' || value.length > maxLength) {
-      throw new Error(`${field}は${maxLength}文字以内の文字列にしてください`);
+  const readDate = (val, label) => {
+    const str = readStr(val, label, 10);
+    if (str && !/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      throw new Error(`${label}はYYYY-MM-DD形式の日付にしてください`);
     }
-    return value;
+    return str;
   };
-  const readDate = (value, field) => {
-    const date = readString(value, field, 10);
-    if (!date) return '';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new Error(`${field}はYYYY-MM-DD形式の日付にしてください`);
+  const readNum = (val, label) => {
+    if (val === undefined || val === null || val === '') return null;
+    if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) {
+      throw new Error(`${label}は0以上の数値にしてください`);
     }
-    const parsedDate = new Date(`${date}T00:00:00Z`);
-    if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
-      throw new Error(`${field}は実在する日付にしてください`);
-    }
-    return date;
-  };
-  const readNumber = (value, field, min, max) => {
-    if (value === undefined || value === null || value === '') return null;
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
-      throw new Error(`${field}は${min}〜${max}の数値にしてください`);
-    }
-    return value;
-  };
-  const readPhoto = (value) => {
-    if (typeof value !== 'string' || value.length > 2_000_000 ||
-        !/^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/]*={0,2}$/.test(value)) {
-      throw new Error('成長記録の写真は2MB以内のPNG・JPEG・WebP形式にしてください');
-    }
-    return value;
+    return val;
   };
 
-  return records.map((record, plantIndex) => {
+  return records.map((record, i) => {
     if (!record || typeof record !== 'object' || Array.isArray(record)) {
-      throw new Error(`${plantIndex + 1}株目のデータがオブジェクトではありません`);
+      throw new Error(`${i + 1}株目のデータが不正です`);
     }
-    const name = readString(record.name, `${plantIndex + 1}株目の植物名`, 200);
-    if (!name.trim()) throw new Error(`${plantIndex + 1}株目の植物名がありません`);
+    const name = readStr(record.name, `${i + 1}株目の植物名`, 200);
+    if (!name.trim()) throw new Error(`${i + 1}株目の植物名がありません`);
 
-    const usedLogIds = new Set();
-    const growthLogs = record.growthLogs === undefined || record.growthLogs === null ? [] : record.growthLogs;
-    if (!Array.isArray(growthLogs) || growthLogs.length > 200) {
-      throw new Error(`${plantIndex + 1}株目の成長記録は200件以内の配列にしてください`);
-    }
+    const logs = record.growthLogs == null ? [] : record.growthLogs;
+    if (!Array.isArray(logs)) throw new Error(`${name}の成長記録が配列ではありません`);
 
     return {
-      id: safeId(record.id, 'p_import', plantIndex, usedPlantIds),
+      id: typeof record.id === 'string' && record.id ? record.id : `p_${Date.now()}_${i}`,
       name,
-      svgType: typeof record.svgType === 'string' &&
-        Object.prototype.hasOwnProperty.call(BOTANICAL_SVGS, record.svgType)
+      svgType: typeof record.svgType === 'string' && Object.prototype.hasOwnProperty.call(BOTANICAL_SVGS, record.svgType)
         ? record.svgType
         : 'agave',
-      location: readString(record.location, `${name}の置き場所`, 200),
-      soil: readString(record.soil, `${name}の用土`, 300),
-      lightLevel: readString(record.lightLevel, `${name}の光量`, 300),
-      waterIntervalDays: readNumber(record.waterIntervalDays, `${name}の水やり頻度`, 1, 90),
-      waterMethod: readString(record.waterMethod, `${name}の水やり方法`, 100),
+      location: readStr(record.location, `${name}の置き場所`, 200),
+      soil: readStr(record.soil, `${name}の用土`, 300),
+      lightLevel: readStr(record.lightLevel, `${name}の光量`, 300),
+      waterIntervalDays: readNum(record.waterIntervalDays, `${name}の水やり頻度`),
+      waterMethod: readStr(record.waterMethod, `${name}の水やり方法`, 100),
       purchaseDate: readDate(record.purchaseDate, `${name}の購入日`),
-      price: readNumber(record.price, `${name}の価格`, 0, 1_000_000_000),
-      shop: readString(record.shop, `${name}の購入店`, 300),
+      price: readNum(record.price, `${name}の価格`),
+      shop: readStr(record.shop, `${name}の購入店`, 300),
       lastWatered: readDate(record.lastWatered, `${name}の水やり日`),
       lastFertilized: readDate(record.lastFertilized, `${name}の活力剤の日`),
       lastRepotted: readDate(record.lastRepotted, `${name}の植え替え日`),
-      notes: readString(record.notes, `${name}の育成メモ`, 5000),
-      growthLogs: growthLogs.map((entry, logIndex) => {
+      notes: readStr(record.notes, `${name}の育成メモ`, 5000),
+      growthLogs: logs.map((entry, j) => {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-          throw new Error(`${name}の成長記録${logIndex + 1}件目が不正です`);
+          throw new Error(`${name}の成長記録${j + 1}件目が不正です`);
+        }
+        if (typeof entry.photoDataUrl !== 'string' || !/^data:image\/(?:webp|jpeg|png);base64,/.test(entry.photoDataUrl)) {
+          throw new Error(`${name}の成長記録${j + 1}件目の画像形式が不正です`);
         }
         return {
-          id: safeId(entry.id, 'g_import', logIndex, usedLogIds),
-          date: readDate(entry.date, `${name}の成長記録${logIndex + 1}件目の日付`),
-          photoDataUrl: readPhoto(entry.photoDataUrl),
-          note: readString(entry.note, `${name}の成長記録${logIndex + 1}件目のメモ`, 1000)
+          id: typeof entry.id === 'string' && entry.id ? entry.id : `g_${Date.now()}_${j}`,
+          date: readDate(entry.date, `${name}の成長記録${j + 1}件目の日付`),
+          photoDataUrl: entry.photoDataUrl,
+          note: readStr(entry.note, `${name}の成長記録${j + 1}件目のメモ`, 1000)
         };
       })
     };
@@ -1564,7 +1480,7 @@ function validatePlantRecords(records) {
 }
 
 /********************************************************************
- * 10. FULLSCREEN IMAGE VIEWER (ZOOM & PAN ENGINE)
+- 10. FULLSCREEN IMAGE VIEWER (ZOOM & PAN ENGINE)
  ********************************************************************/
 const imageViewerState = {
   scale: 1,
@@ -1735,7 +1651,7 @@ function initializeImageViewerEvents() {
 }
 
 /********************************************************************
- * 11. FILTER HELPERS, DIALOG, TOAST & EVENT INITIALIZATION
+- 11. FILTER HELPERS, DIALOG, TOAST & EVENT INITIALIZATION
  ********************************************************************/
 function selectLocationTab(loc) {
   appState.selectedLocation = loc;
@@ -1901,7 +1817,7 @@ function initializeUIEvents() {
 }
 
 /********************************************************************
- * 12. INITIALIZATION
+- 12. INITIALIZATION
  ********************************************************************/
 window.addEventListener('DOMContentLoaded', async () => {
   initializeUIEvents();
@@ -1921,6 +1837,5 @@ window.addEventListener('DOMContentLoaded', async () => {
     appState.plants = [];
     showToast(`保存データを読み込めません: ${err.message || err.name}。既存データは上書きしません`, true);
   }
-  startupPending = false;
   renderApp();
 });
