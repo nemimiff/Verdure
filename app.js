@@ -432,6 +432,7 @@ function renderApp() {
   renderLocationTabs();
   renderPlantGrid();
   updateHeaderBadges();
+  updateActiveFilterDot();
 }
 
 function getWaterMarginDays(plant) {
@@ -454,10 +455,10 @@ function updateHeaderBadges() {
 
   const btn = document.getElementById('filterNeedsWaterBtn');
   if (appState.onlyNeedsWater) {
-    btn.className = 'h-9 px-3 rounded-xl text-xs font-semibold border border-amber-500 bg-amber-500 text-white flex items-center gap-1.5 transition shrink-0 shadow-2xs';
+    btn.className = 'ui-btn ui-md font-semibold border-amber-500 bg-amber-500 text-white transition shrink-0 shadow-2xs cursor-pointer';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-white text-amber-800 text-[10px] font-bold leading-none';
   } else {
-    btn.className = 'h-9 px-3 rounded-xl text-xs font-medium border border-stoneborder bg-white text-gray-600 hover:bg-amber-50 flex items-center gap-1.5 transition shrink-0';
+    btn.className = 'ui-btn ui-md font-medium border-stoneborder bg-white text-gray-600 hover:bg-amber-50 transition shrink-0 cursor-pointer';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold leading-none';
   }
 }
@@ -480,8 +481,8 @@ function renderLocationTabs() {
     const active = appState.selectedLocation === loc;
     const button = createElement(
       'button',
-      `px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition cursor-pointer ${
-        active ? 'bg-sage-600 text-white shadow-2xs' : 'bg-white text-gray-600 border border-stoneborder hover:bg-sage-50'
+      `ui-btn ui-md font-medium transition shrink-0 cursor-pointer ${
+        active ? 'bg-sage-600 text-white border-sage-600 shadow-2xs' : 'bg-white text-gray-600 border-stoneborder hover:bg-sage-50'
       }`
     );
     button.type = 'button';
@@ -653,10 +654,10 @@ function createPlantCard(plant) {
   body.appendChild(details);
 
   // Quick Care & Log Buttons
-  const actions = createElement('div', 'grid grid-cols-2 gap-1.5');
+  const actions = createElement('div', 'grid grid-cols-[1.15fr_1fr] gap-1.5');
 
   const waterCard = QUICK_CARE_CARDS[0];
-  const waterBtn = createElement('button', `py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-medium border flex items-center justify-center gap-1 transition cursor-pointer ${waterCard.btnClass}`);
+  const waterBtn = createElement('button', `ui-btn ui-sm card-action font-medium transition cursor-pointer ${waterCard.btnClass}`);
   waterBtn.type = 'button';
   waterBtn.title = plant.lastWatered === getTodayStr() ? '今日の水やり記録を取り消す' : '今日水やりしたとして記録';
   waterBtn.append(
@@ -668,7 +669,7 @@ function createPlantCard(plant) {
     recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
 
-  const quickLogBtn = createElement('button', 'py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-medium border flex items-center justify-center gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  const quickLogBtn = createElement('button', 'ui-btn ui-sm card-action font-medium transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
   quickLogBtn.type = 'button';
   quickLogBtn.title = '写真やひとことメモをサッと追加';
   quickLogBtn.append(
@@ -933,7 +934,7 @@ function renderBatchMaterialChips() {
     const selected = appState.batchSelectedMaterials.has(code);
     const chip = createElement(
       'button',
-      `px-2.5 py-1.5 rounded-lg text-[11px] font-semibold leading-none border transition cursor-pointer inline-flex items-center gap-1 ${
+      `ui-btn ui-sm font-semibold transition cursor-pointer ${
         selected
           ? 'bg-white text-sage-800 border-white shadow-2xs'
           : 'bg-sage-700/80 text-sage-100 border-sage-600 hover:bg-sage-600'
@@ -1073,16 +1074,16 @@ const todayStr = getTodayStr();
     const done = plant.lastWatered === todayStr;
     waterBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
     waterBtnEl.className = done
-      ? 'text-[11px] px-2.5 py-1.5 rounded-xl bg-white text-sky-700 border border-sky-300 hover:bg-sky-50 font-semibold transition shrink-0 cursor-pointer'
-      : 'text-[11px] px-2.5 py-1.5 rounded-xl bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer';
+      ? 'ui-btn ui-sm bg-white text-sky-700 border-sky-300 hover:bg-sky-50 font-semibold transition shrink-0 cursor-pointer'
+      : 'ui-btn ui-sm border-transparent bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer';
   }
   const repotBtnEl = document.getElementById('detailQuickRepotBtn');
   if (repotBtnEl) {
     const done = plant.lastRepotted === todayStr;
     repotBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
     repotBtnEl.className = done
-      ? 'text-[11px] px-2.5 py-1.5 rounded-xl bg-white text-amber-800 border border-amber-300 hover:bg-amber-50 font-semibold transition shrink-0 cursor-pointer'
-      : 'text-[11px] px-2.5 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer';
+      ? 'ui-btn ui-sm bg-white text-amber-800 border-amber-300 hover:bg-amber-50 font-semibold transition shrink-0 cursor-pointer'
+      : 'ui-btn ui-sm border-transparent bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer';
   }
 
   const matContainer = document.getElementById('detailMaterialsContainer');
@@ -1112,7 +1113,7 @@ const todayStr = getTodayStr();
 
         const chip = createElement(
           'button',
-          `h-7 px-2.5 rounded-xl border text-xs font-medium leading-none inline-flex items-center gap-1.5 transition cursor-pointer ${
+          `ui-btn ui-sm font-medium transition cursor-pointer ${
             isToday
               ? (def.updatesWatered ? 'bg-sky-600 text-white border-sky-600 shadow-2xs' : 'bg-sage-600 text-white border-sage-600 shadow-2xs')
               : (def.updatesWatered
@@ -1167,7 +1168,7 @@ const todayStr = getTodayStr();
 
     const diffDays = calcDaysBetween(first.date, latest.date);
     document.getElementById('comparisonSpanBadge').textContent =
-      diffDays !== null && diffDays > 0 ? `${diffDays}日間の変化` : '成長記録比較';
+      diffDays !== null && diffDays > 0 ? `${diffDays}日間` : '成長記録比較';
   } else {
     compSec.classList.add('hidden');
   }
@@ -1480,6 +1481,27 @@ function updateQuickLogPhotoPreviewUI() {
   });
 }
 
+function openFilterModal() {
+  const modal = document.getElementById('filterModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeFilterModal() {
+  const modal = document.getElementById('filterModal');
+  if (modal) modal.classList.add('hidden');
+  updateActiveFilterDot();
+}
+
+function updateActiveFilterDot() {
+  const dot = document.getElementById('activeFilterDot');
+  if (!dot) return;
+  const searchVal = (document.getElementById('searchInput')?.value || '').trim();
+  const sortVal = document.getElementById('sortSelect')?.value || 'water_priority';
+  const statusVal = document.getElementById('statusFilterSelect')?.value || 'all';
+  const isActive = Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all';
+  dot.classList.toggle('hidden', !isActive);
+}
+
 function openQuickLogModal(plantId) {
   if (!canEditData()) return;
   const plant = appState.plants.find(p => p.id === plantId);
@@ -1641,7 +1663,7 @@ function renderFormMaterialAutoLogGrid(selectedCodes = []) {
   const selectedSet = new Set(selectedCodes);
   grid.replaceChildren();
   Object.entries(MATERIAL_DEFS).forEach(([code, def]) => {
-    const label = createElement('label', 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-stoneborder bg-white hover:bg-sage-50 text-xs cursor-pointer select-none');
+    const label = createElement('label', 'ui-btn ui-sm border-stoneborder bg-white hover:bg-sage-50 cursor-pointer select-none');
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.value = code;
@@ -2332,6 +2354,7 @@ function resetFilters() {
   appState.selectedStatus = 'all';
   const stSelect = document.getElementById('statusFilterSelect');
   if (stSelect) stSelect.value = 'all';
+  document.getElementById('sortSelect').value = 'water_priority';
   document.getElementById('searchInput').value = '';
   renderApp();
 }
@@ -2423,6 +2446,8 @@ function initializeUIEvents() {
       showToast('並び順を更新しました');
     },
     resetFilters,
+    openFilterModal,
+    closeFilterModal,
     closeDetailModal,
     addGrowthLogEntry,
     cancelEditGrowthLog,
@@ -2475,6 +2500,8 @@ function initializeUIEvents() {
       closeImageViewer();
     } else if (!document.getElementById('confirmDialog').classList.contains('hidden')) {
       closeConfirmDialog();
+    } else if (!document.getElementById('filterModal').classList.contains('hidden')) {
+      closeFilterModal();
     } else if (!document.getElementById('quickLogModal').classList.contains('hidden')) {
       closeQuickLogModal();
     } else if (!document.getElementById('formModal').classList.contains('hidden')) {
@@ -2496,6 +2523,9 @@ function initializeUIEvents() {
   document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);
   document.getElementById('newGrowthPhotoInput').addEventListener('change', previewGrowthPhoto);
   document.getElementById('quickLogPhotoInput').addEventListener('change', previewQuickLogPhoto);
+  document.getElementById('filterModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'filterModal') closeFilterModal();
+  });
 
   initializeImageViewerEvents();
   initializeIconPlaceholders();
