@@ -354,7 +354,7 @@ async function extractPhotoDate(file) {
   return null;
 }
 
-function compressImageFile(file, maxDim = 800, quality = 0.76) {
+function compressImageFile(file, maxDim = 1280, quality = 0.80) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -376,6 +376,8 @@ function compressImageFile(file, maxDim = 800, quality = 0.76) {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
 
         let dataUrl = canvas.toDataURL('image/webp', quality);
@@ -1270,33 +1272,36 @@ function renderBatchMaterialChips() {
 
 async function executeBatchMaterial() {
   if (!canEditData()) return;
-  const codes = Array.from(appState.batchSelectedMaterials);
-  if (codes.length === 0) {
-    showToast('使用する肥料・薬剤チップをタップして選択してください');
-    return;
-  }
-  if (appState.batchSelectedIds.size === 0) {
-    showToast('対象の株カードをタップして選択してください');
-    return;
-  }
-  const today = getTodayStr();
-  let count = 0;
-  appState.plants.forEach(p => {
-    if (appState.batchSelectedIds.has(p.id)) {
-      codes.forEach(code => applyMaterialUsage(p, code, today));
-      count++;
+  const submitBtn = document.getElementById('batchMaterialBtn');
+  await runWithButtonDisabled(submitBtn, async () => {
+    const codes = Array.from(appState.batchSelectedMaterials);
+    if (codes.length === 0) {
+      showToast('使用する肥料・薬剤チップをタップして選択してください');
+      return;
     }
+    if (appState.batchSelectedIds.size === 0) {
+      showToast('対象の株カードをタップして選択してください');
+      return;
+    }
+    const today = getTodayStr();
+    let count = 0;
+    appState.plants.forEach(p => {
+      if (appState.batchSelectedIds.has(p.id)) {
+        codes.forEach(code => applyMaterialUsage(p, code, today));
+        count++;
+      }
+    });
+    try {
+      await saveToDB();
+    } catch (err) {
+      renderApp();
+      return;
+    }
+    closeBatchMaterialModal();
+    const names = codes.map(c => MATERIAL_DEFS[c]?.label).filter(Boolean).join('・');
+    showToast(`🧪 ${count}株に「${names}」を一括記録しました`);
+    setBatchMode(false);
   });
-  try {
-    await saveToDB();
-  } catch (err) {
-    renderApp();
-    return;
-  }
-  closeBatchMaterialModal();
-  const names = codes.map(c => MATERIAL_DEFS[c]?.label).filter(Boolean).join('・');
-  showToast(`🧪 ${count}株に「${names}」を一括記録しました`);
-  setBatchMode(false);
 }
 
 function openBatchEditModal() {
@@ -2195,9 +2200,13 @@ async function addGrowthLogEntry() {
         const soilSelect = document.getElementById('growthRepotSoilSelect');
         const soilInput = document.getElementById('growthRepotSoilInput');
         if (soilSelect) {
+          if (soilSelect.value === '__custom__' && !soilInput?.value.trim()) {
+            showToast('新しい用土・鉢を入力してください');
+            return;
+          }
           const prevSoil = plant.soil || '';
           const nextSoil = soilSelect.value === '__custom__'
-            ? (soilInput?.value.trim() || '')
+            ? soilInput.value.trim()
             : soilSelect.value;
           if (nextSoil !== prevSoil) {
             plant.soil = nextSoil;
@@ -2213,9 +2222,13 @@ async function addGrowthLogEntry() {
         const locSelect = document.getElementById('growthMoveLocationSelect');
         const locInput = document.getElementById('growthMoveLocationInput');
         if (locSelect) {
+          if (locSelect.value === '__custom__' && !locInput?.value.trim()) {
+            showToast('新しい置き場所を入力してください');
+            return;
+          }
           const prevLoc = plant.location || '未設定';
           const rawNext = locSelect.value === '__custom__'
-            ? (locInput?.value.trim() || '')
+            ? locInput.value.trim()
             : locSelect.value;
           const nextLoc = rawNext || '未設定';
           if (nextLoc !== prevLoc) {
@@ -2987,6 +3000,8 @@ function handleImportFile(event) {
             }
             appState.plants = importedPlants;
             appState.selectedLocations.clear();
+            appState.selectedStatuses.clear();
+            appState.selectedCalendarTasks.clear();
             appState.dbLoadError = false;
             setBatchMode(false);
             showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
