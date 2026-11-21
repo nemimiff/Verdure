@@ -50,7 +50,7 @@
       { key: 'soil', id: 'specSoil', label: '用土・鉢' },
       { key: 'waterIntervalDays', id: 'specWaterInterval', label: '水やり目安・方法', formatValue: (plant) => plant.waterIntervalDays ? `${plant.waterIntervalDays}日ごと / ${plant.waterMethod || '通常'}` : (plant.waterMethod || '未設定') },
       { key: 'shop', id: 'specShop', label: '購入店・入手先' },
-      { key: 'price', id: 'specPrice', label: '購入価格', formatValue: (plant) => plant.price ? `¥${Number(plant.price).toLocaleString()}` : '未設定' },
+      { key: 'price', id: 'specPrice', label: '購入価格', formatValue: (plant) => plant.price !== null && plant.price !== undefined ? `¥${Number(plant.price).toLocaleString()}` : '未設定' },
       { key: 'purchaseDate', id: 'specPurchaseDate', label: 'お迎え日' }
     ];
 
@@ -360,7 +360,7 @@
               <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5"></p>
             </div>
-            <button id="detailQuickWaterBtn" data-action="quickCareFromModal" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
+            <button id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
           </div>
 
           <div class="p-2.5 sm:p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-row sm:flex-col justify-between">
@@ -371,7 +371,7 @@
               <p id="detailLastFertilized" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">定期ケア</p>
             </div>
-            <button id="detailQuickFertBtn" data-action="quickCareFromModal" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
+            <button id="detailQuickFertBtn" data-action="quickCareFromModal" data-care-type="lastFertilized" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
           </div>
 
           <div class="p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-row sm:flex-col justify-between">
@@ -382,7 +382,7 @@
               <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
               <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
             </div>
-            <button id="detailQuickRepotBtn" data-action="quickCareFromModal" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
+            <button id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
           </div>
         </div>
 
@@ -848,6 +848,18 @@
 
     let cachedDB = null;
 
+    function readLocalStorageFallback() {
+      try {
+        const fallback = localStorage.getItem(STATE_KEY);
+        if (!fallback) return null;
+        const parsed = JSON.parse(fallback);
+        return parsed && Array.isArray(parsed.plants) ? parsed : null;
+      } catch (err) {
+        console.error('localStorage Load Error:', err);
+        return null;
+      }
+    }
+
     function openDB() {
       if (cachedDB) return Promise.resolve(cachedDB);
       return new Promise((resolve, reject) => {
@@ -870,25 +882,37 @@
     }
 
     async function saveToDB() {
+      const updatedAt = new Date().toISOString();
       try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         const payload = {
           version: '1.0',
-          updatedAt: new Date().toISOString(),
+          updatedAt,
           plants: appState.plants
         };
         store.put(payload, STATE_KEY);
-        return new Promise((res, rej) => {
-          tx.oncomplete = () => res();
+        return await new Promise((res, rej) => {
+          tx.oncomplete = () => {
+            try {
+              localStorage.removeItem(STATE_KEY);
+            } catch (err) {
+              console.error('localStorage Fallback Cleanup Error:', err);
+            }
+            res();
+          };
           tx.onerror = () => rej(tx.error);
           tx.onabort = () => rej(new Error('Transaction aborted'));
         });
       } catch (err) {
         console.error('IndexedDB Save Error:', err);
         try {
-          localStorage.setItem(STATE_KEY, JSON.stringify({ plants: appState.plants }));
+          localStorage.setItem(STATE_KEY, JSON.stringify({
+            version: '1.0',
+            updatedAt,
+            plants: appState.plants
+          }));
         } catch (storageErr) {
           console.error('localStorage Save Error:', storageErr);
           showToast('保存容量の上限に達しました。不要な写真を削除するかJSONに書き出してください');
@@ -897,6 +921,7 @@
     }
 
     async function loadFromDB() {
+      const fallback = readLocalStorageFallback();
       try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, 'readonly');
@@ -904,26 +929,22 @@
         const req = store.get(STATE_KEY);
         return new Promise((resolve) => {
           req.onsuccess = () => {
-            if (req.result && Array.isArray(req.result.plants)) {
-              resolve(req.result.plants);
+            const stored = req.result;
+            if (stored && Array.isArray(stored.plants)) {
+              const fallbackDate = fallback?.updatedAt ? Date.parse(fallback.updatedAt) : NaN;
+              const storedDate = stored.updatedAt ? Date.parse(stored.updatedAt) : NaN;
+              resolve(Number.isFinite(fallbackDate) && (!Number.isFinite(storedDate) || fallbackDate > storedDate)
+                ? fallback.plants
+                : stored.plants);
             } else {
-              resolve(null);
+              resolve(fallback?.plants || null);
             }
           };
-          req.onerror = () => resolve(null);
+          req.onerror = () => resolve(fallback?.plants || null);
         });
       } catch (err) {
         console.error('IndexedDB Load Error:', err);
-        try {
-          const fallback = localStorage.getItem(STATE_KEY);
-          if (fallback) {
-            const parsed = JSON.parse(fallback);
-            return parsed && Array.isArray(parsed.plants) ? parsed.plants : null;
-          }
-        } catch (parseErr) {
-          console.error('localStorage Parse Error:', parseErr);
-        }
-        return null;
+        return fallback?.plants || null;
       }
     }
 
@@ -1243,9 +1264,11 @@
 
       const cards = list.map(plant => {
         const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-        const latestPhoto = plant.growthLogs && plant.growthLogs.length > 0
-          ? plant.growthLogs[plant.growthLogs.length - 1].photoDataUrl
-          : null;
+        const sortedLogs = Array.isArray(plant.growthLogs)
+          ? [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+          : [];
+        const latestLog = sortedLogs[sortedLogs.length - 1];
+        const latestPhoto = latestLog?.photoDataUrl || null;
 
         const daysSinceWater = plant.lastWatered ? calcDaysBetween(plant.lastWatered) : null;
         const needsWater = isPlantNeedingWater(plant);
@@ -1338,7 +1361,9 @@
         const shop = createElement('span', 'truncate max-w-[65%]');
         if (plant.shop) shop.append(createLucideIcon('store', 'w-3 h-3 inline mr-0.5'), document.createTextNode(plant.shop));
         else shop.textContent = 'コレクション株';
-        metadata.append(shop, createElement('span', '', plant.price ? `¥${Number(plant.price).toLocaleString()}` : ''));
+        metadata.append(shop, createElement('span', '', plant.price !== null && plant.price !== undefined
+          ? `¥${Number(plant.price).toLocaleString()}`
+          : ''));
         body.appendChild(metadata);
 
         // Quick Care Action Buttons (水やり / 活力剤)
@@ -1662,6 +1687,10 @@
       const editLogId = document.getElementById('editGrowthLogId').value;
 
       if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+      if (!editLogId && plant.growthLogs.length >= 200) {
+        showToast('成長記録は1株あたり200枚まで登録できます');
+        return;
+      }
 
       if (editLogId) {
         const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
@@ -1755,7 +1784,7 @@
         document.getElementById('formWaterInterval').value = p.waterIntervalDays || '';
         document.getElementById('formWaterMethod').value = p.waterMethod || '通常水やり';
         document.getElementById('formPurchaseDate').value = p.purchaseDate || '';
-        document.getElementById('formPrice').value = p.price || '';
+        document.getElementById('formPrice').value = p.price ?? '';
         document.getElementById('formShop').value = p.shop || '';
         document.getElementById('formNotes').value = p.notes || '';
       } else {
@@ -1808,6 +1837,10 @@
       const id = document.getElementById('formPlantId').value;
       const name = document.getElementById('formName').value.trim();
       if (!name) return;
+      if (!id && appState.plants.length >= 1000) {
+        showToast('株データは1,000株まで登録できます');
+        return;
+      }
 
       const location = document.getElementById('formLocation').value.trim() || '未設定';
       const soil = document.getElementById('formSoil').value.trim();
@@ -1824,6 +1857,11 @@
       if (id) {
         const plant = appState.plants.find(p => p.id === id);
         if (plant) {
+          if (appState.tempFormPhotoDataUrl &&
+              Array.isArray(plant.growthLogs) && plant.growthLogs.length >= 200) {
+            showToast('成長記録は1株あたり200枚まで登録できます');
+            return;
+          }
           plant.name = name;
           plant.svgType = appState.selectedFormSvgType;
           plant.location = location;
@@ -1860,7 +1898,7 @@
           price,
           shop,
           notes,
-          lastWatered: getTodayStr(),
+          lastWatered: null,
           lastFertilized: null,
           lastRepotted: purchaseDate || getTodayStr(),
           growthLogs: []
@@ -1907,6 +1945,13 @@
      * 9. JSON EXPORT & IMPORT
      ********************************************************************/
     function exportData() {
+      if (appState.plants.length > 1000 ||
+          appState.plants.some(plant => Array.isArray(plant.growthLogs) &&
+            (plant.growthLogs.length > 200 ||
+             plant.growthLogs.some(log => typeof log.photoDataUrl !== 'string' || log.photoDataUrl.length > 2_000_000)))) {
+        showToast('書き出し上限を超えています（1,000株・成長記録200枚/株・写真2MB/枚）');
+        return;
+      }
       const payload = {
         appName: 'VERDURE Botanical Manager',
         version: '1.0',
@@ -1916,6 +1961,10 @@
       };
       const jsonStr = JSON.stringify(payload, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
+      if (blob.size > 30 * 1024 * 1024) {
+        showToast('JSONファイルが大きすぎて書き出せません（上限30MB）');
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -2219,7 +2268,7 @@
       try {
         initializeUIEvents();
         const storedPlants = await loadFromDB();
-        if (storedPlants && storedPlants.length > 0) {
+        if (storedPlants !== null) {
           appState.plants = validatePlantRecords(storedPlants);
         } else {
           appState.plants = getInitialSamplePlants();
