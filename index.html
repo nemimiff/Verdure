@@ -157,10 +157,11 @@
       </button>
     </div>
 
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 h-9 text-xs text-gray-600 w-full sm:w-auto">
+<div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 h-9 text-xs text-gray-600 flex-1 sm:flex-none sm:w-auto">
         <span data-icon="arrow-up-down" data-icon-class="w-3.5 h-3.5 text-gray-400 shrink-0"></span>
         <select id="sortSelect" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer w-full text-xs">
+          <option value="water_priority">水やりが必要な順（目安基準）</option>
           <option value="water_desc">水やり経過が長い順</option>
           <option value="name_asc">植物名順 (A-Z)</option>
           <option value="purchase_desc">お迎えが新しい順</option>
@@ -168,6 +169,16 @@
           <option value="price_desc">価格が高い順</option>
         </select>
       </div>
+      <button
+        type="button"
+        id="resortBtn"
+        data-action="resortGrid"
+        class="h-9 px-2.5 rounded-xl border border-stoneborder bg-white hover:bg-sage-50 text-gray-600 hover:text-sage-700 flex items-center gap-1 text-xs font-medium transition shrink-0 cursor-pointer"
+        title="現在の条件で並び順を更新"
+      >
+        <span data-icon="refresh-cw" data-icon-class="w-3.5 h-3.5"></span>
+        <span class="hidden sm:inline">再並替</span>
+      </button>
     </div>
   </section>
 

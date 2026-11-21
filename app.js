@@ -384,11 +384,16 @@ function renderApp() {
   updateHeaderBadges();
 }
 
+function getWaterMarginDays(plant) {
+  if (!plant.waterIntervalDays) return null;
+  if (!plant.lastWatered) return -9999;
+  const elapsed = calcDaysBetween(plant.lastWatered);
+  return elapsed === null ? null : Number(plant.waterIntervalDays) - elapsed;
+}
+
 function isPlantNeedingWater(plant) {
-  if (!plant.waterIntervalDays) return false;
-  if (!plant.lastWatered) return true;
-  const days = calcDaysBetween(plant.lastWatered);
-  return days !== null && days >= Number(plant.waterIntervalDays);
+  const margin = getWaterMarginDays(plant);
+  return margin !== null && margin <= 0;
 }
 
 function updateHeaderBadges() {
@@ -458,6 +463,14 @@ function getFilteredAndSortedPlants() {
 
   const sortVal = document.getElementById('sortSelect').value;
   list.sort((a, b) => {
+    if (sortVal === 'water_priority') {
+      const ma = getWaterMarginDays(a) ?? 9999;
+      const mb = getWaterMarginDays(b) ?? 9999;
+      if (ma !== mb) return ma - mb;
+      const da = a.lastWatered ? calcDaysBetween(a.lastWatered) : 9999;
+      const db = b.lastWatered ? calcDaysBetween(b.lastWatered) : 9999;
+      return db - da;
+    }
     if (sortVal === 'water_desc') {
       const da = a.lastWatered ? calcDaysBetween(a.lastWatered) : 9999;
       const db = b.lastWatered ? calcDaysBetween(b.lastWatered) : 9999;
@@ -480,12 +493,19 @@ function createPlantCard(plant) {
   const latestPhoto = latestLog?.photoDataUrl || null;
 
   const daysSinceWater = plant.lastWatered ? calcDaysBetween(plant.lastWatered) : null;
+  const waterMargin = getWaterMarginDays(plant);
   const needsWater = isPlantNeedingWater(plant);
-  const waterBadgeText = daysSinceWater === null
-    ? '未記録'
-    : daysSinceWater === 0
-      ? '今日完了'
-      : `${daysSinceWater}日前`;
+
+  let waterBadgeText;
+  if (daysSinceWater === 0) {
+    waterBadgeText = '今日完了';
+  } else if (waterMargin !== null && waterMargin !== -9999) {
+    if (waterMargin > 0) waterBadgeText = `あと${waterMargin}日`;
+    else if (waterMargin === 0) waterBadgeText = '今日目安';
+    else waterBadgeText = `${Math.abs(waterMargin)}日超過`;
+  } else {
+    waterBadgeText = daysSinceWater === null ? '未記録' : `${daysSinceWater}日前`;
+  }
 
   const isBatchSelected = appState.batchSelectedIds.has(plant.id);
   const card = createElement('article', `group bg-surface rounded-2xl border shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${
@@ -631,7 +651,13 @@ async function recordPlantCare(plantId, careType, toastMessage) {
     if (appState.activeDetailPlantId === plantId) populateDetailModal(plantId);
     return;
   }
-  renderApp();
+  const existingCard = document.getElementById(`card_${plantId}`);
+  if (existingCard) {
+    existingCard.replaceWith(createPlantCard(plant));
+    updateHeaderBadges();
+  } else {
+    renderApp();
+  }
   if (appState.activeDetailPlantId === plantId) {
     populateDetailModal(plantId);
   }
@@ -1641,6 +1667,10 @@ function initializeUIEvents() {
     },
     clearSearch,
     toggleNeedsWaterFilter,
+    resortGrid: () => {
+      renderApp();
+      showToast('並び順を更新しました');
+    },
     resetFilters,
     closeDetailModal,
     addGrowthLogEntry,
