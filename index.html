@@ -363,8 +363,8 @@
               <div class="sm:col-span-4">
                 <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full">
                   <span data-icon="camera" data-icon-class="w-3.5 h-3.5"></span>
-                  <span id="newGrowthPhotoLabel">写真を追加（任意）</span>
-                  <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
+                  <span id="newGrowthPhotoLabel">写真を追加（最大6枚）</span>
+                  <input type="file" id="newGrowthPhotoInput" accept="image/*" multiple class="hidden" />
                 </label>
               </div>
               <div class="sm:col-span-2 flex gap-1.5">
@@ -381,17 +381,13 @@
             </div>
             <input type="hidden" id="editGrowthLogId" value="">
             
-            <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <img id="newGrowthPreviewImg" src="" class="w-12 h-12 rounded-lg object-cover border border-stoneborder" />
-                <div class="text-xs">
-                  <p class="font-medium text-sage-700">軽量化完了・保存準備OK</p>
-                  <p id="newGrowthSizeInfo" class="text-[11px] text-gray-500"></p>
-                </div>
+            <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder">
+              <div class="flex items-center justify-between mb-2">
+                <p id="newGrowthSizeInfo" class="text-[11px] font-medium text-sage-700"></p>
+                <button type="button" data-action="clearNewGrowthPhoto" class="text-xs text-gray-400 hover:text-red-500">すべて取消</button>
               </div>
-              <button data-action="clearNewGrowthPhoto" class="text-xs text-gray-400 hover:text-red-500">取消</button>
+              <div id="newGrowthPreviewList" class="flex flex-wrap gap-2"></div>
             </div>
-          </div>
 
           <div id="growthTimelineGrid" class="space-y-0"></div>
         </div>
@@ -561,17 +557,18 @@
           </div>
         </div>
         <div>
-          <label class="block text-[11px] font-bold text-charcoal mb-1">写真（任意・自動圧縮）</label>
-          <div class="flex items-center gap-2.5">
-            <label class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-canvas hover:bg-sage-50 text-sage-700 font-medium cursor-pointer transition">
-              <span data-icon="camera" data-icon-class="w-4 h-4"></span>
-              <span id="quickLogPhotoLabel">写真を選択</span>
-              <input type="file" id="quickLogPhotoInput" accept="image/*" class="hidden" />
-            </label>
-            <div id="quickLogPreviewWrap" class="hidden flex items-center gap-2 shrink-0">
-              <img id="quickLogPreviewImg" src="" class="w-11 h-11 rounded-lg object-cover border border-stoneborder" />
-              <button type="button" data-action="clearQuickLogPhoto" class="text-xs text-gray-400 hover:text-red-500">取消</button>
+          <label class="block text-[11px] font-bold text-charcoal mb-1">写真（任意・最大6枚まで一括選択可）</label>
+          <label class="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-canvas hover:bg-sage-50 text-sage-700 font-medium cursor-pointer transition">
+            <span data-icon="camera" data-icon-class="w-4 h-4"></span>
+            <span id="quickLogPhotoLabel">写真を選択（最大6枚）</span>
+            <input type="file" id="quickLogPhotoInput" accept="image/*" multiple class="hidden" />
+          </label>
+          <div id="quickLogPreviewWrap" class="hidden mt-2.5">
+            <div class="flex items-center justify-between mb-1.5">
+              <span id="quickLogPhotoCount" class="text-[11px] font-medium text-sage-700"></span>
+              <button type="button" data-action="clearQuickLogPhoto" class="text-xs text-gray-400 hover:text-red-500">すべて取消</button>
             </div>
+            <div id="quickLogPreviewList" class="flex flex-wrap gap-2"></div>
           </div>
         </div>
         <div>

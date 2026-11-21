@@ -76,9 +76,11 @@ const appState = {
   activeDetailPlantId: null,
   selectedFormSvgType: 'agave',
   tempFormPhotoDataUrl: null,
-  tempGrowthPhotoDataUrl: null,
+  tempGrowthPhotos: [],
+  growthPhotoSelectionId: 0,
   activeQuickLogPlantId: null,
-  tempQuickLogPhotoDataUrl: null,
+  tempQuickLogPhotos: [],
+  quickLogPhotoSelectionId: 0,
   dbLoadError: true
 };
 
@@ -104,8 +106,17 @@ function getSortedGrowthLogs(plant) {
   return [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 }
 
+const MAX_PHOTOS_PER_LOG = 6;
+
+function getLogPhotos(entry) {
+  if (!entry) return [];
+  if (Array.isArray(entry.photos) && entry.photos.length > 0) return entry.photos;
+  if (entry.photoDataUrl) return [entry.photoDataUrl];
+  return [];
+}
+
 function getPhotoLogs(plant) {
-  return getSortedGrowthLogs(plant).filter(g => Boolean(g.photoDataUrl));
+  return getSortedGrowthLogs(plant).filter(g => getLogPhotos(g).length > 0);
 }
 
 function canEditData() {
@@ -505,7 +516,9 @@ function createPlantCard(plant) {
   const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
   const photoLogs = getPhotoLogs(plant);
   const latestLog = photoLogs[photoLogs.length - 1];
-  const latestPhoto = latestLog?.photoDataUrl || null;
+  const latestPhotos = getLogPhotos(latestLog);
+  const latestPhoto = latestPhotos[latestPhotos.length - 1] || null;
+  const totalPhotoCount = photoLogs.reduce((sum, g) => sum + getLogPhotos(g).length, 0);
 
   const daysSinceWater = plant.lastWatered ? calcDaysBetween(plant.lastWatered) : null;
   const waterMargin = getWaterMarginDays(plant);
@@ -573,7 +586,7 @@ function createPlantCard(plant) {
 
   if (photoLogs.length) {
     const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
-    logBadge.append(createLucideIcon('images'), document.createTextNode(`${photoLogs.length}枚`));
+    logBadge.append(createLucideIcon('images'), document.createTextNode(`${totalPhotoCount}枚`));
     visual.appendChild(logBadge);
   }
 
@@ -799,7 +812,7 @@ function populateDetailModal(plantId) {
   }
 
   const logs = getSortedGrowthLogs(plant);
-  const photoLogs = logs.filter(g => Boolean(g.photoDataUrl));
+  const photoLogs = logs.filter(g => getLogPhotos(g).length > 0);
   document.getElementById('growthCountBadge').textContent = `(${logs.length}件)`;
 
   const compSec = document.getElementById('growthComparisonSection');
@@ -809,13 +822,14 @@ function populateDetailModal(plantId) {
     const latest = photoLogs[photoLogs.length - 1];
 
     const firstImg = document.getElementById('compareFirstImg');
-    firstImg.src = first.photoDataUrl;
+    firstImg.src = getLogPhotos(first)[0];
     firstImg.dataset.caption = `BEFORE (${first.date}) ${first.note || ''}`.trim();
     document.getElementById('compareFirstDate').textContent = first.date;
     document.getElementById('compareFirstNote').textContent = first.note || '初回記録';
 
+    const latestPhotos = getLogPhotos(latest);
     const latestImg = document.getElementById('compareLatestImg');
-    latestImg.src = latest.photoDataUrl;
+    latestImg.src = latestPhotos[latestPhotos.length - 1];
     latestImg.dataset.caption = `NOW (${latest.date}) ${latest.note || ''}`.trim();
     document.getElementById('compareLatestDate').textContent = latest.date;
     document.getElementById('compareLatestNote').textContent = latest.note || '最新記録';
@@ -907,14 +921,19 @@ function populateDetailModal(plantId) {
       contentCol.appendChild(createElement('p', 'text-xs text-charcoal mt-1 whitespace-pre-line leading-relaxed', entry.note));
     }
 
-    if (entry.photoDataUrl) {
-      const imgWrap = createElement('div', 'mt-2');
-      const image = createElement('img', 'w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover border border-stoneborder cursor-zoom-in shadow-2xs');
-      image.src = entry.photoDataUrl;
-      image.alt = 'Growth log';
-      image.dataset.action = 'viewImageFullscreen';
-      image.dataset.caption = `${entry.date || ''} [${tagInfo.label}] ${entry.note || ''}`.trim();
-      imgWrap.appendChild(image);
+    const photos = getLogPhotos(entry);
+    if (photos.length > 0) {
+      const imgWrap = createElement('div', photos.length === 1 ? 'mt-2' : 'mt-2 flex flex-wrap gap-1.5');
+      const thumbSize = photos.length === 1 ? 'w-28 h-28 sm:w-32 sm:h-32' : 'w-20 h-20 sm:w-24 sm:h-24';
+      photos.forEach((src, photoIdx) => {
+        const image = createElement('img', `${thumbSize} rounded-xl object-cover border border-stoneborder cursor-zoom-in shadow-2xs`);
+        image.src = src;
+        image.alt = 'Growth log';
+        image.dataset.action = 'viewImageFullscreen';
+        const suffix = photos.length > 1 ? ` (${photoIdx + 1}/${photos.length})` : '';
+        image.dataset.caption = `${entry.date || ''} [${tagInfo.label}]${suffix} ${entry.note || ''}`.trim();
+        imgWrap.appendChild(image);
+      });
       contentCol.appendChild(imgWrap);
     }
 
@@ -923,26 +942,83 @@ function populateDetailModal(plantId) {
   });
 }
 
-async function previewGrowthPhoto(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    const { dataUrl, approxKB, width, height } = await compressImageFile(file);
-    appState.tempGrowthPhotoDataUrl = dataUrl;
-    document.getElementById('newGrowthPreviewImg').src = dataUrl;
-    document.getElementById('newGrowthSizeInfo').textContent = `${width}×${height}px / 約${approxKB}KB (WebP軽量化済)`;
-    document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
-    document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
-  } catch (e) {
-    showToast('画像の読み込みに失敗しました');
+function renderPhotoPreviewList(listEl, photos, onRemove) {
+  listEl.replaceChildren();
+  photos.forEach((src, idx) => {
+    const wrap = createElement('div', 'relative w-14 h-14 shrink-0');
+    const img = createElement('img', 'w-full h-full rounded-lg object-cover border border-stoneborder');
+    img.src = src;
+    const removeBtn = createElement('button', 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-charcoal/80 hover:bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs cursor-pointer', '×');
+    removeBtn.type = 'button';
+    removeBtn.title = 'この写真を外す';
+    removeBtn.addEventListener('click', () => onRemove(idx));
+    wrap.append(img, removeBtn);
+    listEl.appendChild(wrap);
+  });
+}
+
+function updateGrowthPhotoPreviewUI() {
+  const photos = appState.tempGrowthPhotos;
+  const box = document.getElementById('newGrowthPreviewBox');
+  const list = document.getElementById('newGrowthPreviewList');
+  const info = document.getElementById('newGrowthSizeInfo');
+  const label = document.getElementById('newGrowthPhotoLabel');
+
+  if (photos.length === 0) {
+    box.classList.add('hidden');
+    list.replaceChildren();
+    label.textContent = `写真を追加（最大${MAX_PHOTOS_PER_LOG}枚）`;
+    return;
   }
+
+  box.classList.remove('hidden');
+  info.textContent = `${photos.length} / ${MAX_PHOTOS_PER_LOG}枚 選択中（軽量化完了）`;
+  label.textContent = photos.length >= MAX_PHOTOS_PER_LOG ? `上限(${MAX_PHOTOS_PER_LOG}枚)` : `さらに追加 (${photos.length}/${MAX_PHOTOS_PER_LOG})`;
+  renderPhotoPreviewList(list, photos, idx => {
+    appState.tempGrowthPhotos.splice(idx, 1);
+    updateGrowthPhotoPreviewUI();
+  });
+}
+
+async function previewGrowthPhoto(event) {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (!files.length) return;
+
+  const remain = MAX_PHOTOS_PER_LOG - appState.tempGrowthPhotos.length;
+  if (remain <= 0) {
+    showToast(`写真は1投稿あたり最大${MAX_PHOTOS_PER_LOG}枚までです`);
+    return;
+  }
+  const selectionId = appState.growthPhotoSelectionId;
+  const targets = files.slice(0, remain);
+  if (files.length > remain) {
+    showToast(`最大${MAX_PHOTOS_PER_LOG}枚までのため、先頭${remain}枚を読み込みます`);
+  }
+
+  for (const file of targets) {
+    try {
+      const { dataUrl } = await compressImageFile(file);
+      if (selectionId !== appState.growthPhotoSelectionId) return;
+      if (appState.tempGrowthPhotos.length >= MAX_PHOTOS_PER_LOG) {
+        showToast(`写真は1投稿あたり最大${MAX_PHOTOS_PER_LOG}枚までです`);
+        break;
+      }
+      appState.tempGrowthPhotos.push(dataUrl);
+    } catch (e) {
+      if (selectionId !== appState.growthPhotoSelectionId) return;
+      showToast('一部の画像の読み込みに失敗しました');
+    }
+  }
+  updateGrowthPhotoPreviewUI();
 }
 
 function clearNewGrowthPhoto() {
-  appState.tempGrowthPhotoDataUrl = null;
-  document.getElementById('newGrowthPhotoInput').value = '';
-  document.getElementById('newGrowthPreviewBox').classList.add('hidden');
-  document.getElementById('newGrowthPhotoLabel').textContent = '写真を追加（任意）';
+  appState.growthPhotoSelectionId++;
+  appState.tempGrowthPhotos = [];
+  const input = document.getElementById('newGrowthPhotoInput');
+  if (input) input.value = '';
+  updateGrowthPhotoPreviewUI();
 }
 
 function editGrowthLogEntry(plantId, logId) {
@@ -956,15 +1032,8 @@ function editGrowthLogEntry(plantId, logId) {
   document.getElementById('newGrowthDateInput').value = log.date || getTodayStr();
   document.getElementById('newGrowthNoteInput').value = log.note || '';
 
-  if (log.photoDataUrl) {
-    appState.tempGrowthPhotoDataUrl = log.photoDataUrl;
-    document.getElementById('newGrowthPreviewImg').src = log.photoDataUrl;
-    document.getElementById('newGrowthSizeInfo').textContent = '現在の写真 (変更・取消可能)';
-    document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
-    document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
-  } else {
-    clearNewGrowthPhoto();
-  }
+  appState.tempGrowthPhotos = [...getLogPhotos(log)];
+  updateGrowthPhotoPreviewUI();
 
   const addBtn = document.getElementById('addGrowthLogBtn');
   addBtn.textContent = '更新';
@@ -1003,7 +1072,7 @@ async function addGrowthLogEntry() {
     const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
     const editLogId = document.getElementById('editGrowthLogId').value;
 
-    if (!appState.tempGrowthPhotoDataUrl && !noteVal) {
+    if (appState.tempGrowthPhotos.length === 0 && !noteVal) {
       showToast('写真またはひとことメモを入力してください');
       return;
     }
@@ -1021,7 +1090,8 @@ async function addGrowthLogEntry() {
         id: editLogId,
         tag: tagVal,
         date: dateVal,
-        photoDataUrl: appState.tempGrowthPhotoDataUrl || '',
+        photos: [...appState.tempGrowthPhotos],
+        photoDataUrl: '',
         note: noteVal
       };
       if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
@@ -1034,7 +1104,8 @@ async function addGrowthLogEntry() {
         id: newLogId,
         tag: tagVal,
         date: dateVal,
-        photoDataUrl: appState.tempGrowthPhotoDataUrl || '',
+        photos: [...appState.tempGrowthPhotos],
+        photoDataUrl: '',
         note: noteVal
       });
       if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
@@ -1059,6 +1130,29 @@ async function addGrowthLogEntry() {
   });
 }
 
+function updateQuickLogPhotoPreviewUI() {
+  const photos = appState.tempQuickLogPhotos;
+  const wrap = document.getElementById('quickLogPreviewWrap');
+  const list = document.getElementById('quickLogPreviewList');
+  const count = document.getElementById('quickLogPhotoCount');
+  const label = document.getElementById('quickLogPhotoLabel');
+
+  if (photos.length === 0) {
+    wrap.classList.add('hidden');
+    list.replaceChildren();
+    label.textContent = `写真を選択（最大${MAX_PHOTOS_PER_LOG}枚）`;
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  count.textContent = `${photos.length} / ${MAX_PHOTOS_PER_LOG}枚 選択中`;
+  label.textContent = photos.length >= MAX_PHOTOS_PER_LOG ? `上限(${MAX_PHOTOS_PER_LOG}枚)` : `さらに追加 (${photos.length}/${MAX_PHOTOS_PER_LOG})`;
+  renderPhotoPreviewList(list, photos, idx => {
+    appState.tempQuickLogPhotos.splice(idx, 1);
+    updateQuickLogPhotoPreviewUI();
+  });
+}
+
 function openQuickLogModal(plantId) {
   if (!canEditData()) return;
   const plant = appState.plants.find(p => p.id === plantId);
@@ -1079,26 +1173,44 @@ function closeQuickLogModal() {
 }
 
 async function previewQuickLogPhoto(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    const { dataUrl, approxKB } = await compressImageFile(file);
-    appState.tempQuickLogPhotoDataUrl = dataUrl;
-    document.getElementById('quickLogPreviewImg').src = dataUrl;
-    document.getElementById('quickLogPreviewWrap').classList.remove('hidden');
-    document.getElementById('quickLogPhotoLabel').textContent = `変更 (約${approxKB}KB)`;
-  } catch (e) {
-    showToast('画像の読み込みに失敗しました');
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (!files.length) return;
+
+  const remain = MAX_PHOTOS_PER_LOG - appState.tempQuickLogPhotos.length;
+  if (remain <= 0) {
+    showToast(`写真は1投稿あたり最大${MAX_PHOTOS_PER_LOG}枚までです`);
+    return;
   }
+  const selectionId = appState.quickLogPhotoSelectionId;
+  const targets = files.slice(0, remain);
+  if (files.length > remain) {
+    showToast(`最大${MAX_PHOTOS_PER_LOG}枚までのため、先頭${remain}枚を読み込みます`);
+  }
+
+  for (const file of targets) {
+    try {
+      const { dataUrl } = await compressImageFile(file);
+      if (selectionId !== appState.quickLogPhotoSelectionId) return;
+      if (appState.tempQuickLogPhotos.length >= MAX_PHOTOS_PER_LOG) {
+        showToast(`写真は1投稿あたり最大${MAX_PHOTOS_PER_LOG}枚までです`);
+        break;
+      }
+      appState.tempQuickLogPhotos.push(dataUrl);
+    } catch (e) {
+      if (selectionId !== appState.quickLogPhotoSelectionId) return;
+      showToast('一部の画像の読み込みに失敗しました');
+    }
+  }
+  updateQuickLogPhotoPreviewUI();
 }
 
 function clearQuickLogPhoto() {
-  appState.tempQuickLogPhotoDataUrl = null;
+  appState.quickLogPhotoSelectionId++;
+  appState.tempQuickLogPhotos = [];
   const input = document.getElementById('quickLogPhotoInput');
   if (input) input.value = '';
-  document.getElementById('quickLogPreviewWrap')?.classList.add('hidden');
-  const label = document.getElementById('quickLogPhotoLabel');
-  if (label) label.textContent = '写真を選択';
+  updateQuickLogPhotoPreviewUI();
 }
 
 async function submitQuickLog() {
@@ -1113,7 +1225,7 @@ async function submitQuickLog() {
     const dateVal = document.getElementById('quickLogDateInput').value || getTodayStr();
     const noteVal = document.getElementById('quickLogNoteInput').value.trim();
 
-    if (!appState.tempQuickLogPhotoDataUrl && !noteVal) {
+    if (appState.tempQuickLogPhotos.length === 0 && !noteVal) {
       showToast('写真またはひとことメモを入力してください');
       return;
     }
@@ -1123,7 +1235,8 @@ async function submitQuickLog() {
       id: createId('g'),
       tag: tagVal,
       date: dateVal,
-      photoDataUrl: appState.tempQuickLogPhotoDataUrl || '',
+      photos: [...appState.tempQuickLogPhotos],
+      photoDataUrl: '',
       note: noteVal
     });
     if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
@@ -1557,15 +1670,24 @@ function validatePlantRecords(records) {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
           throw new Error(`${name}の成長記録${j + 1}件目が不正です`);
         }
-        const photoDataUrl = entry.photoDataUrl == null ? '' : entry.photoDataUrl;
-        if (typeof photoDataUrl !== 'string' || (photoDataUrl !== '' && !/^data:image\/(?:webp|jpeg|png);base64,/.test(photoDataUrl))) {
-          throw new Error(`${name}の成長記録${j + 1}件目の画像形式が不正です`);
+        const rawPhotos = Array.isArray(entry.photos)
+          ? entry.photos
+          : (entry.photoDataUrl ? [entry.photoDataUrl] : []);
+        if (rawPhotos.length > MAX_PHOTOS_PER_LOG) {
+          throw new Error(`${name}の成長記録${j + 1}件目の写真枚数が上限(${MAX_PHOTOS_PER_LOG}枚)を超えています`);
         }
+        const photos = rawPhotos.map((src, k) => {
+          if (typeof src !== 'string' || !/^data:image\/(?:webp|jpeg|png);base64,/.test(src)) {
+            throw new Error(`${name}の成長記録${j + 1}件目の写真${k + 1}枚目の形式が不正です`);
+          }
+          return src;
+        });
         return {
           id: typeof entry.id === 'string' && entry.id ? entry.id : createId(`g_${j}`),
           tag: typeof entry.tag === 'string' && Object.prototype.hasOwnProperty.call(LOG_TAGS, entry.tag) ? entry.tag : 'growth',
           date: readDate(entry.date, `${name}の成長記録${j + 1}件目の日付`),
-          photoDataUrl,
+          photos,
+          photoDataUrl: '',
           note: readStr(entry.note, `${name}の成長記録${j + 1}件目のメモ`, 1000)
         };
       })
