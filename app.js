@@ -637,9 +637,9 @@ function createPlantCard(plant) {
   card.appendChild(visual);
 
   // Card Body
-  const body = createElement('div', 'p-2 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3');
+  const body = createElement('div', 'px-3 pt-3 pb-3 sm:px-3.5 sm:pt-3.5 sm:pb-3.5 flex-1 flex flex-col justify-between gap-2');
   const details = createElement('div');
-  const name = createElement('h3', 'font-semibold text-[13px] sm:text-sm text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1 leading-snug', plant.name);
+  const name = createElement('h3', 'font-medium text-[13px] sm:text-sm text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1 leading-snug', plant.name);
   name.addEventListener('click', event => {
     event.stopPropagation();
     if (appState.batchMode) {
@@ -653,27 +653,27 @@ function createPlantCard(plant) {
   body.appendChild(details);
 
   // Quick Care & Log Buttons
-  const actions = createElement('div', 'grid grid-cols-2 gap-1 sm:gap-1.5');
+  const actions = createElement('div', 'grid grid-cols-2 gap-1.5');
 
   const waterCard = QUICK_CARE_CARDS[0];
-  const waterBtn = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${waterCard.btnClass}`);
+  const waterBtn = createElement('button', `py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-medium border flex items-center justify-center gap-1 transition cursor-pointer ${waterCard.btnClass}`);
   waterBtn.type = 'button';
   waterBtn.title = plant.lastWatered === getTodayStr() ? '今日の水やり記録を取り消す' : '今日水やりしたとして記録';
   waterBtn.append(
     createLucideIcon(waterCard.icon, 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', waterCard.label)
+    createElement('span', 'leading-none whitespace-nowrap', waterCard.label)
   );
   waterBtn.addEventListener('click', event => {
     event.stopPropagation();
     recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
 
-  const quickLogBtn = createElement('button', 'py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  const quickLogBtn = createElement('button', 'py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-medium border flex items-center justify-center gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
   quickLogBtn.type = 'button';
   quickLogBtn.title = '写真やひとことメモをサッと追加';
   quickLogBtn.append(
     createLucideIcon('square-pen', 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', '記録')
+    createElement('span', 'leading-none whitespace-nowrap', '記録')
   );
   quickLogBtn.addEventListener('click', event => {
     event.stopPropagation();
