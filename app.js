@@ -6,6 +6,26 @@
 const APP_NAME = 'VERDURE Botanical Manager';
 
 const SPEC_DEFINITIONS = [
+  {
+    key: 'lastWatered',
+    id: 'specLastWatered',
+    label: '最終水やり',
+    formatValue: (plant) => {
+      if (!plant.lastWatered) return '未記録';
+      const days = calcDaysBetween(plant.lastWatered);
+      return `${plant.lastWatered} (${days === 0 ? '今日' : `${days}日前`})`;
+    }
+  },
+  {
+    key: 'lastRepotted',
+    id: 'specLastRepotted',
+    label: '最終植替え',
+    formatValue: (plant) => {
+      if (!plant.lastRepotted) return '未記録';
+      const days = calcDaysBetween(plant.lastRepotted);
+      return `${plant.lastRepotted} (${days === 0 ? '今日' : `${days}日前`})`;
+    }
+  },
   { key: 'lightLevel', id: 'specLight', label: '光量・ライト' },
   { key: 'soil', id: 'specSoil', label: '用土・鉢' },
   {
@@ -33,19 +53,13 @@ const QUICK_CARE_CARDS = [
     careType: 'lastWatered',
     label: '水やり',
     icon: 'droplets',
-    boxId: 'detailLastWatered',
-    subId: 'detailWaterSub',
-    btnClass: 'ui-sky-soft',
-    formatSub: (p) => p.waterIntervalDays ? `目安: ${p.waterIntervalDays}日ごと (${p.waterMethod || '通常'})` : (p.waterMethod || '目安未設定')
+    btnClass: 'ui-sky-soft'
   },
   {
     careType: 'lastRepotted',
     label: '植替え',
     icon: 'shovel',
-    boxId: 'detailLastRepotted',
-    subId: 'detailSoilSub',
-    btnClass: 'ui-amber-soft',
-    formatSub: (p) => p.soil || '用土未設定'
+    btnClass: 'ui-amber-soft'
   }
 ];
 
@@ -60,7 +74,7 @@ const MAX_IMPORT_BYTES = 1000 * 1024 * 1024;
 
 const appState = {
   plants: [],
-  selectedLocation: 'すべて',
+  selectedLocations: new Set(),
   onlyNeedsWater: false,
   selectedStatus: 'all',
   selectedCalendarTask: 'all',
@@ -68,6 +82,10 @@ const appState = {
   batchSelectedIds: new Set(),
   batchSelectedMaterials: new Set(),
   activeDetailPlantId: null,
+  activeDetailTab: 'log',
+  activeBatchEditTab: 'location',
+  growthSelectedStatus: null,
+  growthAutoNote: '',
   returnToDetailPlantId: null,
   selectedFormSvgType: 'agave',
   tempFormPhotoDataUrl: null,
@@ -122,7 +140,7 @@ const LOG_TAGS = {
   check:    { label: '根確認・処置', badgeClass: 'bg-orange-50 text-orange-800 border-orange-200' },
   move:     { label: '場所・環境変更', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
   status:   { label: '状態変更', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
-  material: { label: '資材使用', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
+  material: { label: '肥料・薬剤', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
 };
 
 function getSortedGrowthLogs(plant) {
@@ -565,32 +583,57 @@ function updateHeaderBadges() {
   }
 }
 
-function renderLocationTabs() {
-  const container = document.getElementById('locationTabsContainer');
-  const counts = new Map([['すべて', appState.plants.length]]);
+function getLocationCounts() {
+  const counts = new Map();
   appState.plants.forEach(p => {
     const loc = p.location || '未設定';
     counts.set(loc, (counts.get(loc) || 0) + 1);
   });
+  return counts;
+}
 
-  const locations = ['すべて', ...Array.from(counts.keys()).filter(k => k !== 'すべて')];
-  if (!locations.includes(appState.selectedLocation)) {
-    appState.selectedLocation = 'すべて';
-  }
+function renderLocationTabs() {
+  const container = document.getElementById('locationFilterChips');
+  if (!container) return;
+  const counts = getLocationCounts();
+
+  // 存在しなくなった場所を選択状態から除外
+  Array.from(appState.selectedLocations).forEach(loc => {
+    if (!counts.has(loc)) appState.selectedLocations.delete(loc);
+  });
 
   container.replaceChildren();
-  locations.forEach(loc => {
-    const active = appState.selectedLocation === loc;
-    const button = createElement(
-      'button',
-      active ? 'ui-btn ui-sm ui-primary' : 'ui-btn ui-sm'
-    );
+
+  const isAll = appState.selectedLocations.size === 0;
+  const allBtn = createElement('button', isAll ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md');
+  allBtn.type = 'button';
+  allBtn.addEventListener('click', () => {
+    appState.selectedLocations.clear();
+    renderApp();
+  });
+  allBtn.append(
+    createLucideIcon('layout-grid', isAll ? 'text-sage-200' : 'text-gray-400'),
+    createElement('span', '', 'すべて'),
+    createElement('span', `text-[10px] px-1.5 py-0.5 rounded-full ${isAll ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(appState.plants.length))
+  );
+  container.appendChild(allBtn);
+
+  counts.forEach((count, loc) => {
+    const active = appState.selectedLocations.has(loc);
+    const button = createElement('button', active ? 'ui-btn ui-md ui-primary' : 'ui-btn ui-md');
     button.type = 'button';
-    button.addEventListener('click', () => selectLocationTab(loc));
+    button.addEventListener('click', () => {
+      if (appState.selectedLocations.has(loc)) {
+        appState.selectedLocations.delete(loc);
+      } else {
+        appState.selectedLocations.add(loc);
+      }
+      renderApp();
+    });
     button.append(
-      createLucideIcon(loc === 'すべて' ? 'layout-grid' : 'map-pin', active ? 'text-sage-200' : 'text-gray-400'),
+      createLucideIcon('map-pin', active ? 'text-sage-200' : 'text-gray-400'),
       createElement('span', '', loc),
-      createElement('span', `text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(counts.get(loc) || 0))
+      createElement('span', `text-[10px] px-1.5 py-0.5 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(count))
     );
     container.appendChild(button);
   });
@@ -601,9 +644,9 @@ function getFilteredAndSortedPlants() {
   document.getElementById('clearSearchBtn').classList.toggle('hidden', !q);
 
   const list = appState.plants.filter(p => {
-    if (appState.selectedLocation !== 'すべて') {
+    if (appState.selectedLocations.size > 0) {
       const loc = p.location || '未設定';
-      if (loc !== appState.selectedLocation) return false;
+      if (!appState.selectedLocations.has(loc)) return false;
     }
     if (appState.onlyNeedsWater && !isPlantNeedingWater(p)) return false;
     const plantStatus = p.status || 'normal';
@@ -858,7 +901,7 @@ async function recordPlantCare(plantId, careType, toastMessage) {
 
   if (isUndo) {
     if (!removeCareSource(plant, careType, 'direct', today)) {
-      showToast('以前の日付を復元できないため取り消せません。資材や育成ログの記録も確認してください');
+      showToast('以前の日付を復元できないため取り消せません。肥料・薬剤や育成ログの記録も確認してください');
       return;
     }
   } else {
@@ -996,7 +1039,7 @@ async function recordMaterialUsage(plantId, code) {
   if (isUndo) {
     const snap = plant.careUndo?.date === today ? plant.careUndo.materials[code] : null;
     if (!snap) {
-      showToast('以前の資材記録を復元できないため取り消せません');
+      showToast('以前の肥料・薬剤記録を復元できないため取り消せません');
       return;
     }
     if (snap.previous) plant.materialLogs[code] = snap.previous;
@@ -1054,12 +1097,12 @@ function renderBatchMaterialChips() {
   if (labelEl) {
     const codes = Array.from(appState.batchSelectedMaterials);
     if (codes.length === 0) {
-      labelEl.textContent = '資材を記録';
+      labelEl.textContent = '肥料・薬剤を記録';
     } else {
       const hasWater = codes.some(c => MATERIAL_DEFS[c]?.updatesWatered);
       labelEl.textContent = hasWater
-        ? `水やり＋資材(${codes.length})を記録`
-        : `資材(${codes.length})を記録`;
+        ? `水やり＋肥料・薬剤(${codes.length})を記録`
+        : `肥料・薬剤(${codes.length})を記録`;
     }
   }
 }
@@ -1068,7 +1111,7 @@ async function executeBatchMaterial() {
   if (!canEditData()) return;
   const codes = Array.from(appState.batchSelectedMaterials);
   if (codes.length === 0) {
-    showToast('使用する資材チップをタップして選択してください');
+    showToast('使用する肥料・薬剤チップをタップして選択してください');
     return;
   }
   if (appState.batchSelectedIds.size === 0) {
@@ -1094,12 +1137,211 @@ async function executeBatchMaterial() {
   setBatchMode(false);
 }
 
+function openBatchEditModal() {
+  if (!canEditData()) return;
+  if (appState.batchSelectedIds.size === 0) {
+    showToast('対象の株カードをタップして選択してください');
+    return;
+  }
+  document.getElementById('batchEditTitle').textContent = `${appState.batchSelectedIds.size}株を一括編集`;
+  document.getElementById('batchEditLocationInput').value = '';
+  document.getElementById('batchEditLocationAutoLog').checked = false;
+  renderBatchEditLocationChips();
+  populateBatchCalendarCopySelect();
+  renderCalendarEditorGrid('batchEditCalendarGrid', {});
+  switchBatchEditTab('location');
+  document.getElementById('batchEditModal').classList.remove('hidden');
+}
+
+function closeBatchEditModal() {
+  document.getElementById('batchEditModal').classList.add('hidden');
+}
+
+function switchBatchEditTab(tab) {
+  appState.activeBatchEditTab = tab === 'calendar' ? 'calendar' : 'location';
+  const isLoc = appState.activeBatchEditTab === 'location';
+  document.getElementById('batchEditTabLocation')?.classList.toggle('hidden', !isLoc);
+  document.getElementById('batchEditTabCalendar')?.classList.toggle('hidden', isLoc);
+
+  const locBtn = document.getElementById('batchEditTabBtnLocation');
+  const calBtn = document.getElementById('batchEditTabBtnCalendar');
+  if (locBtn) {
+    locBtn.className = `px-3.5 py-2 text-xs transition cursor-pointer border-b-2 ${
+      isLoc ? 'font-bold border-sage-600 text-sage-800' : 'font-medium border-transparent text-gray-500 hover:text-charcoal'
+    }`;
+  }
+  if (calBtn) {
+    calBtn.className = `px-3.5 py-2 text-xs transition cursor-pointer border-b-2 ${
+      !isLoc ? 'font-bold border-sage-600 text-sage-800' : 'font-medium border-transparent text-gray-500 hover:text-charcoal'
+    }`;
+  }
+}
+
+function renderBatchEditLocationChips() {
+  const wrap = document.getElementById('batchEditLocationChipsWrap');
+  const container = document.getElementById('batchEditLocationChips');
+  if (!container) return;
+  container.replaceChildren();
+  const entries = Array.from(getLocationCounts().entries()).filter(([loc]) => loc !== '未設定');
+  wrap?.classList.toggle('hidden', entries.length === 0);
+  entries.forEach(([loc, count]) => {
+    const btn = createElement('button', 'ui-btn ui-sm');
+    btn.type = 'button';
+    btn.append(
+      createLucideIcon('map-pin', 'text-sage-600'),
+      createElement('span', '', loc),
+      createElement('span', 'text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500', String(count))
+    );
+    btn.addEventListener('click', () => {
+      document.getElementById('batchEditLocationInput').value = loc;
+    });
+    container.appendChild(btn);
+  });
+}
+
+async function submitBatchLocation() {
+  if (!canEditData()) return;
+  const submitBtn = document.getElementById('submitBatchLocationBtn');
+  await runWithButtonDisabled(submitBtn, async () => {
+    const newLoc = document.getElementById('batchEditLocationInput').value.trim();
+    if (!newLoc) {
+      showToast('移動先・統一する場所名を入力してください');
+      return;
+    }
+    const autoLog = document.getElementById('batchEditLocationAutoLog').checked;
+    const today = getTodayStr();
+    let count = 0;
+
+    appState.plants.forEach(p => {
+      if (!appState.batchSelectedIds.has(p.id)) return;
+      const prevLoc = p.location || '未設定';
+      if (prevLoc !== newLoc) {
+        p.location = newLoc;
+        if (autoLog) {
+          if (!Array.isArray(p.growthLogs)) p.growthLogs = [];
+          p.growthLogs.push({
+            id: createId('g'),
+            tag: 'move',
+            date: today,
+            photos: [],
+            photoDataUrl: '',
+            note: `場所: ${prevLoc} → ${newLoc}`.slice(0, 1000)
+          });
+        }
+      }
+      count++;
+    });
+
+    try {
+      await saveToDB();
+    } catch (err) {
+      renderApp();
+      return;
+    }
+
+    closeBatchEditModal();
+    showToast(`📍 ${count}株の置き場所を「${newLoc}」に更新しました`);
+    setBatchMode(false);
+  });
+}
+
+function populateBatchCalendarCopySelect() {
+  const wrap = document.getElementById('batchEditCalendarCopyWrap');
+  const select = document.getElementById('batchEditCalendarCopySelect');
+  if (!select) return;
+  select.replaceChildren(createElement('option', '', '-- 株を選んでカレンダーを読み込む --'));
+  select.firstChild.value = '';
+
+  let count = 0;
+  appState.plants.forEach(p => {
+    const cal = p.careCalendar || {};
+    const hasAny = Object.keys(CALENDAR_TASK_DEFS).some(k => Array.isArray(cal[k]) && cal[k].length > 0);
+    if (!hasAny) return;
+    const opt = createElement('option', '', p.name);
+    opt.value = p.id;
+    select.appendChild(opt);
+    count++;
+  });
+  wrap?.classList.toggle('hidden', count === 0);
+}
+
+function clearBatchCalendarGrid() {
+  const select = document.getElementById('batchEditCalendarCopySelect');
+  if (select) select.value = '';
+  renderCalendarEditorGrid('batchEditCalendarGrid', {});
+}
+
+async function applyBatchCalendar(calData) {
+  const submitBtn = document.getElementById('submitBatchCalendarBtn');
+  await runWithButtonDisabled(submitBtn, async () => {
+    let count = 0;
+    appState.plants.forEach(p => {
+      if (!appState.batchSelectedIds.has(p.id)) return;
+      p.careCalendar = {};
+      Object.entries(calData).forEach(([k, months]) => {
+        if (months.length > 0) p.careCalendar[k] = [...months];
+      });
+      count++;
+    });
+
+    try {
+      await saveToDB();
+    } catch (err) {
+      renderApp();
+      return;
+    }
+
+    closeBatchEditModal();
+    showToast(`📅 ${count}株の栽培カレンダーを一括反映しました`);
+    setBatchMode(false);
+  });
+}
+
+async function submitBatchCalendar() {
+  if (!canEditData()) return;
+  const calData = readCalendarEditorData('batchEditCalendarGrid');
+  const hasAny = Object.values(calData).some(months => months.length > 0);
+  if (!hasAny) {
+    openConfirmDialog(
+      '栽培カレンダーの一括クリア',
+      `カレンダーの月が1つも選択されていません。選択中の ${appState.batchSelectedIds.size}株 の栽培カレンダーをすべてクリアしますか？`,
+      () => applyBatchCalendar(calData)
+    );
+    return;
+  }
+  await applyBatchCalendar(calData);
+}
+
 /********************************************************************
 - 7. PLANT DETAIL & GROWTH COMPARISON MODAL
  ********************************************************************/
-function openDetailModal(plantId) {
+function switchDetailTab(tab) {
+  appState.activeDetailTab = tab === 'info' ? 'info' : 'log';
+  const isLog = appState.activeDetailTab === 'log';
+  document.getElementById('detailTabLog')?.classList.toggle('hidden', !isLog);
+  document.getElementById('detailTabInfo')?.classList.toggle('hidden', isLog);
+
+  const scrollArea = document.getElementById('detailModalScrollArea');
+  if (scrollArea) scrollArea.scrollTop = 0;
+
+  const logBtn = document.getElementById('detailTabBtnLog');
+  const infoBtn = document.getElementById('detailTabBtnInfo');
+  if (logBtn) {
+    logBtn.className = `px-3.5 py-2 text-xs transition cursor-pointer flex items-center gap-1.5 border-b-2 ${
+      isLog ? 'font-bold border-sage-600 text-sage-800' : 'font-medium border-transparent text-gray-500 hover:text-charcoal'
+    }`;
+  }
+  if (infoBtn) {
+    infoBtn.className = `px-3.5 py-2 text-xs transition cursor-pointer flex items-center gap-1.5 border-b-2 ${
+      !isLog ? 'font-bold border-sage-600 text-sage-800' : 'font-medium border-transparent text-gray-500 hover:text-charcoal'
+    }`;
+  }
+}
+
+function openDetailModal(plantId, initialTab = 'log') {
   appState.activeDetailPlantId = plantId;
   cancelEditGrowthLog();
+  switchDetailTab(initialTab);
   populateDetailModal(plantId);
   document.getElementById('detailModal').classList.remove('hidden');
 }
@@ -1191,20 +1433,6 @@ function populateDetailModal(plantId) {
   document.getElementById('detailDaysOwnedBadge').textContent =
     daysOwned !== null && daysOwned >= 0 ? `お迎えから ${daysOwned}日目` : '';
 
-  QUICK_CARE_CARDS.forEach(card => {
-    const careDate = plant[card.careType];
-    const daysAgo = careDate ? calcDaysBetween(careDate) : null;
-    const text = careDate ? `${careDate} (${daysAgo === 0 ? '今日' : `${daysAgo}日前`})` : '未記録';
-
-    const boxEl = document.getElementById(card.boxId);
-    if (boxEl) boxEl.textContent = text;
-
-    if (card.subId) {
-      const subEl = document.getElementById(card.subId);
-      if (subEl) subEl.textContent = card.formatSub(plant);
-    }
-  });
-
   SPEC_DEFINITIONS.forEach(spec => {
     const specEl = document.getElementById(spec.id);
     if (!specEl) return;
@@ -1221,19 +1449,9 @@ function populateDetailModal(plantId) {
 
   renderDetailCalendar(plant);
 
-const todayStr = getTodayStr();
-  const waterBtnEl = document.getElementById('detailQuickWaterBtn');
-  if (waterBtnEl) {
-    const done = plant.lastWatered === todayStr;
-    waterBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
-    waterBtnEl.className = done ? 'ui-btn ui-sm ui-sky-soft font-semibold' : 'ui-btn ui-sm ui-sky';
-  }
-  const repotBtnEl = document.getElementById('detailQuickRepotBtn');
-  if (repotBtnEl) {
-    const done = plant.lastRepotted === todayStr;
-    repotBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
-    repotBtnEl.className = done ? 'ui-btn ui-sm ui-amber-soft text-amber-800 border-amber-300 font-semibold' : 'ui-btn ui-sm ui-amber';
-  }
+  const todayStr = getTodayStr();
+  renderGrowthTagButtons();
+  updateGrowthTagFormUI();
 
   const matContainer = document.getElementById('detailMaterialsContainer');
   if (matContainer) {
@@ -1523,6 +1741,173 @@ function clearNewGrowthPhoto() {
   updateGrowthPhotoPreviewUI();
 }
 
+function applyGrowthAutoNote(nextAutoNote) {
+  const noteInput = document.getElementById('newGrowthNoteInput');
+  if (!noteInput) return;
+  const current = noteInput.value.trim();
+  if (!current || current === appState.growthAutoNote) {
+    noteInput.value = nextAutoNote;
+    appState.growthAutoNote = nextAutoNote;
+  }
+}
+
+function renderGrowthTagButtons() {
+  const container = document.getElementById('growthTagButtons');
+  if (!container) return;
+  const activeTag = document.getElementById('newGrowthTagInput')?.value || 'growth';
+  container.replaceChildren();
+
+  Object.entries(LOG_TAGS).forEach(([key, info]) => {
+    const isActive = activeTag === key;
+    const btn = createElement(
+      'button',
+      isActive ? 'ui-btn ui-sm ui-primary font-semibold' : 'ui-btn ui-sm'
+    );
+    btn.type = 'button';
+    btn.textContent = info.label;
+    btn.addEventListener('click', () => selectGrowthLogTag(key));
+    container.appendChild(btn);
+  });
+}
+
+function selectGrowthLogTag(tagKey, { preserveNote = false } = {}) {
+  const nextTag = LOG_TAGS[tagKey] ? tagKey : 'growth';
+  const tagInput = document.getElementById('newGrowthTagInput');
+  if (!preserveNote && tagInput && tagInput.value === nextTag) return;
+  if (tagInput) tagInput.value = nextTag;
+  if (!preserveNote) {
+    const noteInput = document.getElementById('newGrowthNoteInput');
+    if (noteInput && appState.growthAutoNote && noteInput.value.trim() === appState.growthAutoNote) {
+      noteInput.value = '';
+    }
+    appState.growthAutoNote = '';
+  }
+  appState.growthSelectedStatus = null;
+  renderGrowthTagButtons();
+  updateGrowthTagFormUI();
+}
+
+function updateGrowthTagFormUI() {
+  const tagKey = document.getElementById('newGrowthTagInput')?.value || 'growth';
+  const isEditing = Boolean(document.getElementById('editGrowthLogId')?.value);
+  const matWrap = document.getElementById('detailMaterialsWrap');
+  const normalWrap = document.getElementById('growthNormalFormWrap');
+  const dynamicBox = document.getElementById('growthTagDynamicBox');
+
+  // 肥料・薬剤使用（新規時）は肥料・薬剤チップ専用UIを表示
+  const showMaterialChips = tagKey === 'material' && !isEditing;
+  matWrap?.classList.toggle('hidden', !showMaterialChips);
+  normalWrap?.classList.toggle('hidden', showMaterialChips);
+
+  if (!dynamicBox) return;
+  dynamicBox.replaceChildren();
+
+  if (showMaterialChips || isEditing) {
+    dynamicBox.classList.add('hidden');
+    return;
+  }
+
+  const plant = appState.plants.find(p => p.id === appState.activeDetailPlantId);
+  if (!plant) {
+    dynamicBox.classList.add('hidden');
+    return;
+  }
+
+  if (tagKey === 'status') {
+    const currentStatus = PLANT_STATUSES[plant.status] ? plant.status : 'normal';
+    const selectedStatus = appState.growthSelectedStatus || currentStatus;
+    dynamicBox.classList.remove('hidden');
+    dynamicBox.appendChild(createElement('p', 'text-[11px] font-semibold text-charcoal', `変更後のステータスを選択（現在: ${PLANT_STATUSES[currentStatus].label}）`));
+    const row = createElement('div', 'flex flex-wrap gap-1.5');
+
+    Object.entries(PLANT_STATUSES).forEach(([stKey, stInfo]) => {
+      const active = selectedStatus === stKey;
+      const chip = createElement('button', active ? 'ui-btn ui-sm ui-primary font-semibold' : 'ui-btn ui-sm');
+      chip.type = 'button';
+      chip.textContent = stInfo.label;
+      chip.addEventListener('click', () => {
+        appState.growthSelectedStatus = stKey;
+        if (stKey !== currentStatus) {
+          applyGrowthAutoNote(`状態: ${PLANT_STATUSES[currentStatus].label} → ${stInfo.label}`);
+        } else {
+          applyGrowthAutoNote('');
+        }
+        updateGrowthTagFormUI();
+      });
+      row.appendChild(chip);
+    });
+    dynamicBox.appendChild(row);
+    return;
+  }
+
+  if (tagKey === 'repot') {
+    const currentSoil = plant.soil || '';
+    dynamicBox.classList.remove('hidden');
+    dynamicBox.appendChild(createElement('label', 'block text-[11px] font-semibold text-charcoal', '新しい用土・鉢（変更すると基本情報にも反映）'));
+    const input = createElement('input', 'ui-field ui-md');
+    input.type = 'text';
+    input.id = 'growthRepotSoilInput';
+    input.maxLength = 300;
+    input.setAttribute('list', 'soilPresets');
+    input.placeholder = '例: 無機質土・スリット鉢';
+    input.value = currentSoil;
+    input.addEventListener('input', () => {
+      const nextSoil = input.value.trim();
+      if (nextSoil !== currentSoil) {
+        applyGrowthAutoNote(`用土: ${currentSoil || '未設定'} → ${nextSoil || '未設定'}`);
+      } else {
+        applyGrowthAutoNote('');
+      }
+    });
+    dynamicBox.appendChild(input);
+    return;
+  }
+
+  if (tagKey === 'move') {
+    const currentLoc = plant.location || '未設定';
+    dynamicBox.classList.remove('hidden');
+    dynamicBox.appendChild(createElement('label', 'block text-[11px] font-semibold text-charcoal', `移動先の置き場所（現在: ${currentLoc}）`));
+
+    const locations = Array.from(getLocationCounts().keys()).filter(loc => loc !== '未設定');
+    if (locations.length > 0) {
+      const chipRow = createElement('div', 'flex flex-wrap gap-1 mb-1');
+      locations.forEach(loc => {
+        const chip = createElement('button', 'ui-btn ui-sm');
+        chip.type = 'button';
+        chip.textContent = loc;
+        chip.addEventListener('click', () => {
+          const locInput = document.getElementById('growthMoveLocationInput');
+          if (!locInput) return;
+          locInput.value = loc;
+          locInput.dispatchEvent(new Event('input'));
+        });
+        chipRow.appendChild(chip);
+      });
+      dynamicBox.appendChild(chipRow);
+    }
+
+    const input = createElement('input', 'ui-field ui-md');
+    input.type = 'text';
+    input.id = 'growthMoveLocationInput';
+    input.maxLength = 200;
+    input.setAttribute('list', 'locationPresets');
+    input.placeholder = '新しい置き場所を入力または上から選択...';
+    input.value = currentLoc === '未設定' ? '' : currentLoc;
+    input.addEventListener('input', () => {
+      const nextLoc = input.value.trim() || '未設定';
+      if (nextLoc !== currentLoc) {
+        applyGrowthAutoNote(`場所: ${currentLoc} → ${nextLoc}`);
+      } else {
+        applyGrowthAutoNote('');
+      }
+    });
+    dynamicBox.appendChild(input);
+    return;
+  }
+
+  dynamicBox.classList.add('hidden');
+}
+
 function editGrowthLogEntry(plantId, logId) {
   const plant = appState.plants.find(p => p.id === plantId);
   if (!plant || !Array.isArray(plant.growthLogs)) return;
@@ -1544,12 +1929,15 @@ function editGrowthLogEntry(plantId, logId) {
   addBtn.classList.remove('ui-primary');
   addBtn.classList.add('ui-amber');
 
+  selectGrowthLogTag(LOG_TAGS[log.tag] ? log.tag : 'growth', { preserveNote: true });
   document.getElementById('cancelEditGrowthLogBtn').classList.remove('hidden');
-  document.getElementById('growthAlbumTitle').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('growthLogFormBox')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function cancelEditGrowthLog() {
   clearNewGrowthPhoto();
+  appState.growthSelectedStatus = null;
+  appState.growthAutoNote = '';
   document.getElementById('newGrowthTagInput').value = 'growth';
   document.getElementById('newGrowthDateInput').value = getTodayStr();
   document.getElementById('newGrowthNoteInput').value = '';
@@ -1561,6 +1949,8 @@ function cancelEditGrowthLog() {
   addBtn.classList.add('ui-primary');
 
   document.getElementById('cancelEditGrowthLogBtn').classList.add('hidden');
+  renderGrowthTagButtons();
+  updateGrowthTagFormUI();
 }
 
 async function addGrowthLogEntry() {
@@ -1573,8 +1963,50 @@ async function addGrowthLogEntry() {
 
     const tagVal = document.getElementById('newGrowthTagInput').value || 'growth';
     const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
-    const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
+    let noteVal = document.getElementById('newGrowthNoteInput').value.trim();
     const editLogId = document.getElementById('editGrowthLogId').value;
+
+    if (!editLogId) {
+      if (tagVal === 'status') {
+        const prevStatus = PLANT_STATUSES[plant.status] ? plant.status : 'normal';
+        const nextStatus = appState.growthSelectedStatus && PLANT_STATUSES[appState.growthSelectedStatus]
+          ? appState.growthSelectedStatus
+          : prevStatus;
+        if (nextStatus !== prevStatus) {
+          plant.status = nextStatus;
+          if (!noteVal) {
+            noteVal = `状態: ${PLANT_STATUSES[prevStatus].label} → ${PLANT_STATUSES[nextStatus].label}`.slice(0, 1000);
+          }
+        }
+      } else if (tagVal === 'repot') {
+        const soilInput = document.getElementById('growthRepotSoilInput');
+        if (soilInput) {
+          const prevSoil = plant.soil || '';
+          const nextSoil = soilInput.value.trim();
+          if (nextSoil !== prevSoil) {
+            plant.soil = nextSoil;
+            if (!noteVal) {
+              noteVal = `用土: ${prevSoil || '未設定'} → ${nextSoil || '未設定'}`.slice(0, 1000);
+            }
+          }
+        }
+        if (!noteVal && appState.tempGrowthPhotos.length === 0) {
+          noteVal = '植替えを実施';
+        }
+      } else if (tagVal === 'move') {
+        const locInput = document.getElementById('growthMoveLocationInput');
+        if (locInput) {
+          const prevLoc = plant.location || '未設定';
+          const nextLoc = locInput.value.trim() || '未設定';
+          if (nextLoc !== prevLoc) {
+            plant.location = nextLoc;
+            if (!noteVal) {
+              noteVal = `場所: ${prevLoc} → ${nextLoc}`.slice(0, 1000);
+            }
+          }
+        }
+      }
+    }
 
     if (appState.tempGrowthPhotos.length === 0 && !noteVal) {
       showToast('写真またはひとことメモを入力してください');
@@ -1671,7 +2103,7 @@ function updateActiveFilterDot() {
   const sortVal = document.getElementById('sortSelect')?.value || 'water_priority';
   const statusVal = document.getElementById('statusFilterSelect')?.value || 'all';
   const calVal = document.getElementById('calendarFilterSelect')?.value || 'all';
-  const isActive = Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all' || calVal !== 'all';
+  const isActive = appState.selectedLocations.size > 0 || Boolean(searchVal) || sortVal !== 'water_priority' || statusVal !== 'all' || calVal !== 'all';
   dot.classList.toggle('hidden', !isActive);
 }
 
@@ -1682,7 +2114,6 @@ function openQuickLogModal(plantId) {
   appState.activeQuickLogPlantId = plantId;
   clearQuickLogPhoto();
   document.getElementById('quickLogPlantName').textContent = plant.name;
-  document.getElementById('quickLogTagInput').value = 'growth';
   document.getElementById('quickLogDateInput').value = getTodayStr();
   document.getElementById('quickLogNoteInput').value = '';
   document.getElementById('quickLogModal').classList.remove('hidden');
@@ -1768,7 +2199,7 @@ async function submitQuickLog() {
     const plant = appState.plants.find(p => p.id === plantId);
     if (!plant) return;
 
-    const tagVal = document.getElementById('quickLogTagInput').value || 'growth';
+    const tagVal = 'growth';
     const dateVal = document.getElementById('quickLogDateInput').value || getTodayStr();
     const noteVal = document.getElementById('quickLogNoteInput').value.trim();
 
@@ -1786,7 +2217,6 @@ async function submitQuickLog() {
       photoDataUrl: '',
       note: noteVal
     });
-    if (tagVal === 'repot') updateRepottedFromLog(plant, dateVal);
 
     try {
       await saveToDB();
@@ -1873,8 +2303,8 @@ function renderFormMaterialAutoLogGrid(selectedCodes = []) {
   });
 }
 
-function renderFormCalendarGrid(careCalendar = {}) {
-  const grid = document.getElementById('formCalendarGrid');
+function renderCalendarEditorGrid(containerId, careCalendar = {}) {
+  const grid = document.getElementById(containerId);
   if (!grid) return;
   grid.replaceChildren();
 
@@ -1911,10 +2341,10 @@ function renderFormCalendarGrid(careCalendar = {}) {
   });
 }
 
-function readFormCalendarData() {
+function readCalendarEditorData(containerId) {
   const result = {};
   Object.keys(CALENDAR_TASK_DEFS).forEach(key => { result[key] = []; });
-  document.querySelectorAll('#formCalendarGrid button[data-cal-task][data-active="1"]').forEach(btn => {
+  document.querySelectorAll(`#${containerId} button[data-cal-task][data-active="1"]`).forEach(btn => {
     const task = btn.dataset.calTask;
     const month = Number(btn.dataset.calMonth);
     if (result[task] && month >= 1 && month <= 12 && !result[task].includes(month)) {
@@ -1923,6 +2353,14 @@ function readFormCalendarData() {
   });
   Object.keys(result).forEach(key => result[key].sort((a, b) => a - b));
   return result;
+}
+
+function renderFormCalendarGrid(careCalendar = {}) {
+  renderCalendarEditorGrid('formCalendarGrid', careCalendar);
+}
+
+function readFormCalendarData() {
+  return readCalendarEditorData('formCalendarGrid');
 }
 
 function openPlantFormModal(editPlantId = null) {
@@ -1960,8 +2398,11 @@ function openPlantFormModal(editPlantId = null) {
     document.getElementById('formMaterialAutoLogWrap')?.classList.add('hidden');
     renderFormMaterialAutoLogGrid([]);
     renderFormCalendarGrid({});
-    if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== '未設定') {
-      document.getElementById('formLocation').value = appState.selectedLocation;
+    if (appState.selectedLocations.size === 1) {
+      const [onlyLoc] = Array.from(appState.selectedLocations);
+      if (onlyLoc && onlyLoc !== '未設定') {
+        document.getElementById('formLocation').value = onlyLoc;
+      }
     }
   }
 
@@ -1983,7 +2424,7 @@ function closePlantFormModal() {
   const returnId = appState.returnToDetailPlantId;
   appState.returnToDetailPlantId = null;
   if (returnId && appState.plants.some(p => p.id === returnId)) {
-    openDetailModal(returnId);
+    openDetailModal(returnId, appState.activeDetailTab || 'log');
   }
 }
 
@@ -2175,8 +2616,8 @@ async function savePlantForm(event) {
       return;
     }
 
-    if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== location) {
-      appState.selectedLocation = 'すべて';
+    if (appState.selectedLocations.size > 0 && !appState.selectedLocations.has(location)) {
+      appState.selectedLocations.clear();
     }
     appState.onlyNeedsWater = false;
 
@@ -2280,7 +2721,7 @@ function handleImportFile(event) {
               return;
             }
             appState.plants = importedPlants;
-            appState.selectedLocation = 'すべて';
+            appState.selectedLocations.clear();
             appState.dbLoadError = false;
             setBatchMode(false);
             showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
@@ -2350,8 +2791,8 @@ function validatePlantRecords(records) {
     for (const [code, entry] of Object.entries(value.materials)) {
       if (!Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code) || !isObject(entry)) invalid();
       materials[code] = {
-        previous: readDate(entry.previous, `${name}の資材取消前の日付`),
-        logId: readStr(entry.logId, `${name}の資材取消対象ログID`, 200)
+        previous: readDate(entry.previous, `${name}の肥料・薬剤取消前の日付`),
+        logId: readStr(entry.logId, `${name}の肥料・薬剤取消対象ログID`, 200)
       };
     }
     return { date, fields, materials };
@@ -2395,15 +2836,15 @@ function validatePlantRecords(records) {
       materialLogs: (() => {
         if (record.materialLogs == null) return {};
         if (typeof record.materialLogs !== 'object' || Array.isArray(record.materialLogs)) {
-          throw new Error(`${name}の資材記録が不正です`);
+          throw new Error(`${name}の肥料・薬剤記録が不正です`);
         }
         const out = {};
         Object.entries(record.materialLogs).forEach(([k, v]) => {
           if (!Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, k)) {
-            throw new Error(`${name}の資材コード(${k})が不正です`);
+            throw new Error(`${name}の肥料・薬剤コード(${k})が不正です`);
           }
           if (v !== null && v !== undefined && v !== '') {
-            out[k] = readDate(v, `${name}の資材(${k})使用日`);
+            out[k] = readDate(v, `${name}の肥料・薬剤(${k})使用日`);
           }
         });
         return out;
@@ -2411,12 +2852,12 @@ function validatePlantRecords(records) {
       materialAutoLog: (() => {
         if (record.materialAutoLog == null) return [];
         if (!Array.isArray(record.materialAutoLog)) {
-          throw new Error(`${name}の資材自動記録設定が配列ではありません`);
+          throw new Error(`${name}の肥料・薬剤自動記録設定が配列ではありません`);
         }
         const out = [];
         record.materialAutoLog.forEach((code, idx) => {
           if (typeof code !== 'string' || !Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code)) {
-            throw new Error(`${name}の資材自動記録設定(${idx + 1}件目: ${code})が不正です`);
+            throw new Error(`${name}の肥料・薬剤自動記録設定(${idx + 1}件目: ${code})が不正です`);
           }
           if (!out.includes(code)) out.push(code);
         });
@@ -2650,11 +3091,6 @@ function initializeImageViewerEvents() {
 /********************************************************************
 - 11. FILTER HELPERS, DIALOG, TOAST & EVENT INITIALIZATION
  ********************************************************************/
-function selectLocationTab(loc) {
-  appState.selectedLocation = loc;
-  renderApp();
-}
-
 function toggleNeedsWaterFilter() {
   appState.onlyNeedsWater = !appState.onlyNeedsWater;
   renderApp();
@@ -2666,7 +3102,7 @@ function clearSearch() {
 }
 
 function resetFilters() {
-  appState.selectedLocation = 'すべて';
+  appState.selectedLocations.clear();
   appState.onlyNeedsWater = false;
   appState.selectedStatus = 'all';
   const stSelect = document.getElementById('statusFilterSelect');
@@ -2739,6 +3175,19 @@ function initializeUIEvents() {
     clearBatchSelection,
     executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
     executeBatchMaterial,
+    openBatchEditModal,
+    closeBatchEditModal,
+    switchBatchEditTab: (event) => {
+      const btn = event?.target?.closest('[data-tab]');
+      if (btn) switchBatchEditTab(btn.dataset.tab);
+    },
+    submitBatchLocation,
+    clearBatchCalendarGrid,
+    submitBatchCalendar,
+    switchDetailTab: (event) => {
+      const btn = event?.target?.closest('[data-tab]');
+      if (btn) switchDetailTab(btn.dataset.tab);
+    },
     editActivePlant: () => {
       if (!appState.activeDetailPlantId) return;
       const targetId = appState.activeDetailPlantId;
@@ -2749,15 +3198,6 @@ function initializeUIEvents() {
     deleteActivePlant: () => {
       if (!appState.activeDetailPlantId) return;
       confirmDeletePlant(appState.activeDetailPlantId);
-    },
-    quickCareFromModal: (event) => {
-      if (!appState.activeDetailPlantId) return;
-      const target = event?.target?.closest('[data-care-type]');
-      if (!target) return;
-      const careType = target.dataset.careType;
-      const cardDef = QUICK_CARE_CARDS.find(c => c.careType === careType);
-      const label = cardDef ? cardDef.label : 'ケア';
-      recordPlantCare(appState.activeDetailPlantId, careType, `${label}を記録しました`);
     },
     clearSearch,
     toggleNeedsWaterFilter,
@@ -2821,6 +3261,8 @@ function initializeUIEvents() {
       closeImageViewer();
     } else if (!document.getElementById('confirmDialog').classList.contains('hidden')) {
       closeConfirmDialog();
+    } else if (!document.getElementById('batchEditModal').classList.contains('hidden')) {
+      closeBatchEditModal();
     } else if (!document.getElementById('filterModal').classList.contains('hidden')) {
       closeFilterModal();
     } else if (!document.getElementById('quickLogModal').classList.contains('hidden')) {
@@ -2850,6 +3292,17 @@ function initializeUIEvents() {
   document.getElementById('quickLogPhotoInput').addEventListener('change', previewQuickLogPhoto);
   document.getElementById('filterModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'filterModal') closeFilterModal();
+  });
+  document.getElementById('batchEditModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'batchEditModal') closeBatchEditModal();
+  });
+  document.getElementById('batchEditCalendarCopySelect')?.addEventListener('change', (e) => {
+    const srcId = e.target.value;
+    if (!srcId) return;
+    const srcPlant = appState.plants.find(p => p.id === srcId);
+    if (srcPlant) {
+      renderCalendarEditorGrid('batchEditCalendarGrid', srcPlant.careCalendar || {});
+    }
   });
 
   initializeImageViewerEvents();

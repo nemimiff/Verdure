@@ -278,7 +278,7 @@
         </button>
       </div>
 
-      <!-- 中段: 資材チップ（複数選択） -->
+      <!-- 中段: 肥料・薬剤チップ（複数選択） -->
       <div id="batchMaterialChips" class="flex flex-wrap items-center gap-1.5"></div>
 
       <!-- 下段: 実行ボタン -->
@@ -289,7 +289,11 @@
         </button>
         <button type="button" data-action="executeBatchMaterial" id="batchMaterialBtn" class="ui-btn ui-md ui-batch-mat">
           <span data-icon="flask-conical"></span>
-          <span id="batchMaterialBtnLabel">資材を記録</span>
+          <span id="batchMaterialBtnLabel">肥料・薬剤を記録</span>
+        </button>
+        <button type="button" data-action="openBatchEditModal" id="batchEditOpenBtn" class="ui-btn ui-md ui-soft">
+          <span data-icon="pencil"></span>
+          <span>一括編集</span>
         </button>
       </div>
     </div>
@@ -297,8 +301,6 @@
 
   <!-- ================= FILTER & SEARCH CONTROLS ================= -->
   <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 pb-2 flex flex-col gap-2">
-    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="locationTabsContainer"></div>
-
     <div class="flex items-center gap-2 w-full">
       <button
         id="filterNeedsWaterBtn"
@@ -383,192 +385,174 @@
         </div>
       </div>
 
-      <div class="p-4 sm:p-5 overflow-y-auto space-y-6 flex-1 min-h-0 overscroll-contain">
-        <!-- Quick Care Status Row (水やり・植替えの2列 + 資材専用カード) -->
-        <div class="space-y-2.5">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div class="p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1 text-xs text-sky-800 font-medium mb-0.5">
-                  <span data-icon="droplets" data-icon-class="w-3.5 h-3.5"></span>
-                  <span>最終水やり</span>
+      <!-- Detail Modal Tabs -->
+      <div class="px-3 sm:px-5 pt-2.5 bg-canvas border-b border-stoneborder flex items-center gap-1.5 shrink-0">
+        <button type="button" id="detailTabBtnLog" data-action="switchDetailTab" data-tab="log" class="px-3.5 py-2 text-xs font-bold border-b-2 border-sage-600 text-sage-800 transition cursor-pointer flex items-center gap-1.5">
+          <span data-icon="images" data-icon-class="w-3.5 h-3.5"></span>
+          <span>育成ログ</span>
+          <span id="growthCountBadge" class="text-[11px] font-normal text-gray-500"></span>
+        </button>
+        <button type="button" id="detailTabBtnInfo" data-action="switchDetailTab" data-tab="info" class="px-3.5 py-2 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-charcoal transition cursor-pointer flex items-center gap-1.5">
+          <span data-icon="sliders-horizontal" data-icon-class="w-3.5 h-3.5"></span>
+          <span>基本情報・カレンダー</span>
+        </button>
+      </div>
+
+      <div id="detailModalScrollArea" class="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+        <!-- TAB 1: 育成ログ（トランザクション） -->
+        <div id="detailTabLog" class="space-y-5">
+          <!-- Add / Edit Log Box -->
+          <div id="growthLogFormBox" class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 space-y-3">
+            <!-- Category Buttons -->
+            <div id="growthTagButtons" class="flex flex-wrap gap-1.5"></div>
+            <input type="hidden" id="newGrowthTagInput" value="growth" />
+            <input type="hidden" id="editGrowthLogId" value="" />
+
+            <!-- 肥料・薬剤使用モード専用（ワンタップON/OFF） -->
+            <div id="detailMaterialsWrap" class="hidden space-y-2.5 pt-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] text-gray-500">タップで今日ON/OFF（水やり兼用は最終水やり日も更新）</span>
+                <span class="text-[10px] text-gray-500 inline-flex items-center gap-1 leading-none shrink-0">
+                  <span data-icon="file-check" data-icon-class="w-3 h-3 text-sage-600 block shrink-0"></span>
+                  <span>自動ログ</span>
+                </span>
+              </div>
+              <div id="detailMaterialsContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- 通常ログ入力エリア（成長記録・状態変更・植替え・場所変更など） -->
+            <div id="growthNormalFormWrap" class="space-y-2.5">
+              <!-- カテゴリ連動の専用入力欄（状態チップ / 用土入力 / 場所入力） -->
+              <div id="growthTagDynamicBox" class="hidden p-2.5 rounded-xl bg-white border border-stoneborder space-y-1.5"></div>
+
+              <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2 items-stretch sm:items-center">
+                <div class="sm:col-span-4">
+                  <input type="date" id="newGrowthDateInput" class="ui-field ui-md" />
                 </div>
-                <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
-                <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
-              </div>
-              <button type="button" id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="ui-btn ui-sm ui-sky">今日記録</button>
-            </div>
-
-            <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1 text-xs text-amber-900 font-medium mb-0.5">
-                  <span data-icon="shovel" data-icon-class="w-3.5 h-3.5"></span>
-                  <span>最終植替え</span>
+                <div class="sm:col-span-5">
+                  <label id="newGrowthPhotoLabelWrap" class="ui-btn ui-md ui-dashed w-full">
+                    <span data-icon="camera"></span>
+                    <span id="newGrowthPhotoLabel">写真を追加（最大6枚）</span>
+                    <input type="file" id="newGrowthPhotoInput" accept="image/*" multiple class="hidden" />
+                  </label>
                 </div>
-                <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
-                <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
+                <div class="sm:col-span-3 flex gap-1.5 sm:justify-end">
+                  <button type="button" data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="ui-btn ui-md ui-primary flex-1 min-w-0">
+                    追加
+                  </button>
+                  <button type="button" data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden ui-btn ui-md flex-1">
+                    取消
+                  </button>
+                </div>
+                <div class="sm:col-span-12">
+                  <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="ひとことメモ（例: 新葉展開、根張り良好など...）" class="ui-field ui-md" />
+                </div>
               </div>
-              <button type="button" id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="ui-btn ui-sm ui-amber">今日記録</button>
+
+              <p id="newGrowthDateHint" class="hidden text-[11px] text-sage-700 font-medium"></p>
+
+              <div id="newGrowthPreviewBox" class="hidden pt-2.5 border-t border-stoneborder">
+                <div class="flex items-center justify-between mb-2">
+                  <p id="newGrowthSizeInfo" class="text-[11px] font-medium text-sage-700"></p>
+                  <button type="button" data-action="clearNewGrowthPhoto" class="text-xs text-gray-400 hover:text-red-500">すべて取消</button>
+                </div>
+                <div id="newGrowthPreviewList" class="flex flex-wrap gap-2"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 資材・肥料・薬剤 専用カード（ワンタップON/OFF） -->
-          <div class="p-3 sm:p-3.5 rounded-2xl bg-sage-50/70 border border-sage-200/80 space-y-2.5">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1.5 text-xs font-bold text-sage-800">
-                <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
-                <span>資材・肥料・薬剤</span>
-                <span class="text-[10px] font-normal text-gray-500">（タップで今日ON/OFF）</span>
-              </div>
-              <span class="text-[10px] text-gray-500 inline-flex items-center gap-1 leading-none shrink-0">
-                <span data-icon="file-check" data-icon-class="w-3 h-3 text-sage-600 block shrink-0"></span>
-                <span>自動ログ</span>
-              </span>
-            </div>
-            <div id="detailMaterialsContainer" class="space-y-2"></div>
-          </div>
-        </div>
-
-        <!-- Environment & Collection Spec Grid -->
-        <div class="bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-            <span data-icon="sliders-horizontal" data-icon-class="w-3.5 h-3.5"></span>
-            育成環境・コレクション情報
-          </h3>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-2 sm:gap-y-3 gap-x-2 sm:gap-x-4 text-xs">
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sun" data-icon-class="w-3.5 h-3.5 text-amber-500"></span>光量・ライト</span>
-              <p id="specLight" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sprout" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>用土・鉢</span>
-              <p id="specSoil" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="timer" data-icon-class="w-3.5 h-3.5 text-sky-600"></span>水やり目安・方法</span>
-              <p id="specWaterInterval" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="store" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入店・入手先</span>
-              <p id="specShop" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="japanese-yen" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入価格</span>
-              <p id="specPrice" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-            <div class="min-w-0">
-              <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>お迎え日</span>
-              <p id="specPurchaseDate" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
-            </div>
-          </div>
-          <div id="specNotesBox" class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-stoneborder text-xs text-gray-600 hidden">
-            <span class="text-gray-400 block mb-0.5 text-[10px] sm:text-xs">育成メモ:</span>
-            <p id="specNotes" class="whitespace-pre-line leading-relaxed text-[11px] sm:text-xs"></p>
-          </div>
-        </div>
-
-        <!-- Cultivation Calendar Section -->
-        <div id="detailCalendarSection" class="hidden bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
-          <div class="flex items-center justify-between mb-2.5">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
-              <span>栽培カレンダー</span>
-            </h3>
-            <span id="detailCalendarCurrentMonthBadge" class="text-[10px] font-semibold text-sage-700 bg-sage-100 px-2 py-0.5 rounded-full"></span>
-          </div>
-          <div id="detailCalendarGrid" class="overflow-x-auto no-scrollbar"></div>
-        </div>
-
-        <!-- Growth Comparison Banner -->
-        <div id="growthComparisonSection" class="hidden bg-sage-50/70 border border-sage-200 rounded-2xl p-4">
-          <div class="flex items-center justify-between mb-2.5">
-            <h3 class="text-xs font-bold text-sage-800 flex items-center gap-1.5">
-              <span data-icon="sparkles" data-icon-class="w-4 h-4 text-sage-600"></span>
-              成長変化
-            </h3>
-            <span id="comparisonSpanBadge" class="marker-badge font-medium bg-white text-sage-700 border-sage-200"></span>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white p-2 rounded-xl border border-stoneborder">
-              <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
-                <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
-              </div>
-              <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
-              <p id="compareFirstNote" class="text-[11px] text-gray-500 truncate"></p>
-            </div>
-            <div class="bg-white p-2 rounded-xl border border-stoneborder">
-              <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
-                <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
-              </div>
-              <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
-              <p id="compareLatestNote" class="text-[11px] text-gray-500 truncate"></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Growth Log Timeline & Add Log Section -->
-        <div>
-          <div class="flex items-center justify-between mb-3">
-            <h3 id="growthAlbumTitle" class="text-sm font-bold text-charcoal flex items-center gap-1.5">
-              <span data-icon="images" data-icon-class="w-4 h-4 text-sage-600"></span>
-              <span>育成ログ</span>
-              <span id="growthCountBadge" class="text-xs font-normal text-gray-500"></span>
-            </h3>
-          </div>
-
-          <!-- Add New Log Box -->
-          <div class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 mb-5">
-            <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2 items-stretch sm:items-center">
-              <div class="sm:col-span-3">
-                <select id="newGrowthTagInput" class="ui-field ui-md font-medium">
-                  <option value="growth">成長記録</option>
-                  <option value="repot">植替え</option>
-                  <option value="cut">胴切り・茎伏せ</option>
-                  <option value="rooting">発根・水差し</option>
-                  <option value="check">根確認・処置</option>
-                  <option value="move">場所・環境変更</option>
-                  <option value="status">状態変更</option>
-                  <option value="material">資材使用</option>
-                </select>
-              </div>
-              <div class="sm:col-span-3">
-                <input type="date" id="newGrowthDateInput" class="ui-field ui-md" />
-              </div>
-              <div class="sm:col-span-6 lg:col-span-4">
-                <label id="newGrowthPhotoLabelWrap" class="ui-btn ui-md ui-dashed w-full">
-                  <span data-icon="camera"></span>
-                  <span id="newGrowthPhotoLabel">写真を追加（最大6枚）</span>
-                  <input type="file" id="newGrowthPhotoInput" accept="image/*" multiple class="hidden" />
-                </label>
-              </div>
-              <div class="sm:col-span-12 lg:col-span-2 flex gap-1.5 sm:justify-end">
-                <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="ui-btn ui-md ui-primary flex-1 sm:flex-none lg:flex-1 min-w-0">
-                  追加
-                </button>
-                <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden ui-btn ui-md flex-1 sm:flex-none lg:flex-1">
-                  取消
-                </button>
-              </div>
-              <div class="sm:col-span-12">
-                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="ひとことメモ（例: 葉元が黒ずんだので胴切り、新葉展開など...）" class="ui-field ui-md" />
-              </div>
-            </div>
-            <input type="hidden" id="editGrowthLogId" value="">
-            
-            <p id="newGrowthDateHint" class="hidden mt-2 text-[11px] text-sage-700 font-medium"></p>
-
-            <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder">
-              <div class="flex items-center justify-between mb-2">
-                <p id="newGrowthSizeInfo" class="text-[11px] font-medium text-sage-700"></p>
-                <button type="button" data-action="clearNewGrowthPhoto" class="text-xs text-gray-400 hover:text-red-500">すべて取消</button>
-              </div>
-              <div id="newGrowthPreviewList" class="flex flex-wrap gap-2"></div>
-            </div>
-          </div>
-
+          <!-- Timeline -->
           <div id="growthTimelineGrid" class="space-y-0"></div>
+        </div>
+
+        <!-- TAB 2: 基本情報・カレンダー（マスタ＆振り返り） -->
+        <div id="detailTabInfo" class="hidden space-y-5">
+          <!-- Environment & Collection Spec Grid -->
+          <div class="bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+              <span data-icon="sliders-horizontal" data-icon-class="w-3.5 h-3.5"></span>
+              育成環境・コレクション情報
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 sm:gap-y-3 gap-x-2 sm:gap-x-4 text-xs">
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="droplets" data-icon-class="w-3.5 h-3.5 text-sky-600"></span>最終水やり</span>
+                <p id="specLastWatered" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="shovel" data-icon-class="w-3.5 h-3.5 text-amber-600"></span>最終植替え</span>
+                <p id="specLastRepotted" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="timer" data-icon-class="w-3.5 h-3.5 text-sky-600"></span>水やり目安・方法</span>
+                <p id="specWaterInterval" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sun" data-icon-class="w-3.5 h-3.5 text-amber-500"></span>光量・ライト</span>
+                <p id="specLight" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="sprout" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>用土・鉢</span>
+                <p id="specSoil" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>お迎え日</span>
+                <p id="specPurchaseDate" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="store" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入店・入手先</span>
+                <p id="specShop" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+              <div class="min-w-0">
+                <span class="text-gray-400 flex items-center gap-1 text-[10px] sm:text-[11px]"><span data-icon="japanese-yen" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>購入価格</span>
+                <p id="specPrice" class="font-semibold text-charcoal mt-0.5 text-xs sm:text-sm truncate">-</p>
+              </div>
+            </div>
+            <div id="specNotesBox" class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-stoneborder text-xs text-gray-600 hidden">
+              <span class="text-gray-400 block mb-0.5 text-[10px] sm:text-xs">育成メモ:</span>
+              <p id="specNotes" class="whitespace-pre-line leading-relaxed text-[11px] sm:text-xs"></p>
+            </div>
+          </div>
+
+          <!-- Cultivation Calendar Section -->
+          <div id="detailCalendarSection" class="hidden bg-canvas rounded-2xl p-3 sm:p-4 border border-stoneborder">
+            <div class="flex items-center justify-between mb-2.5">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                <span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
+                <span>栽培カレンダー</span>
+              </h3>
+              <span id="detailCalendarCurrentMonthBadge" class="text-[10px] font-semibold text-sage-700 bg-sage-100 px-2 py-0.5 rounded-full"></span>
+            </div>
+            <div id="detailCalendarGrid" class="overflow-x-auto no-scrollbar"></div>
+          </div>
+
+          <!-- Growth Comparison Banner -->
+          <div id="growthComparisonSection" class="hidden bg-sage-50/70 border border-sage-200 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2.5">
+              <h3 class="text-xs font-bold text-sage-800 flex items-center gap-1.5">
+                <span data-icon="sparkles" data-icon-class="w-4 h-4 text-sage-600"></span>
+                成長変化
+              </h3>
+              <span id="comparisonSpanBadge" class="marker-badge font-medium bg-white text-sage-700 border-sage-200"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white p-2 rounded-xl border border-stoneborder">
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
+                  <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
+                  <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
+                </div>
+                <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
+                <p id="compareFirstNote" class="text-[11px] text-gray-500 truncate"></p>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-stoneborder">
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
+                  <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
+                  <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
+                </div>
+                <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
+                <p id="compareLatestNote" class="text-[11px] text-gray-500 truncate"></p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -625,26 +609,11 @@
           <div>
             <label class="block text-xs font-medium text-charcoal mb-1">置き場所</label>
             <input type="text" id="formLocation" maxlength="200" list="locationPresets" placeholder="選択または自由入力..." class="ui-field ui-lg" />
-            <datalist id="locationPresets">
-              <option value="ライト棚・直下"></option>
-              <option value="ライト棚・周辺"></option>
-              <option value="窓際・室内"></option>
-              <option value="キッチンレール"></option>
-              <option value="ダイニングレール"></option>
-              <option value="ベランダ・屋外"></option>
-            </datalist>
           </div>
 
           <div>
             <label class="block text-xs font-medium text-charcoal mb-1">用土・鉢スペック（任意）</label>
             <input type="text" id="formSoil" maxlength="300" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="ui-field ui-lg" />
-            <datalist id="soilPresets">
-              <option value="無機質土・スリット鉢"></option>
-              <option value="無機質土・プレステラ"></option>
-              <option value="ベラボン / ねこチップ"></option>
-              <option value="観葉植物ブレンド土"></option>
-              <option value="水苔・板付け"></option>
-            </datalist>
           </div>
 
           <div>
@@ -686,7 +655,7 @@
               </select>
             </div>
             <div id="formMaterialAutoLogWrap">
-              <label class="block text-xs font-bold text-charcoal mb-1">資材の育成ログ自動記録（ONにする資材を選択）</label>
+              <label class="block text-xs font-bold text-charcoal mb-1">肥料・薬剤の育成ログ自動記録（ONにする肥料・薬剤を選択）</label>
               <div id="formMaterialAutoLogGrid" class="flex flex-wrap gap-1.5"></div>
             </div>
           </div>
@@ -744,24 +713,9 @@
         </button>
       </div>
       <div class="p-4 sm:p-5 space-y-3.5 text-xs overflow-y-auto min-h-0 overscroll-contain">
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block text-[11px] font-bold text-charcoal mb-1">カテゴリ</label>
-            <select id="quickLogTagInput" class="ui-field ui-lg font-medium">
-              <option value="growth">成長記録</option>
-              <option value="repot">植替え</option>
-              <option value="cut">胴切り・茎伏せ</option>
-              <option value="rooting">発根・水差し</option>
-              <option value="check">根確認・処置</option>
-              <option value="move">場所・環境変更</option>
-              <option value="status">状態変更</option>
-              <option value="material">資材使用</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-charcoal mb-1">日付</label>
-            <input type="date" id="quickLogDateInput" class="ui-field ui-lg" />
-          </div>
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal mb-1">日付</label>
+          <input type="date" id="quickLogDateInput" class="ui-field ui-lg" />
         </div>
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1">写真（任意・最大6枚まで一括選択可）</label>
@@ -806,6 +760,11 @@
       </div>
 
       <div class="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto min-h-0 overscroll-contain">
+        <div>
+          <label class="block text-xs font-medium text-charcoal mb-1.5">置き場所（複数選択可）</label>
+          <div id="locationFilterChips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
         <div>
           <label class="block text-xs font-medium text-charcoal mb-1.5">キーワード検索</label>
           <div class="ui-field ui-lg">
@@ -871,6 +830,74 @@
     </div>
   </div>
 
+  <!-- ================= MODAL 5: BATCH EDIT (LOCATION & CALENDAR) ================= -->
+  <div id="batchEditModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-lg w-full modal-box-responsive flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+      <div class="px-5 py-3.5 border-b border-stoneborder bg-canvas flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold text-sage-600">選択中の株をまとめて更新</p>
+          <h3 id="batchEditTitle" class="font-bold text-sm sm:text-base text-charcoal truncate">一括編集</h3>
+        </div>
+        <button type="button" data-action="closeBatchEditModal" class="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 shrink-0 cursor-pointer">
+          <span data-icon="x" data-icon-class="w-4 h-4"></span>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-5 pt-2 bg-canvas border-b border-stoneborder flex items-center gap-1.5 shrink-0">
+        <button type="button" id="batchEditTabBtnLocation" data-action="switchBatchEditTab" data-tab="location" class="px-3.5 py-2 text-xs font-bold border-b-2 border-sage-600 text-sage-800 transition cursor-pointer">
+          置き場所（移動・名寄せ）
+        </button>
+        <button type="button" id="batchEditTabBtnCalendar" data-action="switchBatchEditTab" data-tab="calendar" class="px-3.5 py-2 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-charcoal transition cursor-pointer">
+          栽培カレンダー
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto min-h-0 overscroll-contain">
+        <!-- Tab 1: Location -->
+        <div id="batchEditTabLocation" class="space-y-3.5">
+          <div id="batchEditLocationChipsWrap">
+            <label class="block text-[11px] font-bold text-charcoal mb-1.5">既存の置き場所から選ぶ（タップで入力）</label>
+            <div id="batchEditLocationChips" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-charcoal mb-1">移動先・統一する場所名</label>
+            <input type="text" id="batchEditLocationInput" maxlength="200" list="locationPresets" placeholder="例: ライト棚・直下" class="ui-field ui-lg" />
+          </div>
+          <label class="flex items-center gap-2 text-xs text-charcoal cursor-pointer select-none">
+            <input type="checkbox" id="batchEditLocationAutoLog" class="accent-sage-600 cursor-pointer" />
+            <span>育成ログにも「場所変更」を自動記録する（表記ゆれの名寄せ時はOFF推奨）</span>
+          </label>
+          <div class="pt-2 flex items-center justify-end gap-2 border-t border-stoneborder">
+            <button type="button" data-action="closeBatchEditModal" class="ui-btn ui-lg">キャンセル</button>
+            <button type="button" id="submitBatchLocationBtn" data-action="submitBatchLocation" class="ui-btn ui-lg ui-primary">場所を一括更新</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Calendar -->
+        <div id="batchEditTabCalendar" class="hidden space-y-3.5">
+          <div id="batchEditCalendarCopyWrap">
+            <label class="block text-[11px] font-bold text-charcoal mb-1">登録済みの株からコピー（任意）</label>
+            <select id="batchEditCalendarCopySelect" class="ui-field ui-lg">
+              <option value="">-- 株を選んでカレンダーを読み込む --</option>
+            </select>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[11px] font-bold text-charcoal">反映する栽培カレンダー</label>
+              <button type="button" data-action="clearBatchCalendarGrid" class="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer">すべてクリア</button>
+            </div>
+            <div id="batchEditCalendarGrid" class="space-y-2.5 bg-canvas p-3 rounded-2xl border border-stoneborder"></div>
+          </div>
+          <div class="pt-2 flex items-center justify-end gap-2 border-t border-stoneborder">
+            <button type="button" data-action="closeBatchEditModal" class="ui-btn ui-lg">キャンセル</button>
+            <button type="button" id="submitBatchCalendarBtn" data-action="submitBatchCalendar" class="ui-btn ui-lg ui-primary">カレンダーを一括反映</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= CUSTOM CONFIRM / MESSAGE DIALOG ================= -->
   <div id="confirmDialog" class="fixed inset-0 z-[60] hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white border border-stoneborder rounded-2xl max-w-sm w-full p-5 shadow-xl animate-fade-in">
@@ -909,6 +936,23 @@
       <p class="text-[11px] text-white/50">ダブルクリック・ホイール・ピンチで拡大／ドラッグで移動</p>
     </div>
   </div>
+
+  <!-- ================= SHARED DATALISTS ================= -->
+  <datalist id="locationPresets">
+    <option value="ライト棚・直下"></option>
+    <option value="ライト棚・周辺"></option>
+    <option value="窓際・室内"></option>
+    <option value="キッチンレール"></option>
+    <option value="ダイニングレール"></option>
+    <option value="ベランダ・屋外"></option>
+  </datalist>
+  <datalist id="soilPresets">
+    <option value="無機質土・スリット鉢"></option>
+    <option value="無機質土・プレステラ"></option>
+    <option value="ベラボン / ねこチップ"></option>
+    <option value="観葉植物ブレンド土"></option>
+    <option value="水苔・板付け"></option>
+  </datalist>
 
   <!-- ================= TOAST NOTIFICATION ================= -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 pointer-events-none"></div>
