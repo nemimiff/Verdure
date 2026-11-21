@@ -3,6 +3,8 @@
 /********************************************************************
 - 1. STATIC DEFINITIONS (ICONS, SPECS, CARE CARDS, BOTANICAL SVGS)
  ********************************************************************/
+const APP_NAME = 'VERDURE Botanical Manager';
+
 const ICON_PATHS = {
   'sprout': '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>',
   'plant-plus': '<path d="M13 9.5V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" fill="#588157" fill-opacity="0.25"/><path d="M3 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" fill="#588157" fill-opacity="0.25"/><path d="M18.5 14v6" stroke-width="2.2"/><path d="M15.5 17h6" stroke-width="2.2"/>',
@@ -232,7 +234,7 @@ const DB_NAME = 'BotanicalLogDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'appData';
 const STATE_KEY = 'verdure_state_v1';
-const MAX_JSON_BYTES = 30 * 1024 * 1024;
+const MAX_IMPORT_BYTES = 1000 * 1024 * 1024;
 
 const appState = {
   plants: [],
@@ -248,6 +250,17 @@ const appState = {
 };
 
 let cachedDB = null;
+let svgUniqueCounter = 0;
+let activeConfirmCleanup = null;
+
+function createId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function getSortedGrowthLogs(plant) {
+  if (!Array.isArray(plant?.growthLogs)) return [];
+  return [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
 
 function canEditData() {
   if (!appState.dbLoadError) return true;
@@ -508,7 +521,30 @@ function appendBotanicalSvg(container, svgMarkup) {
   if (parsed.documentElement.tagName !== 'svg') {
     throw new Error('Invalid built-in botanical SVG');
   }
-  container.replaceChildren(document.importNode(parsed.documentElement, true));
+  const svgEl = document.importNode(parsed.documentElement, true);
+  const idElements = svgEl.querySelectorAll('[id]');
+  if (idElements.length > 0) {
+    const suffix = `_${++svgUniqueCounter}`;
+    const idMap = new Map();
+    idElements.forEach(el => {
+      const oldId = el.getAttribute('id');
+      const newId = `${oldId}${suffix}`;
+      idMap.set(oldId, newId);
+      el.setAttribute('id', newId);
+    });
+    svgEl.querySelectorAll('*').forEach(el => {
+      for (const attr of Array.from(el.attributes)) {
+        if (attr.value.includes('url(#')) {
+          let nextVal = attr.value;
+          idMap.forEach((newId, oldId) => {
+            nextVal = nextVal.replaceAll(`url(#${oldId})`, `url(#${newId})`);
+          });
+          if (nextVal !== attr.value) el.setAttribute(attr.name, nextVal);
+        }
+      }
+    });
+  }
+  container.replaceChildren(svgEl);
 }
 
 function renderApp() {
@@ -608,9 +644,7 @@ function getFilteredAndSortedPlants() {
 
 function createPlantCard(plant) {
   const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-  const sortedLogs = Array.isArray(plant.growthLogs)
-    ? [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-    : [];
+  const sortedLogs = getSortedGrowthLogs(plant);
   const latestLog = sortedLogs[sortedLogs.length - 1];
   const latestPhoto = latestLog?.photoDataUrl || null;
 
@@ -671,9 +705,9 @@ function createPlantCard(plant) {
   statusWrap.appendChild(statusBadge);
   visual.appendChild(statusWrap);
 
-  if (plant.growthLogs?.length) {
+  if (sortedLogs.length) {
     const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
-    logBadge.append(createLucideIcon('images'), document.createTextNode(`${plant.growthLogs.length}枚`));
+    logBadge.append(createLucideIcon('images'), document.createTextNode(`${sortedLogs.length}枚`));
     visual.appendChild(logBadge);
   }
 
@@ -759,7 +793,13 @@ async function recordPlantCare(plantId, careType, toastMessage) {
   const plant = appState.plants.find(p => p.id === plantId);
   if (!plant) return;
   plant[careType] = getTodayStr();
-  await saveToDB();
+  try {
+    await saveToDB();
+  } catch (err) {
+    renderApp();
+    if (appState.activeDetailPlantId === plantId) populateDetailModal(plantId);
+    return;
+  }
   renderApp();
   if (appState.activeDetailPlantId === plantId) {
     populateDetailModal(plantId);
@@ -767,8 +807,8 @@ async function recordPlantCare(plantId, careType, toastMessage) {
   showToast(`${toastMessage}（${plant.name}）`);
 }
 
-function toggleBatchMode() {
-  appState.batchMode = !appState.batchMode;
+function setBatchMode(enabled) {
+  appState.batchMode = enabled;
   appState.batchSelectedIds.clear();
   document.getElementById('batchActionBar').classList.toggle('hidden', !appState.batchMode);
 
@@ -786,6 +826,10 @@ function toggleBatchMode() {
 
   updateBatchCountUI();
   renderApp();
+}
+
+function toggleBatchMode() {
+  setBatchMode(!appState.batchMode);
 }
 
 function toggleSelectInBatch(plantId) {
@@ -822,10 +866,14 @@ async function executeBatchCare(careFields, toastMessage) {
       count++;
     }
   });
-  await saveToDB();
-  renderApp();
+  try {
+    await saveToDB();
+  } catch (err) {
+    renderApp();
+    return;
+  }
   showToast(toastMessage.replace('{count}', count));
-  toggleBatchMode();
+  setBatchMode(false);
 }
 
 /********************************************************************
@@ -884,8 +932,7 @@ function populateDetailModal(plantId) {
     notesBox.classList.add('hidden');
   }
 
-  const logs = Array.isArray(plant.growthLogs) ? [...plant.growthLogs] : [];
-  logs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const logs = getSortedGrowthLogs(plant);
   document.getElementById('growthCountBadge').textContent = `(${logs.length}枚)`;
 
   const compSec = document.getElementById('growthComparisonSection');
@@ -968,7 +1015,7 @@ async function previewGrowthPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   try {
-    const { dataUrl, approxKB, width, height } = await compressImageFile(file, 800, 0.76);
+    const { dataUrl, approxKB, width, height } = await compressImageFile(file);
     appState.tempGrowthPhotoDataUrl = dataUrl;
     document.getElementById('newGrowthPreviewImg').src = dataUrl;
     document.getElementById('newGrowthSizeInfo').textContent = `${width}×${height}px / 約${approxKB}KB (WebP軽量化済)`;
@@ -1059,7 +1106,7 @@ async function addGrowthLogEntry() {
       };
       successMessage = '📷 成長記録を更新しました';
     } else {
-      const newLogId = `g_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const newLogId = createId('g');
       plant.growthLogs.push({
         id: newLogId,
         date: dateVal,
@@ -1096,7 +1143,13 @@ async function deleteGrowthLogEntry(plantId, logId) {
     if (document.getElementById('editGrowthLogId').value === logId) {
       cancelEditGrowthLog();
     }
-    await saveToDB();
+    try {
+      await saveToDB();
+    } catch (err) {
+      populateDetailModal(plantId);
+      renderApp();
+      return;
+    }
     populateDetailModal(plantId);
     renderApp();
     showToast('写真を削除しました');
@@ -1180,7 +1233,7 @@ async function handleFormPhotoSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
   try {
-    const { dataUrl, approxKB } = await compressImageFile(file, 800, 0.76);
+    const { dataUrl, approxKB } = await compressImageFile(file);
     appState.tempFormPhotoDataUrl = dataUrl;
     document.getElementById('formPhotoPreview').src = dataUrl;
     document.getElementById('formPhotoSizeBadge').textContent = `約${approxKB}KBに自動圧縮済`;
@@ -1240,7 +1293,7 @@ async function savePlantForm(event) {
       if (appState.tempFormPhotoDataUrl) {
         if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
         plant.growthLogs.push({
-          id: `g_${Date.now()}`,
+          id: createId('g'),
           date: getTodayStr(),
           photoDataUrl: appState.tempFormPhotoDataUrl,
           note: '写真追加'
@@ -1248,7 +1301,7 @@ async function savePlantForm(event) {
       }
     } else {
       const newPlant = {
-        id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id: createId('p'),
         name,
         svgType: appState.selectedFormSvgType,
         location,
@@ -1267,7 +1320,7 @@ async function savePlantForm(event) {
       };
       if (appState.tempFormPhotoDataUrl) {
         newPlant.growthLogs.push({
-          id: `g_${Date.now()}`,
+          id: createId('g'),
           date: purchaseDate || getTodayStr(),
           photoDataUrl: appState.tempFormPhotoDataUrl,
           note: 'お迎え・初回記録'
@@ -1307,7 +1360,13 @@ function confirmDeletePlant(plantId) {
     async () => {
       if (!canEditData()) return;
       appState.plants = appState.plants.filter(p => p.id !== plantId);
-      await saveToDB();
+      try {
+        await saveToDB();
+      } catch (err) {
+        closeDetailModal();
+        renderApp();
+        return;
+      }
       closeDetailModal();
       renderApp();
       showToast(`「${plant.name}」を削除しました`);
@@ -1320,17 +1379,13 @@ function confirmDeletePlant(plantId) {
  ********************************************************************/
 function createExportJSON(plants) {
   const validPlants = validatePlantRecords(plants);
-  const json = JSON.stringify({
-    appName: 'VERDURE Botanical Manager',
+  return JSON.stringify({
+    appName: APP_NAME,
     version: '1.0',
     exportedAt: new Date().toISOString(),
     plantCount: validPlants.length,
     plants: validPlants
   }, null, 2);
-  if (new Blob([json], { type: 'application/json' }).size > MAX_JSON_BYTES) {
-    throw new Error('JSONのサイズが上限30MBを超えます。写真を削除してください');
-  }
-  return json;
 }
 
 function exportData() {
@@ -1353,7 +1408,7 @@ function exportData() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast('📦 写真を含む全データをJSONに書き出しました');
 }
 
@@ -1365,15 +1420,15 @@ function triggerImport() {
 function handleImportFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > MAX_JSON_BYTES) {
-    showToast('JSONファイルが大きすぎます（上限30MB）');
+  if (file.size > MAX_IMPORT_BYTES) {
+    showToast('JSONファイルが大きすぎます（上限1GB）');
     return;
   }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (!Array.isArray(parsed) && parsed?.appName != null && parsed.appName !== 'VERDURE Botanical Manager') {
+      if (!Array.isArray(parsed) && parsed?.appName != null && parsed.appName !== APP_NAME) {
         throw new Error('VERDUREのバックアップではありません');
       }
       const importedPlants = validatePlantRecords(Array.isArray(parsed) ? parsed : parsed?.plants);
@@ -1391,7 +1446,7 @@ function handleImportFile(event) {
             appState.plants = importedPlants;
             appState.selectedLocation = 'すべて';
             appState.dbLoadError = false;
-            renderApp();
+            setBatchMode(false);
             showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
           });
         }
@@ -1444,7 +1499,7 @@ function validatePlantRecords(records) {
     if (!Array.isArray(logs)) throw new Error(`${name}の成長記録が配列ではありません`);
 
     return {
-      id: typeof record.id === 'string' && record.id ? record.id : `p_${Date.now()}_${i}`,
+      id: typeof record.id === 'string' && record.id ? record.id : createId(`p_${i}`),
       name,
       svgType: typeof record.svgType === 'string' && Object.prototype.hasOwnProperty.call(BOTANICAL_SVGS, record.svgType)
         ? record.svgType
@@ -1469,7 +1524,7 @@ function validatePlantRecords(records) {
           throw new Error(`${name}の成長記録${j + 1}件目の画像形式が不正です`);
         }
         return {
-          id: typeof entry.id === 'string' && entry.id ? entry.id : `g_${Date.now()}_${j}`,
+          id: typeof entry.id === 'string' && entry.id ? entry.id : createId(`g_${j}`),
           date: readDate(entry.date, `${name}の成長記録${j + 1}件目の日付`),
           photoDataUrl: entry.photoDataUrl,
           note: readStr(entry.note, `${name}の成長記録${j + 1}件目のメモ`, 1000)
@@ -1675,7 +1730,12 @@ function resetFilters() {
   renderApp();
 }
 
+function closeConfirmDialog() {
+  if (activeConfirmCleanup) activeConfirmCleanup();
+}
+
 function openConfirmDialog(title, message, onConfirm) {
+  closeConfirmDialog();
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMessage').textContent = message;
   const dialog = document.getElementById('confirmDialog');
@@ -1686,7 +1746,9 @@ function openConfirmDialog(title, message, onConfirm) {
     dialog.classList.add('hidden');
     cancelBtn.onclick = null;
     okBtn.onclick = null;
+    if (activeConfirmCleanup === cleanup) activeConfirmCleanup = null;
   };
+  activeConfirmCleanup = cleanup;
 
   cancelBtn.onclick = cleanup;
   okBtn.onclick = () => {
@@ -1797,7 +1859,7 @@ function initializeUIEvents() {
     if (!document.getElementById('imageViewerModal').classList.contains('hidden')) {
       closeImageViewer();
     } else if (!document.getElementById('confirmDialog').classList.contains('hidden')) {
-      document.getElementById('confirmDialog').classList.add('hidden');
+      closeConfirmDialog();
     } else if (!document.getElementById('formModal').classList.contains('hidden')) {
       closePlantFormModal();
     } else if (!document.getElementById('detailModal').classList.contains('hidden')) {
