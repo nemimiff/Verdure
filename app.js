@@ -455,10 +455,10 @@ function updateHeaderBadges() {
 
   const btn = document.getElementById('filterNeedsWaterBtn');
   if (appState.onlyNeedsWater) {
-    btn.className = 'ui-btn ui-md font-semibold border-amber-500 bg-amber-500 text-white transition shrink-0 shadow-2xs cursor-pointer';
+    btn.className = 'ui-btn ui-sm font-semibold border-amber-500 bg-amber-500 text-white transition shrink-0 shadow-2xs cursor-pointer';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-white text-amber-800 text-[10px] font-bold leading-none';
   } else {
-    btn.className = 'ui-btn ui-md font-medium border-stoneborder bg-white text-gray-600 hover:bg-amber-50 transition shrink-0 cursor-pointer';
+    btn.className = 'ui-btn ui-sm font-medium border-stoneborder bg-white text-gray-600 hover:bg-amber-50 transition shrink-0 cursor-pointer';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold leading-none';
   }
 }
@@ -481,7 +481,7 @@ function renderLocationTabs() {
     const active = appState.selectedLocation === loc;
     const button = createElement(
       'button',
-      `ui-btn ui-md font-medium transition shrink-0 cursor-pointer ${
+      `ui-btn ui-sm font-medium transition shrink-0 cursor-pointer ${
         active ? 'bg-sage-600 text-white border-sage-600 shadow-2xs' : 'bg-white text-gray-600 border-stoneborder hover:bg-sage-50'
       }`
     );
@@ -657,24 +657,24 @@ function createPlantCard(plant) {
   const actions = createElement('div', 'grid grid-cols-[1.15fr_1fr] gap-1.5');
 
   const waterCard = QUICK_CARE_CARDS[0];
-  const waterBtn = createElement('button', `ui-btn ui-sm card-action font-medium transition cursor-pointer ${waterCard.btnClass}`);
+  const waterBtn = createElement('button', `ui-btn ui-md card-action font-medium transition cursor-pointer ${waterCard.btnClass}`);
   waterBtn.type = 'button';
   waterBtn.title = plant.lastWatered === getTodayStr() ? '今日の水やり記録を取り消す' : '今日水やりしたとして記録';
   waterBtn.append(
     createLucideIcon(waterCard.icon, 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'leading-none whitespace-nowrap', waterCard.label)
+    createElement('span', 'whitespace-nowrap', waterCard.label)
   );
   waterBtn.addEventListener('click', event => {
     event.stopPropagation();
     recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
 
-  const quickLogBtn = createElement('button', 'ui-btn ui-sm card-action font-medium transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  const quickLogBtn = createElement('button', 'ui-btn ui-md card-action font-medium transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
   quickLogBtn.type = 'button';
   quickLogBtn.title = '写真やひとことメモをサッと追加';
   quickLogBtn.append(
     createLucideIcon('square-pen', 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'leading-none whitespace-nowrap', '記録')
+    createElement('span', 'whitespace-nowrap', '記録')
   );
   quickLogBtn.addEventListener('click', event => {
     event.stopPropagation();
