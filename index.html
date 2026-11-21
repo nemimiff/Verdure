@@ -3,123 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
   <title>VERDURE — Botanical Collection & Care Log</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 
-  <script>
-    // SVG Icon Map - centralized icon definitions (28 icons)
-    const ICON_PATHS = {
-      'sprout' : '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>',
-      'plant-plus': '<path d="M13 9.5V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" fill="#588157" fill-opacity="0.25"/><path d="M3 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" fill="#588157" fill-opacity="0.25"/><path d="M18.5 14v6" stroke-width="2.2"/><path d="M15.5 17h6" stroke-width="2.2"/>',
-      'layers': '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
-      'download': '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
-      'upload': '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
-      'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
-      'droplets': '<path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>',
-      'flask-conical': '<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/>',
-      'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
-      'x': '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-      'droplet': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
-      'arrow-up-down': '<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>',
-      'leaf': '<path d="M11 20a10 10 0 0 0 10-10 25.9 25.9 0 0 0-1.04-7.281 1 1 0 0 0-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0 0 11 20"/><path d="M2 21a5 5 0 0 1 2.911-4.544C7.613 15.212 8.351 15.24 11 13"/>',
-      'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
-      'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
-      'shovel': '<path d="M21.56 4.56a1.5 1.5 0 0 1 0 2.122l-.47.47a3 3 0 0 1-4.212-.03 3 3 0 0 1 0-4.243l.44-.44a1.5 1.5 0 0 1 2.121 0z"/><path d="M3 22a1 1 0 0 1-1-1v-3.586a1 1 0 0 1 .293-.707l3.355-3.355a1.205 1.205 0 0 1 1.704 0l3.296 3.296a1.205 1.205 0 0 1 0 1.704l-3.355 3.355a1 1 0 0 1-.707.293z"/><path d="m9 15 7.879-7.878"/>',
-      'sliders-horizontal': '<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/>',
-      'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
-      'timer': '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
-      'store': '<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
-      'japanese-yen': '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 8 3 3v7"/><path d="m12 11 3-3"/><path d="M9 12h6"/><path d="M9 16h6"/>',
-      'calendar': '<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/>',
-      'sparkles': '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
-      'camera': '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/>',
-      'image-plus': '<path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/>',
-      'check': '<path d="M20 6 9 17l-5-5"/>',
-      'map-pin': '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
-      'images': '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
-      'layout-grid': '<circle cx="17.5" cy="17.5" r="3.5"/><circle cx="17.5" cy="6.5" r="3.5"/><circle cx="6.5" cy="17.5" r="3.5"/><circle cx="6.5" cy="6.5" r="3.5"/>',
-      'archive': '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
-      'repeat': '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>'
-    };
-
-    // Spec Definitions for detail modal
-    const SPEC_DEFINITIONS = [
-      { key: 'lightLevel', id: 'specLight', label: '光量・ライト' },
-      { key: 'soil', id: 'specSoil', label: '用土・鉢' },
-      { key: 'waterIntervalDays', id: 'specWaterInterval', label: '水やり目安・方法', formatValue: (plant) => plant.waterIntervalDays ? `${plant.waterIntervalDays}日ごと / ${plant.waterMethod || '通常'}` : (plant.waterMethod || '未設定') },
-      { key: 'shop', id: 'specShop', label: '購入店・入手先' },
-      { key: 'price', id: 'specPrice', label: '購入価格', formatValue: (plant) => plant.price !== null && plant.price !== undefined ? `¥${Number(plant.price).toLocaleString()}` : '未設定' },
-      { key: 'purchaseDate', id: 'specPurchaseDate', label: 'お迎え日' }
-    ];
-
-    // Quick Care Cards Definition (Data-Driven)
-    const QUICK_CARE_CARDS = [
-      { 
-        careType: 'lastWatered', 
-        label: '水やり', 
-        icon: 'droplets', 
-        badgeText: '💧 水やり',
-        boxId: 'detailLastWatered', 
-        subId: 'detailWaterSub', 
-        btnId: 'detailQuickWaterBtn',
-        btnClass: 'bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border-sky-200/80',
-        formatSub: (p) => p.waterIntervalDays ? `目安: ${p.waterIntervalDays}日ごと (${p.waterMethod || '通常'})` : (p.waterMethod || '目安未設定')
-      },
-      { 
-        careType: 'lastFertilized', 
-        label: '活力剤', 
-        icon: 'flask-conical', 
-        badgeText: '🧪 活力剤・肥料',
-        boxId: 'detailLastFertilized', 
-        subId: null, 
-        btnId: 'detailQuickFertBtn',
-        btnClass: 'bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border-emerald-200/70',
-        formatSub: () => '定期ケア'
-      },
-      { 
-        careType: 'lastRepotted', 
-        label: '植替え', 
-        icon: 'shovel', 
-        badgeText: '🪴 植え替え',
-        boxId: 'detailLastRepotted', 
-        subId: 'detailSoilSub', 
-        btnId: 'detailQuickRepotBtn',
-        btnClass: 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border-amber-200/70',
-        formatSub: (p) => p.soil || '用土未設定'
-      }
-    ];
-
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
-          },
-          colors: {
-            canvas: '#F9F9F8',
-            surface: '#FFFFFF',
-            sage: {
-              50: '#F2F5F3',
-              100: '#E3EAE5',
-              200: '#C5D5CA',
-              500: '#588157',
-              600: '#3A5A40',
-              700: '#2D4732',
-              800: '#1F3323',
-            },
-            charcoal: '#2F3E46',
-            stoneborder: '#E5E5E0',
-            terracotta: '#D97757',
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Local Tailwind JS & Theme Config -->
+  <script src="./vendor/tailwindcss-3.4.17.js"></script>
+  <script src="./tailwind-config.js"></script>
 
   <style>
-    /* この直下に追加 */
     .modal-box-responsive {
       max-height: calc(var(--modal-viewport-height, 100dvh) - 1.5rem);
     }
@@ -165,30 +57,19 @@
     .animate-fade-in {
       animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.12); }
-      100% { transform: scale(1); }
-    }
-    .animate-pop {
-      animation: pop 0.25s ease-out;
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-sage-200 selection:text-sage-800 pb-24">
 
-<!-- ================= HEADER ================= -->
+  <!-- ================= HEADER ================= -->
   <header class="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-stoneborder">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
       <!-- Brand Logo -->
       <div class="flex items-center gap-2">
         <div class="w-7 h-7 shrink-0 flex items-center justify-center">
           <svg viewBox="0 0 24 24" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <!-- 地面 -->
             <path d="M4 21h16" stroke="#2F3E46" stroke-width="1.8" stroke-linecap="round"/>
-            <!-- 茎 -->
             <path d="M12 21v-7" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round"/>
-            <!-- 左右の葉（薄緑塗り＋フチ） -->
             <path d="M12 14c-4.5 0-7-3-7-7 4 0 7 2.5 7 7Z" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M12 11c3.5 0 7-2 7-6-3.5 0-7 2-7 6Z" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -201,26 +82,22 @@
 
       <!-- Right Action Buttons -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <!-- 一括水やり -->
         <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shadow-2xs shrink-0" title="複数の鉢にまとめて水やりを記録します">
           <span data-icon="layers" data-icon-class="w-4 h-4 text-sage-600"></span>
           <span class="hidden md:inline">一括水やり</span>
         </button>
 
-        <!-- 保存 (Export) -->
         <button id="exportDataBtn" data-action="exportData" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shrink-0" title="写真を含む全データをJSONファイルに書き出し">
           <span data-icon="download" data-icon-class="w-4 h-4 text-gray-600"></span>
           <span class="hidden lg:inline">保存(Export)</span>
         </button>
 
-        <!-- 読込 (Import) -->
         <button id="importDataBtn" data-action="triggerImport" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border border-stoneborder bg-white hover:bg-sage-50 text-charcoal flex items-center gap-1.5 transition shrink-0" title="JSONファイルからデータを復元">
           <span data-icon="upload" data-icon-class="w-4 h-4 text-gray-600"></span>
           <span class="hidden lg:inline">読込(Import)</span>
         </button>
         <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
-        <!-- 株を追加 -->
         <button data-action="openPlantFormModal" id="addPlantBtn" class="p-2 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-sage-100 hover:bg-sage-200 text-sage-800 flex items-center gap-1.5 transition cursor-pointer shrink-0" title="株を追加">
           <span data-icon="plant-plus" data-icon-class="w-4 h-4 text-sage-700"></span>
           <span class="hidden sm:inline whitespace-nowrap">株を追加</span>
@@ -242,7 +119,7 @@
           <span data-icon="droplets" data-icon-class="w-4 h-4"></span>
           <span>今日水やり完了にする</span>
         </button>
-        <button data-action="executeBatchFertilizer" id="batchFertilizerBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
+        <button data-action="executeBatchFertilizer" id="batchFertilizerBtn" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
           <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5"></span>
           <span>＋活力剤も記録</span>
         </button>
@@ -253,13 +130,11 @@
 
   <!-- ================= FILTER & SEARCH CONTROLS ================= -->
   <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 pb-2 flex flex-col gap-2.5">
-    <!-- 1段目: 置き場所タブ -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="locationTabsContainer"></div>
 
-    <!-- 2段目: 検索バー ＆ 水やり目安トグル -->
     <div class="flex items-center gap-2 w-full">
       <div class="relative flex-1">
-        <span data-icon="search" data-icon-class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" data-icon-stroke-width="1.5"></span>
+        <span data-icon="search" data-icon-class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></span>
         <input
           type="text"
           id="searchInput"
@@ -267,7 +142,7 @@
           class="w-full h-9 pl-9 pr-7 bg-white border border-stoneborder rounded-xl text-xs sm:text-sm focus:outline-none focus:border-sage-600 transition"
         />
         <button id="clearSearchBtn" data-action="clearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-          <span data-icon="x" data-icon-class="w-3.5 h-3.5" data-icon-stroke-width="1.5"></span>
+          <span data-icon="x" data-icon-class="w-3.5 h-3.5"></span>
         </button>
       </div>
 
@@ -282,7 +157,6 @@
       </button>
     </div>
 
-    <!-- 3段目: ソートドロップダウン -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 h-9 text-xs text-gray-600 w-full sm:w-auto">
         <span data-icon="arrow-up-down" data-icon-class="w-3.5 h-3.5 text-gray-400 shrink-0"></span>
@@ -318,9 +192,7 @@
   <!-- ================= MODAL 1: PLANT DETAIL & GROWTH ALBUM ================= -->
   <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain">
     <div class="bg-white border border-stoneborder rounded-3xl max-w-3xl w-full modal-box-responsive sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in my-auto">
-      <!-- Modal Header -->
       <div class="px-3 sm:px-5 py-4 border-b border-stoneborder bg-canvas">
-        <!-- Top row: Icon + Name + Close button -->
         <div class="flex items-center justify-between gap-2 mb-2 sm:mb-0">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <div id="detailSvgBadge" class="w-9 sm:w-10 h-9 sm:h-10 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-center shrink-0"></div>
@@ -330,7 +202,6 @@
             <span data-icon="x" data-icon-class="w-4 h-4"></span>
           </button>
         </div>
-        <!-- Bottom row: Location badge + Days owned + Edit/Delete buttons -->
         <div class="flex items-center justify-between gap-2 sm:gap-1.5">
           <div class="flex items-center gap-2 min-w-0">
             <span class="marker-badge font-medium bg-sage-100 text-sage-700 border-transparent shrink-0"><span data-icon="map-pin" data-icon-class="text-sage-600"></span><span id="detailLocationBadge"></span></span>
@@ -348,7 +219,6 @@
         </div>
       </div>
 
-      <!-- Modal Scrollable Body -->
       <div class="p-4 sm:p-5 overflow-y-auto space-y-6 flex-1 min-h-0 overscroll-contain">
         <!-- Quick Care Status Row -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -436,7 +306,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-pointer" data-action="viewImageFullscreen" />
+                <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
                 <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
               </div>
               <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
@@ -444,7 +314,7 @@
             </div>
             <div class="bg-white p-2 rounded-xl border border-stoneborder">
               <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
-                <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-pointer" data-action="viewImageFullscreen" />
+                <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
                 <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
               </div>
               <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
@@ -466,7 +336,6 @@
           <!-- Add New Growth Photo Box -->
           <div class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 mb-4">
             <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2.5 items-stretch sm:items-center">
-              <!-- Photo picker -->
               <div class="sm:col-span-4">
                 <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full">
                   <span data-icon="upload" data-icon-class="w-4 h-4"></span>
@@ -474,27 +343,23 @@
                   <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
                 </label>
               </div>
-              <!-- Date -->
               <div class="sm:col-span-3">
                 <input type="date" id="newGrowthDateInput" class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
               </div>
-              <!-- Short Note -->
               <div class="sm:col-span-3">
-                <input type="text" id="newGrowthNoteInput" placeholder="新葉展開、子株など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
+                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="新葉展開、子株など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
               </div>
-              <!-- Submit -->
-              <div class="sm:col-span-2">
+              <div class="sm:col-span-2 flex gap-1.5">
                 <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer h-full">
                   追加
                 </button>
                 <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden w-full py-2 px-3 rounded-xl border border-stoneborder bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold transition cursor-pointer flex-1">
-                  キャンセル
+                  取消
                 </button>
               </div>
             </div>
             <input type="hidden" id="editGrowthLogId" value="">
             
-            <!-- Preview of compressed image before adding -->
             <div id="newGrowthPreviewBox" class="hidden mt-3 pt-2.5 border-t border-stoneborder flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <img id="newGrowthPreviewImg" src="" class="w-12 h-12 rounded-lg object-cover border border-stoneborder" />
@@ -507,7 +372,6 @@
             </div>
           </div>
 
-          <!-- Chronological Photo Timeline Grid -->
           <div id="growthTimelineGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
         </div>
       </div>
@@ -528,12 +392,10 @@
       </div>
 
       <form id="plantForm" class="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1 min-h-0 overscroll-contain text-xs sm:text-sm">
-        
-        <!-- 1. Name & Botanical SVG Silhouette Selector -->
         <div class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">植物名 / 品種名 <span class="text-red-500">*</span></label>
-            <input type="text" id="formName" required placeholder="例: アガベ チタノタ 白鯨 / モンステラ デリシオーサ" class="w-full px-3.5 py-2.5 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600 text-sm" />
+            <input type="text" id="formName" required maxlength="200" placeholder="例: アガベ チタノタ 白鯨 / モンステラ デリシオーサ" class="w-full px-3.5 py-2.5 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600 text-sm" />
           </div>
 
           <div>
@@ -542,7 +404,6 @@
           </div>
         </div>
 
-        <!-- 2. Initial Photo Upload (Optional) -->
         <div class="bg-canvas p-3.5 rounded-2xl border border-stoneborder">
           <label class="block text-xs font-bold text-charcoal mb-1">現在の写真（任意・自動WebP軽量化）</label>
           <p class="text-[11px] text-gray-500 mb-2">登録するとカードのサムネイルになり、成長記録の1枚目としても保存されます。</p>
@@ -560,11 +421,10 @@
           </div>
         </div>
 
-        <!-- 3. Environment & Care Settings -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">置き場所</label>
-            <input type="text" id="formLocation" list="locationPresets" placeholder="選択または自由入力..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
+            <input type="text" id="formLocation" maxlength="200" list="locationPresets" placeholder="選択または自由入力..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
             <datalist id="locationPresets">
               <option value="ライト棚・直下"></option>
               <option value="ライト棚・周辺"></option>
@@ -577,7 +437,7 @@
 
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">用土・鉢スペック（任意）</label>
-            <input type="text" id="formSoil" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
+            <input type="text" id="formSoil" maxlength="300" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
             <datalist id="soilPresets">
               <option value="無機質土・スリット鉢"></option>
               <option value="無機質土・プレステラ"></option>
@@ -589,7 +449,7 @@
 
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">光量目安（任意）</label>
-            <input type="text" id="formLight" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
+            <input type="text" id="formLight" maxlength="300" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
             <datalist id="lightPresets">
               <option value="25,000 lx (強光・直下)"></option>
               <option value="10,000 lx (中高光)"></option>
@@ -618,7 +478,6 @@
           </div>
         </div>
 
-        <!-- 4. Purchase & Collection Info -->
         <div class="border-t border-stoneborder pt-4">
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">購入・コレクション記録（任意）</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -628,16 +487,16 @@
             </div>
             <div>
               <label class="block text-xs font-medium text-charcoal mb-1">価格 (¥)</label>
-              <input type="number" id="formPrice" min="0" step="1" placeholder="例: 4800" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
+              <input type="number" id="formPrice" min="0" max="1000000000" step="1" placeholder="例: 4800" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
             </div>
             <div>
               <label class="block text-xs font-medium text-charcoal mb-1">購入店・イベント</label>
-              <input type="text" id="formShop" placeholder="例: ○○園芸 / メルカリ" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
+              <input type="text" id="formShop" maxlength="300" placeholder="例: ○○園芸 / メルカリ" class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600" />
             </div>
           </div>
           <div class="mt-3">
             <label class="block text-xs font-medium text-charcoal mb-1">育成メモ・特徴</label>
-            <textarea id="formNotes" rows="2" placeholder="根張り状況、肥料の相性、冬越しの注意点など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600"></textarea>
+            <textarea id="formNotes" rows="2" maxlength="5000" placeholder="根張り状況、肥料の相性、冬越しの注意点など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600"></textarea>
           </div>
         </div>
 
@@ -662,1625 +521,37 @@
     </div>
   </div>
 
-  <!-- ================= FULLSCREEN IMAGE VIEWER ================= -->
-  <div id="imageViewerModal" class="fixed inset-0 z-[70] hidden bg-black/95 flex items-center justify-center p-2 sm:p-5">
-    <button data-action="closeImageViewer" class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white z-10 transition">
-      <span data-icon="x" data-icon-class="w-6 h-6"></span>
-    </button>
-    <img id="imageViewerImg" src="" class="max-w-full max-h-full object-contain select-none" />
+  <!-- ================= FULLSCREEN IMAGE VIEWER (ZOOM & PAN) ================= -->
+  <div id="imageViewerModal" class="fixed inset-0 z-[70] hidden bg-black/95 flex items-center justify-center overflow-hidden select-none">
+    <!-- Top Controls -->
+    <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
+      <div class="flex items-center gap-1.5 bg-black/60 backdrop-blur-xs border border-white/15 rounded-full px-3 py-1.5 text-white text-xs pointer-events-auto">
+        <button type="button" data-action="zoomOutImage" class="px-1.5 hover:text-sage-200 font-bold" title="縮小">－</button>
+        <span id="imageZoomLevel" class="min-w-[3.2rem] text-center font-mono text-[11px]">100%</span>
+        <button type="button" data-action="zoomInImage" class="px-1.5 hover:text-sage-200 font-bold" title="拡大">＋</button>
+        <button type="button" data-action="resetImageZoom" class="ml-1 pl-2 border-l border-white/20 text-[11px] text-gray-300 hover:text-white">リセット</button>
+      </div>
+      <button type="button" data-action="closeImageViewer" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition pointer-events-auto" title="閉じる (ESC)">
+        <span data-icon="x" data-icon-class="w-6 h-6"></span>
+      </button>
+    </div>
+
+    <!-- Zoomable Stage -->
+    <div id="imageViewerStage" class="w-full h-full flex items-center justify-center p-2 sm:p-6 touch-none cursor-zoom-in">
+      <img id="imageViewerImg" src="" alt="拡大画像" class="max-w-full max-h-full object-contain transition-transform duration-150 ease-out origin-center will-change-transform" draggable="false" />
+    </div>
+
+    <!-- Bottom Caption & Hint -->
+    <div class="absolute bottom-4 left-4 right-4 flex flex-col items-center gap-1 z-20 pointer-events-none">
+      <p id="imageViewerCaption" tabindex="0" class="hidden px-3.5 py-1.5 rounded-2xl bg-black/70 backdrop-blur-xs text-white text-xs w-full max-w-lg max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-center border border-white/10 pointer-events-auto"></p>
+      <p class="text-[11px] text-white/50">ダブルクリック・ホイール・ピンチで拡大／ドラッグで移動</p>
+    </div>
   </div>
 
   <!-- ================= TOAST NOTIFICATION ================= -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-[80] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ================= APPLICATION JAVASCRIPT ================= -->
-  <script>
-    /********************************************************************
-     * 1. CUSTOM BOTANICAL SVG ARTWORKS
-     ********************************************************************/
-    const BOTANICAL_SVGS = {
-      agave: {
-        label: 'アガベ・多肉',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 10C29 22 25 34 26 44H38C39 34 35 22 32 10Z" fill="#588157" fill-opacity="0.2" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M32 44C23 44 15 35 12 22C21 25 27 33 28 44" fill="#588157" fill-opacity="0.15" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M32 44C41 44 49 35 52 22C43 25 37 33 36 44" fill="#588157" fill-opacity="0.15" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M26 44C17 44 10 40 8 33C16 34 22 38 26 44Z" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M38 44C47 44 54 40 56 33C48 34 42 38 38 44Z" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M20 44H44L41 55H23L20 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      monstera: {
-        label: 'モンステラ・アロイド',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 44V20" stroke="#3A5A40" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M32 12C20 12 13 21 15 32C19 31 23 29 23 29C23 29 18 35 20 39C24 41 30 41 32 41C34 41 40 41 44 39C46 35 41 29 41 29C41 29 45 31 49 32C51 21 44 12 32 12Z" fill="#588157" fill-opacity="0.2" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M22 44H42L39 55H25L22 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      caudex: {
-        label: '塊根・コーデックス',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 44C18 39 19 29 26 26C27 21 31 19 34 22C40 24 45 31 42 44H22Z" fill="#D97757" fill-opacity="0.2" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M29 21C27 16 22 13 17 14" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M34 21C36 15 42 12 47 14" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="16" cy="14" r="3" fill="#588157"/>
-          <circle cx="48" cy="14" r="3" fill="#588157"/>
-          <circle cx="32" cy="11" r="3" fill="#588157"/>
-          <path d="M19 44H45L42 54H22L19 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      hanging: {
-        label: 'ハンギング・シダ',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 8L23 26M32 8L41 26" stroke="#2F3E46" stroke-width="1.6" stroke-linecap="round"/>
-          <path d="M21 26H43L40 36H24L21 26Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M25 36C21 42 17 48 16 55" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M32 36V57" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M39 36C43 42 47 48 48 55" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="19" cy="45" r="2.5" fill="#588157"/>
-          <circle cx="16" cy="53" r="2.5" fill="#588157"/>
-          <circle cx="32" cy="48" r="2.5" fill="#588157"/>
-          <circle cx="45" cy="45" r="2.5" fill="#588157"/>
-          <circle cx="48" cy="53" r="2.5" fill="#588157"/>
-        </svg>`
-      },
-      tree: {
-        label: 'フィカス・枝物',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 44V20C32 16 36 13 39 12" stroke="#2F3E46" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M32 32C28 29 24 28 21 26" stroke="#2F3E46" stroke-width="2" stroke-linecap="round"/>
-          <ellipse cx="18" cy="24" rx="6" ry="4" transform="rotate(-20 18 24)" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="2"/>
-          <ellipse cx="42" cy="14" rx="6" ry="4" transform="rotate(15 42 14)" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="2"/>
-          <ellipse cx="42" cy="27" rx="6" ry="4" transform="rotate(-15 42 27)" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="2"/>
-          <ellipse cx="26" cy="14" rx="5" ry="3.5" transform="rotate(25 26 14)" fill="#588157" fill-opacity="0.25" stroke="#3A5A40" stroke-width="2"/>
-          <path d="M22 44H42L39 55H25L22 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      conophytum: {
-        label: 'コノフィツム',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path d="M 24 44 C 21 32 22 23 27 23 C 30 23 32 26 32 28 C 32 26 34 23 37 23 C 42 23 43 32 40 44 Z" fill="#588157" fill-opacity="0.2" stroke="#3A5A40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M 32 28 V 30" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M 20 38 H 44 L 41 55 H 23 L 20 38 Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      echeveria: {
-        label: 'エケベリア系',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <!-- 葉っぱ1枚ごとに適用するグラデーション（上端=葉先がピンク、下端=根元が緑） -->
-            <linearGradient id="eke-leaf-grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="17%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="20%" stop-color="#789977" stop-opacity="1" />
-            </linearGradient>
-            <linearGradient id="eke-leaf-grad2" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="20%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="23%" stop-color="#789977" stop-opacity="1" />
-            </linearGradient>
-            <linearGradient id="eke-leaf-grad3" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#EAA1A7" stop-opacity="1" /><stop offset="28%" stop-color="#EAA1A7" stop-opacity="0.9" /><stop offset="31%" stop-color="#789977" stop-opacity="1" />
-            </linearGradient>
-          </defs>
-
-          <g transform="translate(12.8, 12.8) scale(0.6)">
-            
-            <!-- 第1層: 外側の大きな葉 -->
-            <g fill="url(#eke-leaf-grad1)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
-              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(0 32 32)"/>
-              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(72 32 32)"/>
-              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(144 32 32)"/>
-              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(216 32 32)"/>
-              <path d="M 32 38 C 12 34 16 6 32 2 C 48 6 52 34 32 38 Z" transform="rotate(288 32 32)"/>
-            </g>
-
-            <!-- 第2層: 中段の葉 -->
-            <g fill="url(#eke-leaf-grad2)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
-              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(36 32 32)"/>
-              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(108 32 32)"/>
-              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(180 32 32)"/>
-              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(252 32 32)"/>
-              <path d="M 32 36 C 16 32 19 11 32 7 C 45 11 48 32 32 36 Z" transform="rotate(324 32 32)"/>
-            </g>
-
-            <!-- 第3層: 内側の葉 -->
-            <g fill="url(#eke-leaf-grad3)" stroke="#3A5A40" stroke-width="3" stroke-linejoin="round">
-              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(15 32 32)"/>
-              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(87 32 32)"/>
-              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(159 32 32)"/>
-              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(231 32 32)"/>
-              <path d="M 32 34 C 21 31 23 16 32 12 C 41 16 43 31 32 34 Z" transform="rotate(303 32 32)"/>
-            </g>
-          </g>
-        </svg>`
-      },
-      haworthia: {
-        label: 'ハオルチア',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="haworthia-window" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#E3EAE5" stop-opacity="0.9" />
-            <stop offset="30%" stop-color="#E3EAE5" stop-opacity="0.9" />
-            <stop offset="31%" stop-color="#789977" stop-opacity="1" />
-          </linearGradient>
-        </defs>
-
-          <!-- 後列の葉 -->
-          <path d="M20 38 C15 35 16 28 19 28 C22 28 24 32 25 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M44 38 C49 35 48 28 45 28 C42 28 40 32 39 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <!-- 中列の葉  -->
-          <path d="M24 38 C20 30 20 25 24 25 C28 25 28 30 29 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M40 38 C44 30 44 25 40 25 C36 25 36 30 35 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <!-- 最前列・中央の葉 -->
-          <path d="M28 38 C29 27 28 22 32 22 C36 22 35 27 36 38 Z" fill="url(#haworthia-window)" stroke="#3A5A40" stroke-width="2" stroke-linejoin="round"/>
-          <!-- 共通の鉢 -->
-          <path d="M 20 38 H 44 L 41 55 H 23 L 20 38 Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      },
-      cactus: {
-        label: 'サボテン・ユーフォルビア',
-        svg: `<svg viewBox="0 0 64 64" fill="none" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <rect x="26" y="14" width="12" height="30" rx="6" fill="#588157" fill-opacity="0.2" stroke="#3A5A40" stroke-width="2"/>
-          <path d="M26 30H20C17 30 16 28 16 25V20" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M38 26H44C47 26 48 24 48 21V17" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
-          <path d="M21 44H43L40 55H24L21 44Z" fill="#E3EAE5" stroke="#2F3E46" stroke-width="2" stroke-linejoin="round"/>
-        </svg>`
-      }
-    };
-
-    /********************************************************************
-     * 2. STATE & INDEXED-DB STORAGE ENGINE
-     ********************************************************************/
-    const DB_NAME = 'BotanicalLogDB';
-    const DB_VERSION = 1;
-    const STORE_NAME = 'appData';
-    const STATE_KEY = 'verdure_state_v1';
-
-    let appState = {
-      plants: [],
-      selectedLocation: 'すべて',
-      onlyNeedsWater: false,
-      batchMode: false,
-      batchSelectedIds: new Set(),
-      activeDetailPlantId: null,
-      selectedFormSvgType: 'agave',
-      tempFormPhotoDataUrl: null,
-      tempGrowthPhotoDataUrl: null
-    };
-
-    let cachedDB = null;
-
-    function readLocalStorageFallback() {
-      try {
-        const fallback = localStorage.getItem(STATE_KEY);
-        if (!fallback) return null;
-        const parsed = JSON.parse(fallback);
-        return parsed && Array.isArray(parsed.plants) ? parsed : null;
-      } catch (err) {
-        console.error('localStorage Load Error:', err);
-        return null;
-      }
-    }
-
-    function openDB() {
-      if (cachedDB) return Promise.resolve(cachedDB);
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME);
-          }
-        };
-        req.onsuccess = () => {
-          const db = req.result;
-          cachedDB = db;
-          db.onversionchange = () => { db.close(); cachedDB = null; };
-          db.onclose = () => { cachedDB = null; };
-          resolve(db);
-        };
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function saveToDB() {
-      const updatedAt = new Date().toISOString();
-      try {
-        const db = await openDB();
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const payload = {
-          version: '1.0',
-          updatedAt,
-          plants: appState.plants
-        };
-        store.put(payload, STATE_KEY);
-        return await new Promise((res, rej) => {
-          tx.oncomplete = () => {
-            try {
-              localStorage.removeItem(STATE_KEY);
-            } catch (err) {
-              console.error('localStorage Fallback Cleanup Error:', err);
-            }
-            res();
-          };
-          tx.onerror = () => rej(tx.error);
-          tx.onabort = () => rej(new Error('Transaction aborted'));
-        });
-      } catch (err) {
-        console.error('IndexedDB Save Error:', err);
-        try {
-          localStorage.setItem(STATE_KEY, JSON.stringify({
-            version: '1.0',
-            updatedAt,
-            plants: appState.plants
-          }));
-        } catch (storageErr) {
-          console.error('localStorage Save Error:', storageErr);
-          showToast('保存容量の上限に達しました。不要な写真を削除するかJSONに書き出してください');
-        }
-      }
-    }
-
-    async function loadFromDB() {
-      const fallback = readLocalStorageFallback();
-      try {
-        const db = await openDB();
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(STATE_KEY);
-        return new Promise((resolve) => {
-          req.onsuccess = () => {
-            const stored = req.result;
-            if (stored && Array.isArray(stored.plants)) {
-              const fallbackDate = fallback?.updatedAt ? Date.parse(fallback.updatedAt) : NaN;
-              const storedDate = stored.updatedAt ? Date.parse(stored.updatedAt) : NaN;
-              resolve(Number.isFinite(fallbackDate) && (!Number.isFinite(storedDate) || fallbackDate > storedDate)
-                ? fallback.plants
-                : stored.plants);
-            } else {
-              resolve(fallback?.plants || null);
-            }
-          };
-          req.onerror = () => resolve(fallback?.plants || null);
-        });
-      } catch (err) {
-        console.error('IndexedDB Load Error:', err);
-        return fallback?.plants || null;
-      }
-    }
-
-    /********************************************************************
-     * 3. CLIENT-SIDE AUTOMATIC IMAGE COMPRESSION
-     ********************************************************************/
-    function compressImageFile(file, maxDim = 800, quality = 0.76) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-            if (width > height) {
-              if (width > maxDim) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              }
-            } else {
-              if (height > maxDim) {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-              }
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-
-            let dataUrl = canvas.toDataURL('image/webp', quality);
-            if (!dataUrl.startsWith('data:image/webp')) {
-              dataUrl = canvas.toDataURL('image/jpeg', quality);
-            }
-            const approxKB = Math.round((dataUrl.length * 3) / 4 / 1024);
-            resolve({ dataUrl, approxKB, width, height });
-          };
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    /********************************************************************
-     * 4. DATE UTILITIES & SAMPLE DATA
-     ********************************************************************/
-    function getTodayStr() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    }
-
-    function getDaysAgoStr(daysAgo) {
-      const d = new Date();
-      d.setDate(d.getDate() - daysAgo);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    }
-
-    function calcDaysBetween(dateStr1, dateStr2 = getTodayStr()) {
-      if (!dateStr1) return null;
-      const d1 = new Date(dateStr1 + 'T00:00:00');
-      const d2 = new Date(dateStr2 + 'T00:00:00');
-      const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-      return isNaN(diff) ? null : diff;
-    }
-
-    function getInitialSamplePlants() {
-      return [
-        {
-          id: 'p_sample_1',
-          name: 'アガベ チタノタ シーザー',
-          svgType: 'agave',
-          location: 'ライト棚・直下',
-          soil: '無機質土・スリット鉢',
-          lightLevel: '25,000 lx (強光)',
-          waterIntervalDays: 7,
-          waterMethod: '底面給水(ドボン)',
-          purchaseDate: getDaysAgoStr(95),
-          price: 6800,
-          shop: 'Botanical Market',
-          lastWatered: getDaysAgoStr(8),
-          lastFertilized: getDaysAgoStr(15),
-          lastRepotted: getDaysAgoStr(60),
-          notes: '鋸歯のうねりが強い選抜株。サーキュレーター24時間直風で締め作り中。',
-          growthLogs: []
-        },
-        {
-          id: 'p_sample_2',
-          name: 'モンステラ デリシオーサ',
-          svgType: 'monstera',
-          location: '窓際・室内',
-          soil: 'ベラボン / ねこチップ',
-          lightLevel: '4,000 lx (中光)',
-          waterIntervalDays: 5,
-          waterMethod: '通常水やり',
-          purchaseDate: getDaysAgoStr(140),
-          price: 4200,
-          shop: 'Green Interior Tokyo',
-          lastWatered: getDaysAgoStr(2),
-          lastFertilized: getDaysAgoStr(10),
-          lastRepotted: getDaysAgoStr(120),
-          notes: 'ねこチップ＋透明スリット鉢で根の動きを観察中。新葉の切れ込みが増えてきた。',
-          growthLogs: []
-        },
-        {
-          id: 'p_sample_3',
-          name: 'パキポディウム グラキリス',
-          svgType: 'caudex',
-          location: 'ライト棚・直下',
-          soil: '無機質土・プレステラ',
-          lightLevel: '28,000 lx (強光)',
-          waterIntervalDays: 6,
-          waterMethod: '底面給水(ドボン)',
-          purchaseDate: getDaysAgoStr(210),
-          price: 12500,
-          shop: '塊根植物フェア',
-          lastWatered: getDaysAgoStr(6),
-          lastFertilized: getDaysAgoStr(20),
-          lastRepotted: getDaysAgoStr(180),
-          notes: '塊根部の張り良好。水やり後はしっかり風を当てて2日で乾かすサイクル。',
-          growthLogs: []
-        },
-        {
-          id: 'p_sample_4',
-          name: 'リプサリス カスッサ',
-          svgType: 'hanging',
-          location: 'キッチンレール',
-          soil: '観葉植物ブレンド土',
-          lightLevel: '2,000 lx (弱〜中光)',
-          waterIntervalDays: 6,
-          waterMethod: '通常水やり',
-          purchaseDate: getDaysAgoStr(45),
-          price: 2900,
-          shop: '地元の園芸店',
-          lastWatered: getDaysAgoStr(4),
-          lastFertilized: getDaysAgoStr(25),
-          lastRepotted: getDaysAgoStr(40),
-          notes: 'ダクトレールからハンギング。エアコンの風が直接当たらない位置をキープ。',
-          growthLogs: []
-        }
-      ];
-    }
-
-    /********************************************************************
-     * 5. RENDERING ENGINE & HELPERS
-     ********************************************************************/
-    function renderApp() {
-      renderLocationTabs();
-      renderPlantGrid();
-      updateHeaderBadges();
-    }
-
-    function updateHeaderBadges() {
-      const needsWaterCount = appState.plants.filter(isPlantNeedingWater).length;
-      const badge = document.getElementById('needsWaterCountBadge');
-      badge.textContent = needsWaterCount;
-
-      const btn = document.getElementById('filterNeedsWaterBtn');
-      if (appState.onlyNeedsWater) {
-        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold border border-amber-500 bg-amber-500 text-white flex items-center gap-1.5 transition shrink-0 shadow-2xs';
-        badge.className = 'px-1.5 py-0.2 rounded-full bg-white text-amber-800 text-[10px] font-bold';
-      } else {
-        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-stoneborder bg-white text-gray-600 hover:bg-amber-50 flex items-center gap-1.5 transition shrink-0';
-        badge.className = 'px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold';
-      }
-    }
-
-    function isPlantNeedingWater(plant) {
-      if (!plant.waterIntervalDays) return false;
-      if (!plant.lastWatered) return true;
-      const days = calcDaysBetween(plant.lastWatered);
-      return days !== null && days >= Number(plant.waterIntervalDays);
-    }
-
-    function renderLocationTabs() {
-      const container = document.getElementById('locationTabsContainer');
-      const counts = new Map([['すべて', appState.plants.length]]);
-      appState.plants.forEach(p => {
-        const loc = p.location || '未設定';
-        counts.set(loc, (counts.get(loc) || 0) + 1);
-      });
-
-      const locations = ['すべて', ...Array.from(counts.keys()).filter(k => k !== 'すべて')];
-      if (!locations.includes(appState.selectedLocation)) {
-        appState.selectedLocation = 'すべて';
-      }
-
-      container.replaceChildren();
-      locations.forEach(loc => {
-        const active = appState.selectedLocation === loc;
-        const button = createElement(
-          'button',
-          `px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition cursor-pointer ${
-            active ? 'bg-sage-600 text-white shadow-2xs' : 'bg-white text-gray-600 border border-stoneborder hover:bg-sage-50'
-          }`
-        );
-        button.type = 'button';
-        button.addEventListener('click', () => selectLocationTab(loc));
-        button.append(
-          createLucideIcon(loc === 'すべて' ? 'layout-grid' : 'map-pin', `w-3.5 h-3.5 ${active ? 'text-sage-200' : 'text-gray-400'}`),
-          createElement('span', '', loc),
-          createElement('span', `text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(counts.get(loc) || 0))
-        );
-        container.appendChild(button);
-      });
-    }
-
-    function createElement(tagName, className = '', text = null) {
-      const element = document.createElement(tagName);
-      if (className) element.className = className;
-      if (text !== null) element.textContent = text;
-      return element;
-    }
-
-    function createLucideIcon(name, className = '') {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '2');
-      svg.setAttribute('stroke-linecap', 'round');
-      svg.setAttribute('stroke-linejoin', 'round');
-      if (className) svg.setAttribute('class', className);
-
-      const paths = ICON_PATHS[name];
-      if (paths) {
-        svg.innerHTML = paths;
-      }
-      return svg;
-    }
-
-    function initializeIconPlaceholders() {
-      document.querySelectorAll('span[data-icon]').forEach(element => {
-        const iconName = element.dataset.icon;
-        const iconClasses = element.dataset.iconClass || '';
-        if (iconName && ICON_PATHS[iconName]) {
-          const icon = createLucideIcon(iconName, iconClasses);
-          element.replaceWith(icon);
-        }
-      });
-    }
-
-    function appendBotanicalSvg(container, svgMarkup) {
-      const parsed = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
-      if (parsed.documentElement.tagName !== 'svg') {
-        throw new Error('Invalid built-in botanical SVG');
-      }
-      container.replaceChildren(document.importNode(parsed.documentElement, true));
-    }
-
-    function getFilteredAndSortedPlants() {
-      const q = document.getElementById('searchInput').value.trim().toLowerCase();
-      const clearBtn = document.getElementById('clearSearchBtn');
-      clearBtn.classList.toggle('hidden', !q);
-
-      let list = appState.plants.filter(p => {
-        if (appState.selectedLocation !== 'すべて') {
-          const loc = p.location || '未設定';
-          if (loc !== appState.selectedLocation) return false;
-        }
-        if (appState.onlyNeedsWater && !isPlantNeedingWater(p)) {
-          return false;
-        }
-        if (q) {
-          const hay = `${p.name || ''} ${p.soil || ''} ${p.shop || ''} ${p.location || ''} ${p.notes || ''}`.toLowerCase();
-          if (!hay.includes(q)) return false;
-        }
-        return true;
-      });
-
-      const sortVal = document.getElementById('sortSelect').value;
-      list.sort((a, b) => {
-        if (sortVal === 'water_desc') {
-          const da = a.lastWatered ? calcDaysBetween(a.lastWatered) : 9999;
-          const db = b.lastWatered ? calcDaysBetween(b.lastWatered) : 9999;
-          return db - da;
-        }
-        if (sortVal === 'name_asc') {
-          return (a.name || '').localeCompare(b.name || '', 'ja');
-        }
-        if (sortVal === 'purchase_desc') {
-          return (b.purchaseDate || '').localeCompare(a.purchaseDate || '');
-        }
-        if (sortVal === 'purchase_asc') {
-          return (a.purchaseDate || '9999').localeCompare(b.purchaseDate || '9999');
-        }
-        if (sortVal === 'price_desc') {
-          return (Number(b.price) || 0) - (Number(a.price) || 0);
-        }
-        return 0;
-      });
-
-      return list;
-    }
-
-    function renderPlantGrid() {
-      const grid = document.getElementById('plantGrid');
-      const emptyState = document.getElementById('emptyState');
-      const list = getFilteredAndSortedPlants();
-
-      if (list.length === 0) {
-        grid.replaceChildren();
-        emptyState.classList.remove('hidden');
-        return;
-      }
-      emptyState.classList.add('hidden');
-
-      const cards = list.map(plant => {
-        const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-        const sortedLogs = Array.isArray(plant.growthLogs)
-          ? [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-          : [];
-        const latestLog = sortedLogs[sortedLogs.length - 1];
-        const latestPhoto = latestLog?.photoDataUrl || null;
-
-        const daysSinceWater = plant.lastWatered ? calcDaysBetween(plant.lastWatered) : null;
-        const needsWater = isPlantNeedingWater(plant);
-        const waterBadgeText = daysSinceWater === null
-          ? '未記録'
-          : daysSinceWater === 0
-            ? '今日完了'
-            : `${daysSinceWater}日前`;
-
-        const isBatchSelected = appState.batchSelectedIds.has(plant.id);
-        const card = createElement('article', `group bg-surface rounded-2xl border shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${
-          isBatchSelected ? 'border-sage-600 ring-2 ring-sage-500/30' : needsWater ? 'border-amber-300' : 'border-stoneborder'
-        }${appState.batchMode ? ' cursor-pointer' : ''}`);
-        card.id = `card_${plant.id}`;
-        if (appState.batchMode) card.addEventListener('click', () => toggleSelectInBatch(plant.id));
-
-        const visual = createElement('div', `relative h-28 sm:h-44 bg-sage-50/60 border-b border-stoneborder flex items-center justify-center overflow-hidden ${latestPhoto ? '' : 'pt-6 sm:pt-7'}`);
-        if (latestPhoto) {
-          const image = createElement('img', 'w-full h-full object-cover group-hover:scale-105 transition duration-500');
-          image.src = latestPhoto;
-          image.alt = plant.name;
-          visual.appendChild(image);
-          const svgBadge = createElement('div', 'absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-0.3 border border-stoneborder shadow-xs');
-          svgBadge.title = svgInfo.label;
-          appendBotanicalSvg(svgBadge, svgInfo.svg);
-          visual.appendChild(svgBadge);
-        } else {
-          const svgWrap = createElement('div', 'w-16 h-16 sm:w-24 sm:h-24 p-1 sm:p-2 transition-transform duration-300 group-hover:scale-110 flex items-center justify-center');
-          appendBotanicalSvg(svgWrap, svgInfo.svg);
-          visual.appendChild(svgWrap);
-        }
-
-        const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-start gap-1.5');
-        if (appState.batchMode) {
-          const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
-          checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
-          locationPill.appendChild(checkWrap);
-        }
-        const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs');
-        locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', '', plant.location || '未設定'));
-        locationPill.appendChild(locationBadge);
-        visual.appendChild(locationPill);
-
-        const statusWrap = createElement('div', 'absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5');
-        const statusBadge = createElement('span', `marker-badge font-bold shadow-2xs ${
-          needsWater ? 'bg-amber-500 text-white border-transparent' : daysSinceWater === 0 ? 'bg-sky-600 text-white border-transparent' : 'bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80'
-        }`);
-        statusBadge.append(
-          createLucideIcon('droplets', `${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
-          createElement('span', '', waterBadgeText)
-        );
-        statusWrap.appendChild(statusBadge);
-        visual.appendChild(statusWrap);
-
-        if (plant.growthLogs?.length) {
-          const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
-          logBadge.append(createLucideIcon('images'), document.createTextNode(`${plant.growthLogs.length}枚`));
-          visual.appendChild(logBadge);
-        }
-
-        visual.addEventListener('click', event => {
-          event.stopPropagation();
-          openDetailModal(plant.id);
-        });
-        visual.style.cursor = 'pointer';
-        card.appendChild(visual);
-
-        const body = createElement('div', 'p-2 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3');
-        const details = createElement('div');
-        const name = createElement('h3', 'font-bold text-sm sm:text-base text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1', plant.name);
-        name.addEventListener('click', event => {
-          event.stopPropagation();
-          openDetailModal(plant.id);
-        });
-        details.appendChild(name);
-
-        const specs = createElement('div', 'flex flex-wrap items-center gap-1 mt-1.5 sm:gap-1.5 sm:mt-2');
-        const addSpec = (iconName, iconClass, text) => {
-          const badge = createElement('span', 'marker-badge bg-canvas border-stoneborder text-gray-600');
-          badge.append(createLucideIcon(iconName, iconClass), document.createTextNode(text));
-          specs.appendChild(badge);
-        };
-        if (plant.soil) addSpec('archive', 'w-3 h-3 text-sage-600', plant.soil);
-        if (plant.lightLevel) addSpec('sun', 'w-3 h-3 text-amber-500', plant.lightLevel);
-        if (plant.waterIntervalDays) addSpec('repeat', 'w-3 h-3 text-sky-600', `目安${plant.waterIntervalDays}日 (${plant.waterMethod || '通常'})`);
-        details.appendChild(specs);
-        body.appendChild(details);
-
-        const metadata = createElement('div', 'pt-1.5 sm:pt-2 border-t border-stoneborder/60 flex items-center justify-between text-[9px] sm:text-[11px] text-gray-400');
-        const shop = createElement('span', 'truncate max-w-[65%]');
-        if (plant.shop) shop.append(createLucideIcon('store', 'w-3 h-3 inline mr-0.5'), document.createTextNode(plant.shop));
-        else shop.textContent = 'コレクション株';
-        metadata.append(shop, createElement('span', '', plant.price !== null && plant.price !== undefined
-          ? `¥${Number(plant.price).toLocaleString()}`
-          : ''));
-        body.appendChild(metadata);
-
-        // Quick Care Action Buttons (水やり / 活力剤)
-        const actions = createElement('div', 'grid grid-cols-2 gap-1 pt-1 sm:gap-1.5');
-        QUICK_CARE_CARDS.slice(0, 2).forEach(cardDef => {
-          // py-2 で外側（ボタン上下端）の余白を確保し、gap-0 でアイコンと文字間を最狭にする
-          const button = createElement('button', `py-2 sm:py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
-          button.type = 'button';
-          button.title = `今日${cardDef.label}したとして記録`;
-          button.append(
-            createLucideIcon(cardDef.icon, 'w-3.5 h-3.5 shrink-0'),
-            createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', cardDef.label)
-          );
-          button.addEventListener('click', event => {
-            event.stopPropagation();
-            recordPlantCare(plant.id, cardDef.careType, `${cardDef.label}を記録しました`);
-          });
-          actions.appendChild(button);
-        });
-        body.appendChild(actions);
-
-        card.appendChild(body);
-        return card;
-      });
-      grid.replaceChildren(...cards);
-    }
-
-    /********************************************************************
-     * 6. ONE-TAP QUICK CARE & BATCH ACTIONS
-     ********************************************************************/
-    async function recordPlantCare(plantId, careType, toastMessage) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-      plant[careType] = getTodayStr();
-      await saveToDB();
-      renderApp();
-      if (appState.activeDetailPlantId === plantId) {
-        populateDetailModal(plantId);
-      }
-      showToast(`${toastMessage}（${plant.name}）`);
-    }
-
-    function toggleBatchMode() {
-      appState.batchMode = !appState.batchMode;
-      appState.batchSelectedIds.clear();
-      document.getElementById('batchActionBar').classList.toggle('hidden', !appState.batchMode);
-
-      const btn = document.getElementById('batchModeBtnHeader');
-      if (btn) {
-        btn.classList.toggle('bg-sage-100', appState.batchMode);
-        btn.classList.toggle('text-sage-800', appState.batchMode);
-        btn.classList.toggle('border-sage-500', appState.batchMode);
-        btn.classList.toggle('font-semibold', appState.batchMode);
-        btn.classList.toggle('bg-white', !appState.batchMode);
-        btn.classList.toggle('text-charcoal', !appState.batchMode);
-        btn.classList.toggle('border-stoneborder', !appState.batchMode);
-        btn.classList.toggle('font-medium', !appState.batchMode);
-      }
-
-      updateBatchCountUI();
-      renderApp();
-    }
-
-    function toggleSelectInBatch(plantId) {
-      if (appState.batchSelectedIds.has(plantId)) {
-        appState.batchSelectedIds.delete(plantId);
-      } else {
-        appState.batchSelectedIds.add(plantId);
-      }
-      updateBatchCountUI();
-      renderApp();
-    }
-
-    function selectAllVisibleInBatch() {
-      const visible = getFilteredAndSortedPlants();
-      visible.forEach(p => appState.batchSelectedIds.add(p.id));
-      updateBatchCountUI();
-      renderApp();
-    }
-
-    function updateBatchCountUI() {
-      document.getElementById('batchSelectedCount').textContent = appState.batchSelectedIds.size;
-    }
-
-    async function executeBatchCare(careFields, toastMessage) {
-      if (appState.batchSelectedIds.size === 0) {
-        showToast('ケア対象の株カードをタップして選択してください');
-        return;
-      }
-      const today = getTodayStr();
-      let count = 0;
-      appState.plants.forEach(p => {
-        if (appState.batchSelectedIds.has(p.id)) {
-          careFields.forEach(field => {
-            p[field] = today;
-          });
-          count++;
-        }
-      });
-      await saveToDB();
-      renderApp();
-      showToast(toastMessage.replace('{count}', count));
-      toggleBatchMode();
-    }
-
-    /********************************************************************
-     * 7. PLANT DETAIL & GROWTH COMPARISON MODAL
-     ********************************************************************/
-    function openDetailModal(plantId) {
-      appState.activeDetailPlantId = plantId;
-      cancelEditGrowthLog();
-
-      populateDetailModal(plantId);
-      document.getElementById('detailModal').classList.remove('hidden');
-    }
-
-    function closeDetailModal() {
-      appState.activeDetailPlantId = null;
-      document.getElementById('detailModal').classList.add('hidden');
-    }
-
-    function populateDetailModal(plantId) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-
-      const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-      appendBotanicalSvg(document.getElementById('detailSvgBadge'), svgInfo.svg);
-      document.getElementById('detailLocationBadge').textContent = plant.location || '場所未設定';
-      document.getElementById('detailPlantName').textContent = plant.name;
-
-      const daysOwned = plant.purchaseDate ? calcDaysBetween(plant.purchaseDate) : null;
-      document.getElementById('detailDaysOwnedBadge').textContent =
-        daysOwned !== null && daysOwned >= 0 ? `お迎えから ${daysOwned}日目` : '';
-
-      // Populate Quick Care Cards (Data-driven)
-      QUICK_CARE_CARDS.forEach(card => {
-        const careDate = plant[card.careType];
-        const daysAgo = careDate ? calcDaysBetween(careDate) : null;
-        const text = careDate ? `${careDate} (${daysAgo === 0 ? '今日' : daysAgo + '日前'})` : '未記録';
-        
-        const boxEl = document.getElementById(card.boxId);
-        if (boxEl) boxEl.textContent = text;
-
-        if (card.subId) {
-          const subEl = document.getElementById(card.subId);
-          if (subEl) subEl.textContent = card.formatSub(plant);
-        }
-      });
-
-      // Populate Spec Grid
-      SPEC_DEFINITIONS.forEach(spec => {
-        const specEl = document.getElementById(spec.id);
-        if (!specEl) return;
-        if (spec.formatValue) {
-          specEl.textContent = spec.formatValue(plant);
-        } else {
-          specEl.textContent = plant[spec.key] || '未設定';
-        }
-      });
-
-      const notesBox = document.getElementById('specNotesBox');
-      if (plant.notes) {
-        notesBox.classList.remove('hidden');
-        document.getElementById('specNotes').textContent = plant.notes;
-      } else {
-        notesBox.classList.add('hidden');
-      }
-
-      // Growth Logs & Comparison
-      const logs = Array.isArray(plant.growthLogs) ? [...plant.growthLogs] : [];
-      logs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-
-      document.getElementById('growthCountBadge').textContent = `(${logs.length}枚)`;
-
-      const compSec = document.getElementById('growthComparisonSection');
-      if (logs.length >= 2) {
-        compSec.classList.remove('hidden');
-        const first = logs[0];
-        const latest = logs[logs.length - 1];
-        document.getElementById('compareFirstImg').src = first.photoDataUrl;
-        document.getElementById('compareFirstDate').textContent = first.date;
-        document.getElementById('compareFirstNote').textContent = first.note || '初回記録';
-
-        document.getElementById('compareLatestImg').src = latest.photoDataUrl;
-        document.getElementById('compareLatestDate').textContent = latest.date;
-        document.getElementById('compareLatestNote').textContent = latest.note || '最新記録';
-
-        const diffDays = calcDaysBetween(first.date, latest.date);
-        document.getElementById('comparisonSpanBadge').textContent =
-          diffDays !== null && diffDays > 0 ? `${diffDays}日間の変化` : '成長記録比較';
-      } else {
-        compSec.classList.add('hidden');
-      }
-
-      // Timeline Grid
-      const timelineGrid = document.getElementById('growthTimelineGrid');
-      const reversed = [...logs].reverse();
-      timelineGrid.replaceChildren();
-      if (reversed.length === 0) {
-        timelineGrid.appendChild(createElement(
-          'div',
-          'col-span-full py-8 text-center text-xs text-gray-400 border border-dashed border-stoneborder rounded-2xl',
-          'まだ成長写真が登録されていません。上の「写真を選択」から1枚目を記録してみましょう。'
-        ));
-      } else {
-        reversed.forEach(entry => {
-          const item = createElement('div', 'bg-canvas rounded-2xl border border-stoneborder overflow-hidden flex flex-col justify-between group');
-          const imageWrap = createElement('div', 'aspect-square bg-gray-100 relative overflow-hidden');
-          const image = createElement('img', 'w-full h-full object-cover cursor-pointer');
-          image.src = entry.photoDataUrl;
-          image.alt = 'Growth log';
-          image.dataset.action = 'viewImageFullscreen'; // Expand image
-          imageWrap.appendChild(image);
-
-          const controlsWrap = createElement('div', 'opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 flex items-center gap-1.5');
-
-          const editButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-amber-500');
-          editButton.type = 'button';
-          editButton.title = 'この記録を編集';
-          editButton.appendChild(createLucideIcon('pencil', 'w-3.5 h-3.5'));
-          editButton.addEventListener('click', () => editGrowthLogEntry(plant.id, entry.id));
-          
-          const deleteButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600');
-          deleteButton.type = 'button';
-          deleteButton.title = 'この写真を削除';
-          deleteButton.appendChild(createLucideIcon('trash-2', 'w-3.5 h-3.5'));
-          deleteButton.addEventListener('click', () => deleteGrowthLogEntry(plant.id, entry.id));
-          
-          controlsWrap.appendChild(editButton);
-          controlsWrap.appendChild(deleteButton);
-          imageWrap.appendChild(controlsWrap);
-
-          item.appendChild(imageWrap);
-
-          const caption = createElement('div', 'p-2.5');
-          caption.append(
-            createElement('p', 'text-[11px] font-bold text-charcoal', entry.date || ''),
-            createElement('p', 'text-xs text-gray-600 mt-0.5 line-clamp-2', entry.note || '記録のみ')
-          );
-          item.appendChild(caption);
-          timelineGrid.appendChild(item);
-        });
-      }
-    }
-
-    async function previewGrowthPhoto(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        const { dataUrl, approxKB, width, height } = await compressImageFile(file, 800, 0.76);
-        appState.tempGrowthPhotoDataUrl = dataUrl;
-        document.getElementById('newGrowthPreviewImg').src = dataUrl;
-        document.getElementById('newGrowthSizeInfo').textContent = `${width}×${height}px / 約${approxKB}KB (WebP軽量化済)`;
-        document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
-        document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
-      } catch (e) {
-        showToast('画像の読み込みに失敗しました');
-      }
-    }
-
-    function clearNewGrowthPhoto() {
-      appState.tempGrowthPhotoDataUrl = null;
-      document.getElementById('newGrowthPhotoInput').value = '';
-      document.getElementById('newGrowthPreviewBox').classList.add('hidden');
-      document.getElementById('newGrowthPhotoLabel').textContent = '写真を選択 (自動圧縮)';
-    }
-
-    function editGrowthLogEntry(plantId, logId) {
-       const plant = appState.plants.find(p => p.id === plantId);
-       if (!plant || !Array.isArray(plant.growthLogs)) return;
-       const log = plant.growthLogs.find(g => g.id === logId);
-       if (!log) return;
-
-       document.getElementById('editGrowthLogId').value = log.id;
-       document.getElementById('newGrowthDateInput').value = log.date || getTodayStr();
-       document.getElementById('newGrowthNoteInput').value = log.note || '';
-       
-       appState.tempGrowthPhotoDataUrl = log.photoDataUrl;
-       document.getElementById('newGrowthPreviewImg').src = log.photoDataUrl;
-       document.getElementById('newGrowthSizeInfo').textContent = '現在の写真 (変更可能)';
-       document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
-       document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
-
-       const addBtn = document.getElementById('addGrowthLogBtn');
-       addBtn.textContent = '更新';
-       addBtn.classList.remove('bg-sage-600', 'hover:bg-sage-700');
-       addBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
-       
-       document.getElementById('cancelEditGrowthLogBtn').classList.remove('hidden');
-
-       // Scroll to the edit form
-       document.getElementById('growthAlbumTitle').scrollIntoView({ behavior: 'smooth' });
-    }
-    function cancelEditGrowthLog() {
-      clearNewGrowthPhoto();
-      document.getElementById('newGrowthDateInput').value = getTodayStr();
-      document.getElementById('newGrowthNoteInput').value = '';
-      document.getElementById('editGrowthLogId').value = '';
-      
-      const addBtn = document.getElementById('addGrowthLogBtn');
-      addBtn.textContent = '追加';
-      addBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-      addBtn.classList.add('bg-sage-600', 'hover:bg-sage-700');
-      
-      // キャンセルボタンを隠す
-      document.getElementById('cancelEditGrowthLogBtn').classList.add('hidden');
-    }
-
-    async function addGrowthLogEntry() {
-      const plantId = appState.activeDetailPlantId;
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-
-      if (!appState.tempGrowthPhotoDataUrl) {
-        showToast('追加・更新する写真を選択してください');
-        return;
-      }
-
-      const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
-      const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
-      const editLogId = document.getElementById('editGrowthLogId').value;
-
-      if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
-      if (!editLogId && plant.growthLogs.length >= 200) {
-        showToast('成長記録は1株あたり200枚まで登録できます');
-        return;
-      }
-
-      if (editLogId) {
-        const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
-        if (logIndex !== -1) {
-            plant.growthLogs[logIndex] = {
-                id: editLogId,
-                date: dateVal,
-                photoDataUrl: appState.tempGrowthPhotoDataUrl,
-                note: noteVal
-            };
-            showToast('📷 成長記録を更新しました');
-        }
-      } else {
-        plant.growthLogs.push({
-          id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          date: dateVal,
-          photoDataUrl: appState.tempGrowthPhotoDataUrl,
-          note: noteVal
-        });
-        showToast('📷 成長アルバムに写真を追加しました');
-      }
-
-      cancelEditGrowthLog();
-      await saveToDB();
-      populateDetailModal(plantId);
-      renderApp();
-    }
-
-    async function deleteGrowthLogEntry(plantId, logId) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant || !Array.isArray(plant.growthLogs)) return;
-
-      openConfirmDialog('写真の削除', 'この成長記録写真を削除しますか？', async () => {
-        plant.growthLogs = plant.growthLogs.filter(g => g.id !== logId);
-        
-        // If the currently edited log is deleted, reset the edit form
-        if (document.getElementById('editGrowthLogId').value === logId) {
-           cancelEditGrowthLog();
-        }
-
-        await saveToDB();
-        populateDetailModal(plantId);
-        renderApp();
-        showToast('写真を削除しました');
-      });
-    }
-
-    /********************************************************************
-     * 8. ADD / EDIT PLANT FORM MODAL
-     ********************************************************************/
-    function renderSvgSelector() {
-      const grid = document.getElementById('svgSelectorGrid');
-      const buttons = Object.entries(BOTANICAL_SVGS).map(([key, item]) => {
-        const active = appState.selectedFormSvgType === key;
-        const button = createElement('button', `p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
-          active ? 'border-sage-600 bg-sage-50 ring-2 ring-sage-500/20' : 'border-stoneborder bg-white hover:bg-gray-50'
-        }`);
-        button.type = 'button';
-        button.addEventListener('click', () => selectFormSvg(key));
-        const illustration = createElement('div', 'w-9 h-9');
-        appendBotanicalSvg(illustration, item.svg);
-        button.append(illustration, createElement('span', 'text-[10px] font-medium text-charcoal text-center leading-tight', item.label));
-        return button;
-      });
-      grid.replaceChildren(...buttons);
-    }
-
-    function selectFormSvg(typeKey) {
-      appState.selectedFormSvgType = typeKey;
-      renderSvgSelector();
-    }
-
-    function openPlantFormModal(editPlantId = null) {
-      const form = document.getElementById('plantForm');
-      form.reset();
-      clearFormPhoto();
-
-      // 文字列のIDが明示的に渡された場合のみ編集モードとする
-      const isEdit = typeof editPlantId === 'string' && editPlantId.length > 0;
-
-      if (isEdit) {
-        const p = appState.plants.find(x => x.id === editPlantId);
-        if (!p) return;
-        setPlantFormTitle('pencil', `「${p.name}」を編集`);
-        document.getElementById('formPlantId').value = p.id;
-        document.getElementById('formName').value = p.name || '';
-        appState.selectedFormSvgType = p.svgType || 'agave';
-        document.getElementById('formLocation').value = p.location || '';
-        document.getElementById('formSoil').value = p.soil || '';
-        document.getElementById('formLight').value = p.lightLevel || '';
-        document.getElementById('formWaterInterval').value = p.waterIntervalDays || '';
-        document.getElementById('formWaterMethod').value = p.waterMethod || '通常水やり';
-        document.getElementById('formPurchaseDate').value = p.purchaseDate || '';
-        document.getElementById('formPrice').value = p.price ?? '';
-        document.getElementById('formShop').value = p.shop || '';
-        document.getElementById('formNotes').value = p.notes || '';
-      } else {
-        setPlantFormTitle('sprout', '新しい株を追加');
-        document.getElementById('formPlantId').value = '';
-        appState.selectedFormSvgType = 'agave';
-        document.getElementById('formPurchaseDate').value = getTodayStr();
-        if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== '未設定') {
-          document.getElementById('formLocation').value = appState.selectedLocation;
-        }
-      }
-
-      renderSvgSelector();
-      document.getElementById('formModal').classList.remove('hidden');
-    }
-
-    function setPlantFormTitle(iconName, title) {
-      const heading = document.getElementById('formModalTitle');
-      const icon = createLucideIcon(iconName, 'w-5 h-5 text-sage-600');
-      const label = createElement('span', '', title);
-      heading.replaceChildren(icon, label);
-    }
-
-    function closePlantFormModal() {
-      document.getElementById('formModal').classList.add('hidden');
-    }
-
-    async function handleFormPhotoSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        const { dataUrl, approxKB } = await compressImageFile(file, 800, 0.76);
-        appState.tempFormPhotoDataUrl = dataUrl;
-        document.getElementById('formPhotoPreview').src = dataUrl;
-        document.getElementById('formPhotoSizeBadge').textContent = `約${approxKB}KBに自動圧縮済`;
-        document.getElementById('formPhotoPreviewWrap').classList.remove('hidden');
-      } catch (e) {
-        showToast('画像の圧縮に失敗しました');
-      }
-    }
-
-    function clearFormPhoto() {
-      appState.tempFormPhotoDataUrl = null;
-      document.getElementById('formPhotoInput').value = '';
-      document.getElementById('formPhotoPreviewWrap').classList.add('hidden');
-    }
-
-    async function savePlantForm(event) {
-      event.preventDefault();
-      const id = document.getElementById('formPlantId').value;
-      const name = document.getElementById('formName').value.trim();
-      if (!name) return;
-      if (!id && appState.plants.length >= 1000) {
-        showToast('株データは1,000株まで登録できます');
-        return;
-      }
-
-      const location = document.getElementById('formLocation').value.trim() || '未設定';
-      const soil = document.getElementById('formSoil').value.trim();
-      const lightLevel = document.getElementById('formLight').value.trim();
-      const waterIntervalDays = document.getElementById('formWaterInterval').value
-        ? Number(document.getElementById('formWaterInterval').value)
-        : null;
-      const waterMethod = document.getElementById('formWaterMethod').value;
-      const purchaseDate = document.getElementById('formPurchaseDate').value;
-      const price = document.getElementById('formPrice').value ? Number(document.getElementById('formPrice').value) : null;
-      const shop = document.getElementById('formShop').value.trim();
-      const notes = document.getElementById('formNotes').value.trim();
-
-      if (id) {
-        const plant = appState.plants.find(p => p.id === id);
-        if (plant) {
-          if (appState.tempFormPhotoDataUrl &&
-              Array.isArray(plant.growthLogs) && plant.growthLogs.length >= 200) {
-            showToast('成長記録は1株あたり200枚まで登録できます');
-            return;
-          }
-          plant.name = name;
-          plant.svgType = appState.selectedFormSvgType;
-          plant.location = location;
-          plant.soil = soil;
-          plant.lightLevel = lightLevel;
-          plant.waterIntervalDays = waterIntervalDays;
-          plant.waterMethod = waterMethod;
-          plant.purchaseDate = purchaseDate;
-          plant.price = price;
-          plant.shop = shop;
-          plant.notes = notes;
-          if (appState.tempFormPhotoDataUrl) {
-            if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
-            plant.growthLogs.push({
-              id: 'g_' + Date.now(),
-              date: getTodayStr(),
-              photoDataUrl: appState.tempFormPhotoDataUrl,
-              note: '写真追加'
-            });
-          }
-        }
-        showToast(`🌿 「${name}」の情報を更新しました`);
-      } else {
-        const newPlant = {
-          id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name,
-          svgType: appState.selectedFormSvgType,
-          location,
-          soil,
-          lightLevel,
-          waterIntervalDays,
-          waterMethod,
-          purchaseDate,
-          price,
-          shop,
-          notes,
-          lastWatered: null,
-          lastFertilized: null,
-          lastRepotted: purchaseDate || getTodayStr(),
-          growthLogs: []
-        };
-        if (appState.tempFormPhotoDataUrl) {
-          newPlant.growthLogs.push({
-            id: 'g_' + Date.now(),
-            date: purchaseDate || getTodayStr(),
-            photoDataUrl: appState.tempFormPhotoDataUrl,
-            note: 'お迎え・初回記録'
-          });
-        }
-        appState.plants.unshift(newPlant);
-        showToast(`🌱 「${name}」をコレクションに追加しました`);
-      }
-
-      if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== location) {
-        appState.selectedLocation = 'すべて';
-      }
-      appState.onlyNeedsWater = false;
-
-      await saveToDB();
-      closePlantFormModal();
-      renderApp();
-    }
-
-    function confirmDeletePlant(plantId) {
-      const plant = appState.plants.find(p => p.id === plantId);
-      if (!plant) return;
-      openConfirmDialog(
-        '株データの削除',
-        `「${plant.name}」と、その成長アルバム写真をすべて削除しますか？`,
-        async () => {
-          appState.plants = appState.plants.filter(p => p.id !== plantId);
-          await saveToDB();
-          closeDetailModal();
-          renderApp();
-          showToast(`「${plant.name}」を削除しました`);
-        }
-      );
-    }
-
-    /********************************************************************
-     * 9. JSON EXPORT & IMPORT
-     ********************************************************************/
-    function exportData() {
-      if (appState.plants.length > 1000 ||
-          appState.plants.some(plant => Array.isArray(plant.growthLogs) &&
-            (plant.growthLogs.length > 200 ||
-             plant.growthLogs.some(log => typeof log.photoDataUrl !== 'string' || log.photoDataUrl.length > 2_000_000)))) {
-        showToast('書き出し上限を超えています（1,000株・成長記録200枚/株・写真2MB/枚）');
-        return;
-      }
-      const payload = {
-        appName: 'VERDURE Botanical Manager',
-        version: '1.0',
-        exportedAt: new Date().toISOString(),
-        plantCount: appState.plants.length,
-        plants: appState.plants
-      };
-      const jsonStr = JSON.stringify(payload, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      if (blob.size > 30 * 1024 * 1024) {
-        showToast('JSONファイルが大きすぎて書き出せません（上限30MB）');
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `verdure_plants_${getTodayStr()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('📦 写真を含む全データをJSONに書き出しました');
-    }
-
-    function triggerImport() {
-      document.getElementById('importFileInput').value = '';
-      document.getElementById('importFileInput').click();
-    }
-
-    function handleImportFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (file.size > 30 * 1024 * 1024) {
-        showToast('JSONファイルが大きすぎます（上限30MB）');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          const importedPlants = validatePlantRecords(Array.isArray(parsed) ? parsed : parsed?.plants);
-          openConfirmDialog(
-            'データの読み込み（復元）',
-            `JSONファイルから ${importedPlants.length}株 のデータ（成長写真を含む）を読み込み、現在のデータを上書きしますか？`,
-            async () => {
-              appState.plants = importedPlants;
-              appState.selectedLocation = 'すべて';
-              await saveToDB();
-              renderApp();
-              showToast(`✅ ${importedPlants.length}株のデータを復元しました`);
-            }
-          );
-        } catch (err) {
-          console.error('Import data validation failed:', err);
-          showToast('JSONの解析またはデータ検証に失敗しました。形式を確認してください');
-        }
-      };
-      reader.onerror = () => showToast('JSONファイルを読み込めませんでした');
-      reader.readAsText(file);
-    }
-
-    function validatePlantRecords(records) {
-      if (!Array.isArray(records) || records.length > 1000) {
-        throw new Error('Plant data must be an array');
-      }
-
-      const usedPlantIds = new Set();
-      const safeId = (value, prefix, index, usedIds) => {
-        if (typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) && !usedIds.has(value)) {
-          usedIds.add(value);
-          return value;
-        }
-        let id;
-        do {
-          id = `${prefix}_${index}_${Math.random().toString(36).slice(2, 10)}`;
-        } while (usedIds.has(id));
-        usedIds.add(id);
-        return id;
-      };
-      const readString = (value, field, maxLength, fallback = '') => {
-        if (value === undefined || value === null) return fallback;
-        if (typeof value !== 'string' || value.length > maxLength) {
-          throw new Error(`Invalid ${field}`);
-        }
-        return value;
-      };
-      const readDate = (value, field) => {
-        const date = readString(value, field, 10);
-        if (!date) return '';
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          throw new Error(`Invalid ${field}`);
-        }
-        const parsedDate = new Date(`${date}T00:00:00Z`);
-        if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
-          throw new Error(`Invalid ${field}`);
-        }
-        return date;
-      };
-      const readNumber = (value, field, min, max) => {
-        if (value === undefined || value === null || value === '') return null;
-        if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
-          throw new Error(`Invalid ${field}`);
-        }
-        return value;
-      };
-      const readPhoto = (value) => {
-        if (typeof value !== 'string' || value.length > 2_000_000 ||
-            !/^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/]*={0,2}$/.test(value)) {
-          throw new Error('Invalid growth photo');
-        }
-        return value;
-      };
-
-      return records.map((record, plantIndex) => {
-        if (!record || typeof record !== 'object' || Array.isArray(record)) {
-          throw new Error(`Invalid plant at index ${plantIndex}`);
-        }
-        const name = readString(record.name, 'plant name', 200);
-        if (!name.trim()) throw new Error(`Missing plant name at index ${plantIndex}`);
-
-        const usedLogIds = new Set();
-        const growthLogs = record.growthLogs === undefined || record.growthLogs === null
-          ? []
-          : record.growthLogs;
-        if (!Array.isArray(growthLogs) || growthLogs.length > 200) {
-          throw new Error(`Invalid growth logs at index ${plantIndex}`);
-        }
-
-        return {
-          id: safeId(record.id, 'p_import', plantIndex, usedPlantIds),
-          name,
-          svgType: typeof record.svgType === 'string' &&
-            Object.prototype.hasOwnProperty.call(BOTANICAL_SVGS, record.svgType)
-            ? record.svgType
-            : 'agave',
-          location: readString(record.location, 'location', 200),
-          soil: readString(record.soil, 'soil', 300),
-          lightLevel: readString(record.lightLevel, 'light level', 300),
-          waterIntervalDays: readNumber(record.waterIntervalDays, 'water interval', 1, 90),
-          waterMethod: readString(record.waterMethod, 'water method', 100),
-          purchaseDate: readDate(record.purchaseDate, 'purchase date'),
-          price: readNumber(record.price, 'price', 0, 1_000_000_000),
-          shop: readString(record.shop, 'shop', 300),
-          lastWatered: readDate(record.lastWatered, 'last watered date'),
-          lastFertilized: readDate(record.lastFertilized, 'last fertilized date'),
-          lastRepotted: readDate(record.lastRepotted, 'last repotted date'),
-          notes: readString(record.notes, 'notes', 5000),
-          growthLogs: growthLogs.map((entry, logIndex) => {
-            if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-              throw new Error(`Invalid growth log at plant ${plantIndex}, index ${logIndex}`);
-            }
-            return {
-              id: safeId(entry.id, 'g_import', logIndex, usedLogIds),
-              date: readDate(entry.date, 'growth log date'),
-              photoDataUrl: readPhoto(entry.photoDataUrl),
-              note: readString(entry.note, 'growth log note', 1000)
-            };
-          })
-        };
-      });
-    }
-
-    /********************************************************************
-     * 10. FILTER HELPERS, DIALOG & TOAST UI
-     ********************************************************************/
-    function selectLocationTab(loc) {
-      appState.selectedLocation = loc;
-      renderApp();
-    }
-
-    function toggleNeedsWaterFilter() {
-      appState.onlyNeedsWater = !appState.onlyNeedsWater;
-      renderApp();
-    }
-
-    function clearSearch() {
-      document.getElementById('searchInput').value = '';
-      renderApp();
-    }
-
-    function resetFilters() {
-      appState.selectedLocation = 'すべて';
-      appState.onlyNeedsWater = false;
-      document.getElementById('searchInput').value = '';
-      renderApp();
-    }
-
-    function openConfirmDialog(title, message, onConfirm) {
-      document.getElementById('confirmTitle').textContent = title;
-      document.getElementById('confirmMessage').textContent = message;
-      const dialog = document.getElementById('confirmDialog');
-      dialog.classList.remove('hidden');
-
-      document.getElementById('confirmCancelBtn').onclick = () => {
-        dialog.classList.add('hidden');
-      };
-      document.getElementById('confirmOkBtn').onclick = () => {
-        dialog.classList.add('hidden');
-        onConfirm();
-      };
-    }
-
-    function showToast(message) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = 'px-4 py-2.5 rounded-2xl bg-charcoal text-white text-xs font-medium shadow-lg flex items-center gap-2 animate-fade-in';
-      toast.textContent = message;
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.25s ease';
-        setTimeout(() => toast.remove(), 250);
-      }, 2600);
-    }
-    
-    function viewImageFullscreen(event) {
-        const imgSrc = event.target.src;
-        if (!imgSrc) return;
-        document.getElementById('imageViewerImg').src = imgSrc;
-        document.getElementById('imageViewerModal').classList.remove('hidden');
-    }
-    
-    function closeImageViewer() {
-        document.getElementById('imageViewerModal').classList.add('hidden');
-        document.getElementById('imageViewerImg').src = '';
-    }
-
-    function initializeUIEvents() {
-      const actions = {
-        toggleBatchMode,
-        exportData,
-        triggerImport,
-        openPlantFormModal: () => openPlantFormModal(null),
-        selectAllVisibleInBatch,
-        executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
-        executeBatchFertilizer: () => executeBatchCare(['lastWatered', 'lastFertilized'], '🧪 {count}株に水やり＋活力剤を一括記録しました'),
-        editActivePlant: () => {
-          if (!appState.activeDetailPlantId) return;
-          const targetId = appState.activeDetailPlantId;
-          closeDetailModal();
-          openPlantFormModal(targetId);
-        },
-        deleteActivePlant: () => {
-          if (!appState.activeDetailPlantId) return;
-          confirmDeletePlant(appState.activeDetailPlantId);
-        },
-        quickCareFromModal: (event) => {
-          if (!appState.activeDetailPlantId) return;
-          const target = event?.target?.closest('[data-care-type]');
-          if (!target) return;
-          const careType = target.dataset.careType;
-          const cardDef = QUICK_CARE_CARDS.find(c => c.careType === careType);
-          const label = cardDef ? cardDef.label : 'ケア';
-          recordPlantCare(appState.activeDetailPlantId, careType, `${label}を記録しました`);
-        },
-        clearSearch,
-        toggleNeedsWaterFilter,
-        resetFilters,
-        closeDetailModal,
-        addGrowthLogEntry,
-        cancelEditGrowthLog,
-        clearNewGrowthPhoto,
-        closePlantFormModal,
-        clearFormPhoto,
-        viewImageFullscreen,
-        closeImageViewer
-      };
-
-      function debounce(func, delay = 150) {
-        let timeoutId;
-        return (...args) => {
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => func(...args), delay);
-        };
-      }
-
-      // Visual Viewport によるモーダル高さ自動制御
-      function updateModalViewport() {
-        const vv = window.visualViewport;
-        const h = vv ? Math.min(window.innerHeight, vv.height) : window.innerHeight;
-        document.documentElement.style.setProperty('--modal-viewport-height', `${h}px`);
-      }
-      updateModalViewport();
-      window.addEventListener('resize', updateModalViewport, { passive: true });
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateModalViewport, { passive: true });
-        window.visualViewport.addEventListener('scroll', updateModalViewport, { passive: true });
-      }
-
-      document.addEventListener('click', event => {
-        if (!(event.target instanceof Element)) return;
-        const actionElement = event.target.closest('[data-action]');
-        if (!actionElement) return;
-        const actionName = actionElement.dataset.action;
-        if (Object.prototype.hasOwnProperty.call(actions, actionName)) {
-          actions[actionName](event);
-        }
-      });
-
-      document.getElementById('searchInput').addEventListener('input', debounce(renderApp, 150));
-      document.getElementById('sortSelect').addEventListener('change', renderApp);
-      document.getElementById('plantForm').addEventListener('submit', savePlantForm);
-      document.getElementById('importFileInput').addEventListener('change', handleImportFile);
-      document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);
-      document.getElementById('newGrowthPhotoInput').addEventListener('change', previewGrowthPhoto);
-
-      initializeIconPlaceholders();
-    }
-
-    /********************************************************************
-     * 11. INITIALIZATION ON WINDOW LOAD
-     ********************************************************************/
-    window.onload = async function () {
-      try {
-        initializeUIEvents();
-        const storedPlants = await loadFromDB();
-        if (storedPlants !== null) {
-          appState.plants = validatePlantRecords(storedPlants);
-        } else {
-          appState.plants = getInitialSamplePlants();
-          await saveToDB();
-        }
-      } catch (err) {
-        console.error('Stored plant data validation failed:', err);
-        appState.plants = getInitialSamplePlants();
-        showToast('データの読み込みで警告が発生しました: ' + err.message);
-      }
-      renderApp();
-    };
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
