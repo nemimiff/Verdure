@@ -39,12 +39,12 @@
       ascent-override: 89%;
       descent-override: 15%;
     }
-    /* === 共通UIサイズ定義（大・中・小） === */
-    .ui-sm { --ui-h: 28px; --ui-fs: 11px; --ui-px: 10px; --ui-icon: 13px; --ui-r: 0.5rem; }
-    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.75rem; }
-    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-px: 14px; --ui-icon: 15px; --ui-r: 0.75rem; }
+    /* 3サイズに --ui-lh（偶数の行高）を追加 */
+    .ui-sm { --ui-h: 28px; --ui-fs: 11px; --ui-lh: 14px; --ui-px: 10px; --ui-icon: 13px; --ui-r: 0.5rem; }
+    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-lh: 16px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.75rem; }
+    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-lh: 16px; --ui-px: 14px; --ui-icon: 15px; --ui-r: 0.75rem; }
 
-    /* ボタン・タブ共通（横幅は可変） */
+    /* ボタン・タブ共通（デフォルト＝白ボタン・横幅可変） */
     .ui-btn {
       display: inline-flex;
       align-items: center;
@@ -53,13 +53,19 @@
       height: var(--ui-h);
       padding: 0 var(--ui-px);
       font-size: var(--ui-fs);
-      line-height: 1;
+      font-weight: 500;
+      line-height: var(--ui-lh);
       border-radius: var(--ui-r);
-      border-width: 1px;
-      border-style: solid;
+      border: 1px solid #E5E5E0;
+      background-color: #FFFFFF;
+      color: #2F3E46;
       white-space: nowrap;
+      flex-shrink: 0;
+      cursor: pointer;
       box-sizing: border-box;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
+    .ui-btn:hover { background-color: #F4F7F4; }
     .ui-btn svg {
       width: var(--ui-icon);
       height: var(--ui-icon);
@@ -69,18 +75,57 @@
       --ui-px: 3px;
       gap: 2px;
       min-width: 0;
+      flex-shrink: 1;
     }
 
-    /* 入力欄・セレクト共通（単体利用 / アイコン付きラッパー両対応・横幅は可変） */
+    /* === ボタンカラーパターン === */
+    .ui-primary { background-color: #3A5A40; color: #FFFFFF; border-color: #3A5A40; }
+    .ui-primary:hover { background-color: #2F4A34; border-color: #2F4A34; }
+
+    .ui-soft { background-color: #E9F0EA; color: #2F4A34; border-color: #C7D8C9; }
+    .ui-soft:hover { background-color: #DCE8DD; }
+
+    .ui-sage-soft { background-color: #F4F7F4; color: #2F4A34; border-color: #D2E0D4; }
+    .ui-sage-soft:hover { background-color: #3A5A40; color: #FFFFFF; border-color: #3A5A40; }
+
+    .ui-sky { background-color: #0284C7; color: #FFFFFF; border-color: #0284C7; }
+    .ui-sky:hover { background-color: #0369A1; border-color: #0369A1; }
+
+    .ui-sky-soft { background-color: #F0F9FF; color: #0369A1; border-color: #BAE6FD; }
+    .ui-sky-soft:hover { background-color: #0284C7; color: #FFFFFF; border-color: #0284C7; }
+
+    .ui-amber { background-color: #D97706; color: #FFFFFF; border-color: #D97706; }
+    .ui-amber:hover { background-color: #B45309; border-color: #B45309; }
+
+    .ui-amber-soft { background-color: #FFFFFF; color: #4B5563; border-color: #E5E5E0; }
+    .ui-amber-soft:hover { background-color: #FFFBEB; }
+
+    .ui-danger { background-color: #FFFFFF; color: #DC2626; border-color: #E5E5E0; }
+    .ui-danger:hover { background-color: #FEF2F2; }
+
+    .ui-dashed { background-color: #FFFFFF; color: #3A5A40; border-style: dashed; border-color: #588157; }
+    .ui-dashed:hover { background-color: #F4F7F4; }
+
+    .ui-dark { background-color: rgba(58, 90, 64, 0.8); color: #E9F0EA; border-color: #4A6F50; }
+    .ui-dark:hover { background-color: #3A5A40; }
+
+    .ui-batch-mat { background-color: #588157; color: #FFFFFF; border-color: #588157; }
+    .ui-batch-mat:hover { background-color: #6B946A; border-color: #6B946A; }
+
+    /* 入力欄・セレクト共通（デフォルト＝白背景・枠線あり・幅100%） */
     .ui-field {
+      width: 100%;
       height: var(--ui-h);
       padding: 0 var(--ui-px);
       font-size: var(--ui-fs);
       min-width: 0;
       border-radius: var(--ui-r);
-      border-width: 1px;
-      border-style: solid;
+      border: 1px solid #E5E5E0;
+      background-color: #FFFFFF;
+      color: #2F3E46;
+      outline: none;
       box-sizing: border-box;
+      transition: border-color 0.15s ease;
     }
     textarea.ui-field {
       height: auto;
@@ -104,11 +149,13 @@
       min-width: 0;
       height: 100%;
       font-size: inherit;
+      color: inherit;
       background: transparent;
       border: 0;
       padding: 0;
       outline: none;
     }
+    .ui-field:focus,
     .ui-field:focus-within {
       border-color: #3A5A40;
     }
@@ -182,23 +229,23 @@
 
       <!-- Right Action Buttons -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="ui-btn ui-md font-medium border-stoneborder bg-white hover:bg-sage-50 text-charcoal transition shadow-2xs shrink-0 cursor-pointer" title="複数の鉢にまとめて水やりを記録します">
+        <button id="batchModeBtnHeader" data-action="toggleBatchMode" class="ui-btn ui-md" title="複数の鉢にまとめて水やりを記録します">
           <span data-icon="layers" data-icon-class="text-sage-600"></span>
           <span class="hidden md:inline">一括水やり</span>
         </button>
 
-        <button id="exportDataBtn" data-action="exportData" class="ui-btn ui-md font-medium border-stoneborder bg-white hover:bg-sage-50 text-charcoal transition shrink-0 cursor-pointer" title="写真を含む全データをJSONファイルに書き出し">
+        <button id="exportDataBtn" data-action="exportData" class="ui-btn ui-md" title="写真を含む全データをJSONファイルに書き出し">
           <span data-icon="download" data-icon-class="text-gray-600"></span>
           <span class="hidden lg:inline">保存(Export)</span>
         </button>
 
-        <button id="importDataBtn" data-action="triggerImport" class="ui-btn ui-md font-medium border-stoneborder bg-white hover:bg-sage-50 text-charcoal transition shrink-0 cursor-pointer" title="JSONファイルからデータを復元">
+        <button id="importDataBtn" data-action="triggerImport" class="ui-btn ui-md" title="JSONファイルからデータを復元">
           <span data-icon="upload" data-icon-class="text-gray-600"></span>
           <span class="hidden lg:inline">読込(Import)</span>
         </button>
         <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" />
 
-        <button data-action="openPlantFormModal" id="addPlantBtn" class="ui-btn ui-md font-semibold border-transparent bg-sage-100 hover:bg-sage-200 text-sage-800 transition cursor-pointer shrink-0" title="株を追加">
+        <button data-action="openPlantFormModal" id="addPlantBtn" class="ui-btn ui-md ui-soft" title="株を追加">
           <span data-icon="plant-plus" data-icon-class="text-sage-700"></span>
           <span class="hidden sm:inline">株を追加</span>
         </button>
@@ -227,11 +274,11 @@
 
       <!-- 下段: 実行ボタン -->
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" data-action="executeBatchWater" id="batchWaterBtn" class="ui-btn ui-md border-transparent bg-sky-500 hover:bg-sky-600 text-white font-semibold shadow-xs transition shrink-0 cursor-pointer">
+        <button type="button" data-action="executeBatchWater" id="batchWaterBtn" class="ui-btn ui-md ui-sky">
           <span data-icon="droplets"></span>
           <span>水やりを記録</span>
         </button>
-        <button type="button" data-action="executeBatchMaterial" id="batchMaterialBtn" class="ui-btn ui-md border-transparent bg-sage-500 hover:bg-sage-400 text-white font-semibold shadow-xs transition shrink-0 cursor-pointer">
+        <button type="button" data-action="executeBatchMaterial" id="batchMaterialBtn" class="ui-btn ui-md ui-batch-mat">
           <span data-icon="flask-conical"></span>
           <span id="batchMaterialBtnLabel">資材を記録</span>
         </button>
@@ -247,7 +294,7 @@
       <button
         id="filterNeedsWaterBtn"
         data-action="toggleNeedsWaterFilter"
-        class="ui-btn ui-sm font-medium border-stoneborder bg-white text-gray-600 hover:bg-amber-50 transition shrink-0 cursor-pointer"
+        class="ui-btn ui-sm ui-amber-soft"
       >
         <span data-icon="droplet" data-icon-class="text-amber-500"></span>
         <span>水やり目安</span>
@@ -258,7 +305,7 @@
         type="button"
         id="openFilterModalBtn"
         data-action="openFilterModal"
-        class="ui-btn ui-sm font-medium border-stoneborder bg-white text-gray-600 hover:bg-sage-50 transition flex-1 sm:flex-none cursor-pointer"
+        class="ui-btn ui-sm flex-1 sm:flex-none"
       >
         <span data-icon="sliders-horizontal" data-icon-class="text-gray-500"></span>
         <span>検索・絞込</span>
@@ -269,7 +316,7 @@
         type="button"
         id="resortBtn"
         data-action="resortGrid"
-        class="ui-btn ui-sm font-medium border-stoneborder bg-white hover:bg-sage-50 text-gray-600 hover:text-sage-700 transition shrink-0 cursor-pointer"
+        class="ui-btn ui-sm"
         title="現在の条件で並び順を更新"
       >
         <span data-icon="refresh-cw"></span>
@@ -290,8 +337,8 @@
       <h3 class="font-bold text-base text-charcoal mb-1">表示できる植物がありません</h3>
       <p class="text-xs text-gray-500 mb-5 leading-relaxed">条件を変更するか、右上の「＋ 株を追加」ボタンから新しい植物を登録してください。</p>
       <div class="flex items-center justify-center gap-2">
-        <button data-action="resetFilters" class="ui-btn ui-md font-medium border-stoneborder bg-white text-charcoal hover:bg-gray-50 transition cursor-pointer">フィルタを解除</button>
-        <button data-action="openPlantFormModal" class="ui-btn ui-md font-semibold border-transparent bg-sage-600 text-white hover:bg-sage-700 transition cursor-pointer">＋ 最初の株を追加</button>
+        <button data-action="resetFilters" class="ui-btn ui-md">フィルタを解除</button>
+        <button data-action="openPlantFormModal" class="ui-btn ui-md ui-primary">＋ 最初の株を追加</button>
       </div>
     </div>
   </main>
@@ -316,11 +363,11 @@
             <span id="detailDaysOwnedBadge" class="text-[10px] sm:text-[11px] text-gray-500 truncate"></span>
           </div>
           <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button id="detailEditBtn" data-action="editActivePlant" class="ui-btn ui-md border-stoneborder bg-white hover:bg-gray-50 text-gray-700 font-medium transition cursor-pointer" title="編集">
+            <button id="detailEditBtn" data-action="editActivePlant" class="ui-btn ui-md" title="編集">
               <span data-icon="pencil"></span>
               <span class="hidden sm:inline">編集</span>
             </button>
-            <button id="detailDeleteBtn" data-action="deleteActivePlant" class="ui-btn ui-md border-stoneborder bg-white hover:bg-red-50 text-red-600 font-medium transition cursor-pointer" title="削除">
+            <button id="detailDeleteBtn" data-action="deleteActivePlant" class="ui-btn ui-md ui-danger" title="削除">
               <span data-icon="trash-2"></span>
             </button>
           </div>
@@ -340,7 +387,7 @@
                 <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
                 <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
               </div>
-              <button type="button" id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="ui-btn ui-sm border-transparent bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer">今日記録</button>
+              <button type="button" id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="ui-btn ui-sm ui-sky">今日記録</button>
             </div>
 
             <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between gap-2">
@@ -352,7 +399,7 @@
                 <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
                 <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
               </div>
-              <button type="button" id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="ui-btn ui-sm border-transparent bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer">今日記録</button>
+              <button type="button" id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="ui-btn ui-sm ui-amber">今日記録</button>
             </div>
           </div>
 
@@ -454,7 +501,7 @@
           <div class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 mb-5">
             <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2 items-stretch sm:items-center">
               <div class="sm:col-span-3">
-                <select id="newGrowthTagInput" class="ui-field ui-md w-full border-stoneborder bg-white font-medium text-charcoal focus:outline-none">
+                <select id="newGrowthTagInput" class="ui-field ui-md font-medium">
                   <option value="growth">成長記録</option>
                   <option value="repot">植替え</option>
                   <option value="cut">胴切り・茎伏せ</option>
@@ -466,25 +513,25 @@
                 </select>
               </div>
               <div class="sm:col-span-3">
-                <input type="date" id="newGrowthDateInput" class="ui-field ui-md w-full border-stoneborder bg-white focus:outline-none" />
+                <input type="date" id="newGrowthDateInput" class="ui-field ui-md" />
               </div>
               <div class="sm:col-span-6 lg:col-span-4">
-                <label id="newGrowthPhotoLabelWrap" class="ui-btn ui-md w-full border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 font-medium cursor-pointer transition">
+                <label id="newGrowthPhotoLabelWrap" class="ui-btn ui-md ui-dashed w-full">
                   <span data-icon="camera"></span>
                   <span id="newGrowthPhotoLabel">写真を追加（最大6枚）</span>
                   <input type="file" id="newGrowthPhotoInput" accept="image/*" multiple class="hidden" />
                 </label>
               </div>
               <div class="sm:col-span-12 lg:col-span-2 flex gap-1.5 sm:justify-end">
-                <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="ui-btn ui-md flex-1 sm:flex-none lg:flex-1 min-w-0 border-transparent bg-sage-600 hover:bg-sage-700 text-white font-semibold transition cursor-pointer">
+                <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="ui-btn ui-md ui-primary flex-1 sm:flex-none lg:flex-1 min-w-0">
                   追加
                 </button>
-                <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden ui-btn ui-md flex-1 sm:flex-none lg:flex-1 border-stoneborder bg-white hover:bg-gray-50 text-gray-600 font-semibold transition cursor-pointer">
+                <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden ui-btn ui-md flex-1 sm:flex-none lg:flex-1">
                   取消
                 </button>
               </div>
               <div class="sm:col-span-12">
-                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="ひとことメモ（例: 葉元が黒ずんだので胴切り、新葉展開など...）" class="ui-field ui-md w-full border-stoneborder bg-white focus:outline-none" />
+                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="ひとことメモ（例: 葉元が黒ずんだので胴切り、新葉展開など...）" class="ui-field ui-md" />
               </div>
             </div>
             <input type="hidden" id="editGrowthLogId" value="">
@@ -521,7 +568,7 @@
         <div class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">植物名 / 品種名 <span class="text-red-500">*</span></label>
-            <input type="text" id="formName" required maxlength="200" placeholder="例: アガベ チタノタ 白鯨 / モンステラ デリシオーサ" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+            <input type="text" id="formName" required maxlength="200" placeholder="例: アガベ チタノタ 白鯨 / モンステラ デリシオーサ" class="ui-field ui-lg" />
           </div>
 
           <div>
@@ -534,7 +581,7 @@
           <label class="block text-xs font-bold text-charcoal mb-1">現在の写真（任意・自動WebP軽量化）</label>
           <p class="text-[11px] text-gray-500 mb-2">登録するとカードのサムネイルになり、成長記録の1枚目としても保存されます。</p>
           <div class="flex items-center gap-3">
-            <label id="formPhotoLabel" class="ui-btn ui-lg bg-white border-stoneborder hover:bg-sage-50 font-medium cursor-pointer shadow-2xs transition">
+            <label id="formPhotoLabel" class="ui-btn ui-lg">
               <span data-icon="camera" data-icon-class="text-sage-600"></span>
               <span>写真を選択</span>
               <input type="file" id="formPhotoInput" accept="image/*" class="hidden" />
@@ -550,7 +597,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">置き場所</label>
-            <input type="text" id="formLocation" maxlength="200" list="locationPresets" placeholder="選択または自由入力..." class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+            <input type="text" id="formLocation" maxlength="200" list="locationPresets" placeholder="選択または自由入力..." class="ui-field ui-lg" />
             <datalist id="locationPresets">
               <option value="ライト棚・直下"></option>
               <option value="ライト棚・周辺"></option>
@@ -563,7 +610,7 @@
 
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">用土・鉢スペック（任意）</label>
-            <input type="text" id="formSoil" maxlength="300" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+            <input type="text" id="formSoil" maxlength="300" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="ui-field ui-lg" />
             <datalist id="soilPresets">
               <option value="無機質土・スリット鉢"></option>
               <option value="無機質土・プレステラ"></option>
@@ -575,7 +622,7 @@
 
           <div>
             <label class="block text-xs font-bold text-charcoal mb-1">光量目安（任意）</label>
-            <input type="text" id="formLight" maxlength="300" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+            <input type="text" id="formLight" maxlength="300" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="ui-field ui-lg" />
             <datalist id="lightPresets">
               <option value="25,000 lx (強光・直下)"></option>
               <option value="10,000 lx (中高光)"></option>
@@ -587,14 +634,14 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs font-bold text-charcoal mb-1">水やり頻度目安</label>
-              <div class="ui-field ui-lg w-full border-stoneborder bg-white">
+              <div class="ui-field ui-lg">
                 <input type="number" id="formWaterInterval" min="1" max="90" placeholder="例: 7" />
                 <span class="text-xs text-gray-400 shrink-0">日毎</span>
               </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-charcoal mb-1">水やり方法</label>
-              <select id="formWaterMethod" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none">
+              <select id="formWaterMethod" class="ui-field ui-lg">
                 <option value="通常水やり">通常水やり</option>
                 <option value="底面給水(ドボン)">底面給水(ドボン)</option>
                 <option value="葉水＋辛め管理">葉水＋辛め管理</option>
@@ -605,7 +652,7 @@
           <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 border-t border-stoneborder">
             <div>
               <label class="block text-xs font-bold text-charcoal mb-1">育成ステータス</label>
-              <select id="formStatus" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none">
+              <select id="formStatus" class="ui-field ui-lg">
                 <option value="normal">通常</option>
                 <option value="rooting">発根管理中</option>
                 <option value="curing">養生中</option>
@@ -623,27 +670,27 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label class="block text-xs font-medium text-charcoal mb-1">購入日・お迎え日</label>
-              <input type="date" id="formPurchaseDate" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+              <input type="date" id="formPurchaseDate" class="ui-field ui-lg" />
             </div>
             <div>
               <label class="block text-xs font-medium text-charcoal mb-1">価格 (¥)</label>
-              <input type="number" id="formPrice" min="0" max="1000000000" step="1" placeholder="例: 4800" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+              <input type="number" id="formPrice" min="0" max="1000000000" step="1" placeholder="例: 4800" class="ui-field ui-lg" />
             </div>
             <div>
               <label class="block text-xs font-medium text-charcoal mb-1">購入店・イベント</label>
-              <input type="text" id="formShop" maxlength="300" placeholder="例: ○○園芸 / メルカリ" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+              <input type="text" id="formShop" maxlength="300" placeholder="例: ○○園芸 / メルカリ" class="ui-field ui-lg" />
             </div>
           </div>
           <div class="mt-3">
             <label class="block text-xs font-medium text-charcoal mb-1">育成メモ・特徴</label>
-            <textarea id="formNotes" rows="2" maxlength="5000" placeholder="根張り状況、肥料の相性、冬越しの注意点など..." class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none"></textarea>
+            <textarea id="formNotes" rows="2" maxlength="5000" placeholder="根張り状況、肥料の相性、冬越しの注意点など..." class="ui-field ui-lg"></textarea>
           </div>
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-2 border-t border-stoneborder">
           <input type="hidden" id="formPlantId" />
-          <button type="button" data-action="closePlantFormModal" class="ui-btn ui-lg border-stoneborder bg-white text-charcoal font-medium hover:bg-gray-50 transition cursor-pointer">キャンセル</button>
-          <button type="submit" class="ui-btn ui-lg border-transparent bg-sage-600 hover:bg-sage-700 text-white font-semibold shadow-xs transition cursor-pointer">保存する</button>
+          <button type="button" data-action="closePlantFormModal" class="ui-btn ui-lg">キャンセル</button>
+          <button type="submit" class="ui-btn ui-lg ui-primary">保存する</button>
         </div>
       </form>
     </div>
@@ -665,7 +712,7 @@
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-[11px] font-bold text-charcoal mb-1">カテゴリ</label>
-            <select id="quickLogTagInput" class="ui-field ui-lg w-full border-stoneborder bg-white font-medium text-charcoal focus:outline-none">
+            <select id="quickLogTagInput" class="ui-field ui-lg font-medium">
               <option value="growth">成長記録</option>
               <option value="repot">植替え</option>
               <option value="cut">胴切り・茎伏せ</option>
@@ -678,12 +725,12 @@
           </div>
           <div>
             <label class="block text-[11px] font-bold text-charcoal mb-1">日付</label>
-            <input type="date" id="quickLogDateInput" class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none" />
+            <input type="date" id="quickLogDateInput" class="ui-field ui-lg" />
           </div>
         </div>
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1">写真（任意・最大6枚まで一括選択可）</label>
-          <label class="ui-btn ui-lg w-full border-dashed border-sage-500 bg-canvas hover:bg-sage-50 text-sage-700 font-medium cursor-pointer transition">
+          <label class="ui-btn ui-lg ui-dashed w-full">
             <span data-icon="camera"></span>
             <span id="quickLogPhotoLabel">写真を選択（最大6枚）</span>
             <input type="file" id="quickLogPhotoInput" accept="image/*" multiple class="hidden" />
@@ -698,11 +745,11 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1">ひとことメモ（任意）</label>
-          <textarea id="quickLogNoteInput" rows="2" maxlength="1000" placeholder="例: 葉の根元が黒ずんでたので胴切り、新葉展開など..." class="ui-field ui-lg w-full border-stoneborder bg-white focus:outline-none"></textarea>
+          <textarea id="quickLogNoteInput" rows="2" maxlength="1000" placeholder="例: 葉の根元が黒ずんでたので胴切り、新葉展開など..." class="ui-field ui-lg"></textarea>
         </div>
         <div class="pt-1 flex items-center justify-end gap-2">
-          <button type="button" data-action="closeQuickLogModal" class="ui-btn ui-lg border-stoneborder bg-white text-charcoal font-medium hover:bg-gray-50 transition cursor-pointer">キャンセル</button>
-          <button type="button" id="submitQuickLogBtn" data-action="submitQuickLog" class="ui-btn ui-lg border-transparent bg-sage-600 hover:bg-sage-700 text-white font-semibold transition cursor-pointer">記録する</button>
+          <button type="button" data-action="closeQuickLogModal" class="ui-btn ui-lg">キャンセル</button>
+          <button type="button" id="submitQuickLogBtn" data-action="submitQuickLog" class="ui-btn ui-lg ui-primary">記録する</button>
         </div>
       </div>
     </div>
@@ -725,7 +772,7 @@
       <div class="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto min-h-0 overscroll-contain">
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1.5">キーワード検索</label>
-          <div class="ui-field ui-lg w-full bg-white border-stoneborder transition">
+          <div class="ui-field ui-lg">
             <span data-icon="search" data-icon-class="text-gray-400"></span>
             <input
               type="text"
@@ -740,7 +787,7 @@
 
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1.5">並び替え</label>
-          <div class="ui-field ui-lg w-full bg-white border-stoneborder text-gray-600 transition">
+          <div class="ui-field ui-lg">
             <span data-icon="arrow-up-down" data-icon-class="text-gray-400"></span>
             <select id="sortSelect" class="font-medium text-charcoal cursor-pointer">
               <option value="water_priority">水やりが必要な順（目安基準）</option>
@@ -755,7 +802,7 @@
 
         <div>
           <label class="block text-[11px] font-bold text-charcoal mb-1.5">育成ステータス</label>
-          <div class="ui-field ui-lg w-full bg-white border-stoneborder text-gray-600 transition">
+          <div class="ui-field ui-lg">
             <span data-icon="sliders-horizontal" data-icon-class="text-gray-400"></span>
             <select id="statusFilterSelect" class="font-medium text-charcoal cursor-pointer">
               <option value="all">全ステータス</option>
@@ -767,8 +814,8 @@
         </div>
 
         <div class="pt-2 flex items-center justify-between gap-2 border-t border-stoneborder">
-          <button type="button" data-action="resetFilters" class="ui-btn ui-lg border-stoneborder bg-white text-gray-600 hover:bg-gray-50 font-medium transition cursor-pointer">条件をリセット</button>
-          <button type="button" data-action="closeFilterModal" class="ui-btn ui-lg border-transparent bg-sage-600 hover:bg-sage-700 text-white font-semibold transition cursor-pointer">完了</button>
+          <button type="button" data-action="resetFilters" class="ui-btn ui-lg">条件をリセット</button>
+          <button type="button" data-action="closeFilterModal" class="ui-btn ui-lg ui-primary">完了</button>
         </div>
       </div>
     </div>
@@ -780,8 +827,8 @@
       <h3 id="confirmTitle" class="font-bold text-base text-charcoal mb-1.5">確認</h3>
       <p id="confirmMessage" class="text-xs text-gray-600 leading-relaxed mb-5"></p>
       <div class="flex items-center justify-end gap-2">
-        <button id="confirmCancelBtn" class="ui-btn ui-md border-stoneborder bg-white text-charcoal font-medium hover:bg-gray-50 transition cursor-pointer">キャンセル</button>
-        <button id="confirmOkBtn" class="ui-btn ui-md border-transparent bg-sage-600 text-white font-semibold hover:bg-sage-700 transition cursor-pointer">実行する</button>
+        <button id="confirmCancelBtn" class="ui-btn ui-md">キャンセル</button>
+        <button id="confirmOkBtn" class="ui-btn ui-md ui-primary">実行する</button>
       </div>
     </div>
   </div>

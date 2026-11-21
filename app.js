@@ -35,7 +35,7 @@ const QUICK_CARE_CARDS = [
     icon: 'droplets',
     boxId: 'detailLastWatered',
     subId: 'detailWaterSub',
-    btnClass: 'bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border-sky-200/80',
+    btnClass: 'ui-sky-soft',
     formatSub: (p) => p.waterIntervalDays ? `目安: ${p.waterIntervalDays}日ごと (${p.waterMethod || '通常'})` : (p.waterMethod || '目安未設定')
   },
   {
@@ -44,7 +44,7 @@ const QUICK_CARE_CARDS = [
     icon: 'shovel',
     boxId: 'detailLastRepotted',
     subId: 'detailSoilSub',
-    btnClass: 'bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border-amber-200/70',
+    btnClass: 'ui-amber-soft',
     formatSub: (p) => p.soil || '用土未設定'
   }
 ];
@@ -455,10 +455,10 @@ function updateHeaderBadges() {
 
   const btn = document.getElementById('filterNeedsWaterBtn');
   if (appState.onlyNeedsWater) {
-    btn.className = 'ui-btn ui-sm font-semibold border-amber-500 bg-amber-500 text-white transition shrink-0 shadow-2xs cursor-pointer';
+    btn.className = 'ui-btn ui-sm ui-amber';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-white text-amber-800 text-[10px] font-bold leading-none';
   } else {
-    btn.className = 'ui-btn ui-sm font-medium border-stoneborder bg-white text-gray-600 hover:bg-amber-50 transition shrink-0 cursor-pointer';
+    btn.className = 'ui-btn ui-sm ui-amber-soft';
     badge.className = 'px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold leading-none';
   }
 }
@@ -481,14 +481,12 @@ function renderLocationTabs() {
     const active = appState.selectedLocation === loc;
     const button = createElement(
       'button',
-      `ui-btn ui-sm font-medium transition shrink-0 cursor-pointer ${
-        active ? 'bg-sage-600 text-white border-sage-600 shadow-2xs' : 'bg-white text-gray-600 border-stoneborder hover:bg-sage-50'
-      }`
+      active ? 'ui-btn ui-sm ui-primary' : 'ui-btn ui-sm'
     );
     button.type = 'button';
     button.addEventListener('click', () => selectLocationTab(loc));
     button.append(
-      createLucideIcon(loc === 'すべて' ? 'layout-grid' : 'map-pin', `w-3.5 h-3.5 ${active ? 'text-sage-200' : 'text-gray-400'}`),
+      createLucideIcon(loc === 'すべて' ? 'layout-grid' : 'map-pin', active ? 'text-sage-200' : 'text-gray-400'),
       createElement('span', '', loc),
       createElement('span', `text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sage-700 text-sage-100' : 'bg-gray-100 text-gray-500'}`, String(counts.get(loc) || 0))
     );
@@ -657,24 +655,24 @@ function createPlantCard(plant) {
   const actions = createElement('div', 'grid grid-cols-[1.15fr_1fr] gap-1.5');
 
   const waterCard = QUICK_CARE_CARDS[0];
-  const waterBtn = createElement('button', `ui-btn ui-md card-action font-medium transition cursor-pointer ${waterCard.btnClass}`);
+  const waterBtn = createElement('button', `ui-btn ui-md ${waterCard.btnClass} card-action`);
   waterBtn.type = 'button';
   waterBtn.title = plant.lastWatered === getTodayStr() ? '今日の水やり記録を取り消す' : '今日水やりしたとして記録';
   waterBtn.append(
-    createLucideIcon(waterCard.icon, 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'whitespace-nowrap', waterCard.label)
+    createLucideIcon(waterCard.icon),
+    createElement('span', '', waterCard.label)
   );
   waterBtn.addEventListener('click', event => {
     event.stopPropagation();
     recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
 
-  const quickLogBtn = createElement('button', 'ui-btn ui-md card-action font-medium transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  const quickLogBtn = createElement('button', 'ui-btn ui-md ui-sage-soft card-action');
   quickLogBtn.type = 'button';
   quickLogBtn.title = '写真やひとことメモをサッと追加';
   quickLogBtn.append(
-    createLucideIcon('square-pen', 'w-3.5 h-3.5 shrink-0'),
-    createElement('span', 'whitespace-nowrap', '記録')
+    createLucideIcon('square-pen'),
+    createElement('span', '', '記録')
   );
   quickLogBtn.addEventListener('click', event => {
     event.stopPropagation();
@@ -789,14 +787,7 @@ function setBatchMode(enabled) {
 
   const btn = document.getElementById('batchModeBtnHeader');
   if (btn) {
-    btn.classList.toggle('bg-sage-100', appState.batchMode);
-    btn.classList.toggle('text-sage-800', appState.batchMode);
-    btn.classList.toggle('border-sage-500', appState.batchMode);
-    btn.classList.toggle('font-semibold', appState.batchMode);
-    btn.classList.toggle('bg-white', !appState.batchMode);
-    btn.classList.toggle('text-charcoal', !appState.batchMode);
-    btn.classList.toggle('border-stoneborder', !appState.batchMode);
-    btn.classList.toggle('font-medium', !appState.batchMode);
+    btn.classList.toggle('ui-soft', appState.batchMode);
   }
 
   updateBatchCountUI();
@@ -934,16 +925,12 @@ function renderBatchMaterialChips() {
     const selected = appState.batchSelectedMaterials.has(code);
     const chip = createElement(
       'button',
-      `ui-btn ui-sm font-semibold transition cursor-pointer ${
-        selected
-          ? 'bg-white text-sage-800 border-white shadow-2xs'
-          : 'bg-sage-700/80 text-sage-100 border-sage-600 hover:bg-sage-600'
-      }`
+      selected ? 'ui-btn ui-sm font-semibold' : 'ui-btn ui-sm ui-dark'
     );
     chip.type = 'button';
-    chip.appendChild(createElement('span', 'leading-none', def.label));
+    chip.appendChild(createElement('span', '', def.label));
     if (def.updatesWatered) {
-      chip.appendChild(createLucideIcon('droplets', `w-3 h-3 block shrink-0 ${selected ? 'text-sky-600' : 'text-sky-300'}`));
+      chip.appendChild(createLucideIcon('droplets', selected ? 'text-sky-600' : 'text-sky-300'));
     }
     chip.addEventListener('click', () => {
       if (appState.batchSelectedMaterials.has(code)) {
@@ -1073,17 +1060,13 @@ const todayStr = getTodayStr();
   if (waterBtnEl) {
     const done = plant.lastWatered === todayStr;
     waterBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
-    waterBtnEl.className = done
-      ? 'ui-btn ui-sm bg-white text-sky-700 border-sky-300 hover:bg-sky-50 font-semibold transition shrink-0 cursor-pointer'
-      : 'ui-btn ui-sm border-transparent bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer';
+    waterBtnEl.className = done ? 'ui-btn ui-sm ui-sky-soft font-semibold' : 'ui-btn ui-sm ui-sky';
   }
   const repotBtnEl = document.getElementById('detailQuickRepotBtn');
   if (repotBtnEl) {
     const done = plant.lastRepotted === todayStr;
     repotBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
-    repotBtnEl.className = done
-      ? 'ui-btn ui-sm bg-white text-amber-800 border-amber-300 hover:bg-amber-50 font-semibold transition shrink-0 cursor-pointer'
-      : 'ui-btn ui-sm border-transparent bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer';
+    repotBtnEl.className = done ? 'ui-btn ui-sm ui-amber-soft text-amber-800 border-amber-300 font-semibold' : 'ui-btn ui-sm ui-amber';
   }
 
   const matContainer = document.getElementById('detailMaterialsContainer');
@@ -1113,26 +1096,22 @@ const todayStr = getTodayStr();
 
         const chip = createElement(
           'button',
-          `ui-btn ui-sm font-medium transition cursor-pointer ${
-            isToday
-              ? (def.updatesWatered ? 'bg-sky-600 text-white border-sky-600 shadow-2xs' : 'bg-sage-600 text-white border-sage-600 shadow-2xs')
-              : (def.updatesWatered
-                  ? 'bg-white hover:bg-sky-50 text-sky-800 border-sky-200'
-                  : 'bg-white hover:bg-sage-100/70 text-charcoal border-stoneborder')
-          }`
+          isToday
+            ? (def.updatesWatered ? 'ui-btn ui-sm ui-sky' : 'ui-btn ui-sm ui-primary')
+            : (def.updatesWatered ? 'ui-btn ui-sm ui-sky-soft' : 'ui-btn ui-sm')
         );
         chip.type = 'button';
         chip.title = isToday ? `${def.label}の今日の記録を取り消す` : `${def.label}を今日使用として記録`;
         if (isToday) {
-          chip.appendChild(createLucideIcon('check', 'w-3 h-3 text-white block shrink-0'));
+          chip.appendChild(createLucideIcon('check', 'text-white'));
         } else if (isAuto) {
-          const icon = createLucideIcon('file-check', 'w-3 h-3 text-sage-600 block shrink-0');
+          const icon = createLucideIcon('file-check', 'text-sage-600');
           icon.setAttribute('aria-label', '自動記録ON');
           chip.appendChild(icon);
         }
         chip.append(
-          createElement('span', 'font-semibold leading-none', def.label),
-          createElement('span', `text-[10px] leading-none ${isToday ? 'text-white/90' : 'text-gray-400'}`, dateLabel)
+          createElement('span', 'font-semibold', def.label),
+          createElement('span', `text-[10px] ${isToday ? 'text-white/90' : 'text-gray-400'}`, dateLabel)
         );
         chip.addEventListener('click', () => recordMaterialUsage(plant.id, code));
         row.appendChild(chip);
@@ -1369,8 +1348,8 @@ function editGrowthLogEntry(plantId, logId) {
 
   const addBtn = document.getElementById('addGrowthLogBtn');
   addBtn.textContent = '更新';
-  addBtn.classList.remove('bg-sage-600', 'hover:bg-sage-700');
-  addBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+  addBtn.classList.remove('ui-primary');
+  addBtn.classList.add('ui-amber');
 
   document.getElementById('cancelEditGrowthLogBtn').classList.remove('hidden');
   document.getElementById('growthAlbumTitle').scrollIntoView({ behavior: 'smooth' });
@@ -1385,8 +1364,8 @@ function cancelEditGrowthLog() {
 
   const addBtn = document.getElementById('addGrowthLogBtn');
   addBtn.textContent = '追加';
-  addBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-  addBtn.classList.add('bg-sage-600', 'hover:bg-sage-700');
+  addBtn.classList.remove('ui-amber');
+  addBtn.classList.add('ui-primary');
 
   document.getElementById('cancelEditGrowthLogBtn').classList.add('hidden');
 }
@@ -1663,7 +1642,7 @@ function renderFormMaterialAutoLogGrid(selectedCodes = []) {
   const selectedSet = new Set(selectedCodes);
   grid.replaceChildren();
   Object.entries(MATERIAL_DEFS).forEach(([code, def]) => {
-    const label = createElement('label', 'ui-btn ui-sm border-stoneborder bg-white hover:bg-sage-50 cursor-pointer select-none');
+    const label = createElement('label', 'ui-btn ui-sm select-none');
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.value = code;
