@@ -509,7 +509,7 @@ function createPlantCard(plant) {
 
   const isBatchSelected = appState.batchSelectedIds.has(plant.id);
   const card = createElement('article', `group bg-surface rounded-2xl border shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden ${
-    isBatchSelected ? 'border-sage-600 ring-2 ring-sage-500/30' : needsWater ? 'border-amber-300' : 'border-stoneborder'
+    isBatchSelected ? 'border-sage-600 ring-2 ring-sage-500/30' : 'border-stoneborder'
   }${appState.batchMode ? ' cursor-pointer' : ''}`);
   card.id = `card_${plant.id}`;
   if (appState.batchMode) card.addEventListener('click', () => toggleSelectInBatch(plant.id));
@@ -533,14 +533,14 @@ function createPlantCard(plant) {
   }
 
   // Location & Batch Checkbox
-  const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-start gap-1.5');
+  const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-start gap-1.5 max-w-[58%] sm:max-w-[62%]');
   if (appState.batchMode) {
-    const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
+    const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg shrink-0 ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
     checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
     locationPill.appendChild(checkWrap);
   }
-  const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs');
-  locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', '', plant.location || '未設定'));
+  const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs min-w-0 max-w-full');
+  locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', 'truncate', plant.location || '未設定'));
   locationPill.appendChild(locationBadge);
   visual.appendChild(locationPill);
 
@@ -579,29 +579,10 @@ function createPlantCard(plant) {
   });
   details.appendChild(name);
 
-  const specs = createElement('div', 'flex flex-wrap items-center gap-1 mt-1.5 sm:gap-1.5 sm:mt-2');
-  const addSpec = (iconName, iconClass, text) => {
-    const badge = createElement('span', 'marker-badge bg-canvas border-stoneborder text-gray-600');
-    badge.append(createLucideIcon(iconName, iconClass), document.createTextNode(text));
-    specs.appendChild(badge);
-  };
-  if (plant.soil) addSpec('archive', 'w-3 h-3 text-sage-600', plant.soil);
-  if (plant.lightLevel) addSpec('sun', 'w-3 h-3 text-amber-500', plant.lightLevel);
-  if (plant.waterIntervalDays) addSpec('repeat', 'w-3 h-3 text-sky-600', `目安${plant.waterIntervalDays}日 (${plant.waterMethod || '通常'})`);
-  details.appendChild(specs);
   body.appendChild(details);
 
-  const metadata = createElement('div', 'pt-1.5 sm:pt-2 border-t border-stoneborder/60 flex items-center justify-between text-[9px] sm:text-[11px] text-gray-400');
-  const shop = createElement('span', 'truncate max-w-[65%]');
-  if (plant.shop) shop.append(createLucideIcon('store', 'w-3 h-3 inline mr-0.5'), document.createTextNode(plant.shop));
-  else shop.textContent = 'コレクション株';
-  metadata.append(shop, createElement('span', '', plant.price !== null && plant.price !== undefined
-    ? `¥${Number(plant.price).toLocaleString()}`
-    : ''));
-  body.appendChild(metadata);
-
   // Quick Care Buttons
-  const actions = createElement('div', 'grid grid-cols-2 gap-1 pt-1 sm:gap-1.5');
+  const actions = createElement('div', 'grid grid-cols-2 gap-1 sm:gap-1.5');
   QUICK_CARE_CARDS.slice(0, 2).forEach(cardDef => {
     const button = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
     button.type = 'button';
