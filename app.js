@@ -39,15 +39,6 @@ const QUICK_CARE_CARDS = [
     formatSub: (p) => p.waterIntervalDays ? `目安: ${p.waterIntervalDays}日ごと (${p.waterMethod || '通常'})` : (p.waterMethod || '目安未設定')
   },
   {
-    careType: 'lastFertilized',
-    label: '活力剤',
-    icon: 'flask-conical',
-    boxId: 'detailLastFertilized',
-    subId: null,
-    btnClass: 'bg-emerald-50/70 hover:bg-emerald-600 text-emerald-800 hover:text-white border-emerald-200/70',
-    formatSub: () => '定期ケア'
-  },
-  {
     careType: 'lastRepotted',
     label: '植替え',
     icon: 'shovel',
@@ -71,9 +62,12 @@ const appState = {
   plants: [],
   selectedLocation: 'すべて',
   onlyNeedsWater: false,
+  selectedStatus: 'all',
   batchMode: false,
   batchSelectedIds: new Set(),
+  batchSelectedMaterials: new Set(),
   activeDetailPlantId: null,
+  returnToDetailPlantId: null,
   selectedFormSvgType: 'agave',
   tempFormPhotoDataUrl: null,
   tempGrowthPhotos: [],
@@ -92,13 +86,31 @@ function createId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
+const PLANT_STATUSES = {
+  normal:  { label: '通常', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
+  rooting: { label: '発根管理中', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
+  curing:  { label: '養生中', badgeClass: 'bg-terracotta/15 text-terracotta border-terracotta/30' }
+};
+
+const MATERIAL_DEFS = {
+  menedel:     { label: 'メネデール', group: 'water', updatesWatered: true },
+  hyponex_liq: { label: 'ハイポ原液', group: 'water', updatesWatered: true },
+  hyponex_pow: { label: '微粉ハイポ', group: 'water', updatesWatered: true },
+  magamp:      { label: 'マグァンプ', group: 'solid', updatesWatered: false },
+  fruit_fert:  { label: '果樹の肥料', group: 'solid', updatesWatered: false },
+  ortran:      { label: 'オルトラン', group: 'solid', updatesWatered: false },
+  benika:      { label: 'ベニカ',     group: 'solid', updatesWatered: false }
+};
+
 const LOG_TAGS = {
-  growth:  { label: '成長記録', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
-  repot:   { label: '植替え', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200' },
-  cut:     { label: '胴切り・茎伏せ', badgeClass: 'bg-rose-50 text-rose-800 border-rose-200' },
-  rooting: { label: '発根・水差し', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
-  check:   { label: '根確認・処置', badgeClass: 'bg-orange-50 text-orange-800 border-orange-200' },
-  move:    { label: '場所・環境変更', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' }
+  growth:   { label: '成長記録', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
+  repot:    { label: '植替え', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200' },
+  cut:      { label: '胴切り・茎伏せ', badgeClass: 'bg-rose-50 text-rose-800 border-rose-200' },
+  rooting:  { label: '発根・水差し', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
+  check:    { label: '根確認・処置', badgeClass: 'bg-orange-50 text-orange-800 border-orange-200' },
+  move:     { label: '場所・環境変更', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+  status:   { label: '状態変更', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
+  material: { label: '資材使用', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
 };
 
 function getSortedGrowthLogs(plant) {
@@ -279,6 +291,9 @@ function getInitialSamplePlants() {
       lastFertilized: getDaysAgoStr(15),
       lastRepotted: getDaysAgoStr(60),
       notes: '鋸歯のうねりが強い選抜株。サーキュレーター24時間直風で締め作り中。',
+      status: 'normal',
+      materialLogs: {},
+      materialAutoLog: [],
       growthLogs: []
     },
     {
@@ -297,6 +312,9 @@ function getInitialSamplePlants() {
       lastFertilized: getDaysAgoStr(10),
       lastRepotted: getDaysAgoStr(120),
       notes: 'ねこチップ＋透明スリット鉢で根の動きを観察中。新葉の切れ込みが増えてきた。',
+      status: 'normal',
+      materialLogs: {},
+      materialAutoLog: [],
       growthLogs: []
     },
     {
@@ -315,6 +333,9 @@ function getInitialSamplePlants() {
       lastFertilized: getDaysAgoStr(20),
       lastRepotted: getDaysAgoStr(180),
       notes: '塊根部の張り良好。水やり後はしっかり風を当てて2日で乾かすサイクル。',
+      status: 'normal',
+      materialLogs: {},
+      materialAutoLog: [],
       growthLogs: []
     },
     {
@@ -333,6 +354,9 @@ function getInitialSamplePlants() {
       lastFertilized: getDaysAgoStr(25),
       lastRepotted: getDaysAgoStr(40),
       notes: 'ダクトレールからハンギング。エアコンの風が直接当たらない位置をキープ。',
+      status: 'normal',
+      materialLogs: {},
+      materialAutoLog: [],
       growthLogs: []
     }
   ];
@@ -418,6 +442,7 @@ function getWaterMarginDays(plant) {
 }
 
 function isPlantNeedingWater(plant) {
+  if (plant.status && plant.status !== 'normal') return false;
   const margin = getWaterMarginDays(plant);
   return margin !== null && margin <= 0;
 }
@@ -480,6 +505,8 @@ function getFilteredAndSortedPlants() {
       if (loc !== appState.selectedLocation) return false;
     }
     if (appState.onlyNeedsWater && !isPlantNeedingWater(p)) return false;
+    const plantStatus = p.status || 'normal';
+    if (appState.selectedStatus !== 'all' && plantStatus !== appState.selectedStatus) return false;
     if (q) {
       const hay = `${p.name || ''} ${p.soil || ''} ${p.shop || ''} ${p.location || ''} ${p.notes || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -560,8 +587,10 @@ function createPlantCard(plant) {
     visual.appendChild(svgWrap);
   }
 
-  // Location & Batch Checkbox
-  const locationPill = createElement('div', 'absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 flex items-start gap-1.5 max-w-[58%] sm:max-w-[62%]');
+  // Top Overlay Row (Location & Status — 140px幅でも重ならないようFlex配置)
+  const topOverlay = createElement('div', 'absolute top-1.5 inset-x-1.5 sm:top-2.5 sm:inset-x-2.5 flex items-start justify-between gap-1 pointer-events-none');
+
+  const locationPill = createElement('div', 'flex items-center gap-1 min-w-0 flex-1');
   if (appState.batchMode) {
     const checkWrap = createElement('div', `w-5 h-5 sm:w-6 sm:h-6 rounded-lg shrink-0 ${isBatchSelected ? 'bg-sage-600 text-white' : 'bg-white/90 text-gray-400 border border-gray-300'} flex items-center justify-center shadow-xs`);
     checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
@@ -570,19 +599,25 @@ function createPlantCard(plant) {
   const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs min-w-0 max-w-full');
   locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', 'truncate', plant.location || '未設定'));
   locationPill.appendChild(locationBadge);
-  visual.appendChild(locationPill);
 
-  // Water Status Badge
-  const statusWrap = createElement('div', 'absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5');
-  const statusBadge = createElement('span', `marker-badge font-bold shadow-2xs ${
-    needsWater ? 'bg-amber-500 text-white border-transparent' : daysSinceWater === 0 ? 'bg-sky-600 text-white border-transparent' : 'bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80'
-  }`);
-  statusBadge.append(
-    createLucideIcon('droplets', `${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
-    createElement('span', '', waterBadgeText)
-  );
-  statusWrap.appendChild(statusBadge);
-  visual.appendChild(statusWrap);
+  const statusWrap = createElement('div', 'shrink-0');
+  const plantStatus = plant.status && PLANT_STATUSES[plant.status] ? plant.status : 'normal';
+  if (plantStatus !== 'normal') {
+    const stInfo = PLANT_STATUSES[plantStatus];
+    statusWrap.appendChild(createElement('span', `marker-badge font-bold shadow-2xs ${stInfo.badgeClass}`, stInfo.label));
+  } else {
+    const statusBadge = createElement('span', `marker-badge font-bold shadow-2xs ${
+      needsWater ? 'bg-amber-500 text-white border-transparent' : daysSinceWater === 0 ? 'bg-sky-600 text-white border-transparent' : 'bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80'
+    }`);
+    statusBadge.append(
+      createLucideIcon('droplets', `${needsWater || daysSinceWater === 0 ? 'text-white' : 'text-sky-500'}`),
+      createElement('span', '', waterBadgeText)
+    );
+    statusWrap.appendChild(statusBadge);
+  }
+
+  topOverlay.append(locationPill, statusWrap);
+  visual.appendChild(topOverlay);
 
   if (photoLogs.length) {
     const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
@@ -592,6 +627,10 @@ function createPlantCard(plant) {
 
   visual.addEventListener('click', event => {
     event.stopPropagation();
+    if (appState.batchMode) {
+      toggleSelectInBatch(plant.id);
+      return;
+    }
     openDetailModal(plant.id);
   });
   visual.style.cursor = 'pointer';
@@ -600,9 +639,13 @@ function createPlantCard(plant) {
   // Card Body
   const body = createElement('div', 'p-2 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3');
   const details = createElement('div');
-  const name = createElement('h3', 'font-bold text-sm sm:text-base text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1', plant.name);
+  const name = createElement('h3', 'font-semibold text-[13px] sm:text-sm text-charcoal hover:text-sage-600 transition cursor-pointer line-clamp-1 leading-snug', plant.name);
   name.addEventListener('click', event => {
     event.stopPropagation();
+    if (appState.batchMode) {
+      toggleSelectInBatch(plant.id);
+      return;
+    }
     openDetailModal(plant.id);
   });
   details.appendChild(name);
@@ -613,9 +656,9 @@ function createPlantCard(plant) {
   const actions = createElement('div', 'grid grid-cols-2 gap-1 sm:gap-1.5');
 
   const waterCard = QUICK_CARE_CARDS[0];
-  const waterBtn = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${waterCard.btnClass}`);
+  const waterBtn = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${waterCard.btnClass}`);
   waterBtn.type = 'button';
-  waterBtn.title = '今日水やりしたとして記録';
+  waterBtn.title = plant.lastWatered === getTodayStr() ? '今日の水やり記録を取り消す' : '今日水やりしたとして記録';
   waterBtn.append(
     createLucideIcon(waterCard.icon, 'w-3.5 h-3.5 shrink-0'),
     createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', waterCard.label)
@@ -625,7 +668,7 @@ function createPlantCard(plant) {
     recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
 
-  const quickLogBtn = createElement('button', 'py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  const quickLogBtn = createElement('button', 'py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-medium border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
   quickLogBtn.type = 'button';
   quickLogBtn.title = '写真やひとことメモをサッと追加';
   quickLogBtn.append(
@@ -661,11 +704,61 @@ function renderPlantGrid() {
 /********************************************************************
 - 6. ONE-TAP QUICK CARE & BATCH ACTIONS
  ********************************************************************/
+function getTodayCareUndo(plant, today) {
+  if (!plant.careUndo || plant.careUndo.date !== today) {
+    plant.careUndo = { date: today, fields: {}, materials: {} };
+  }
+  return plant.careUndo;
+}
+
+function addCareSource(plant, field, source, today) {
+  const undo = getTodayCareUndo(plant, today);
+  if (!undo.fields[field]) {
+    undo.fields[field] = { previous: plant[field] || '', sources: [] };
+  }
+  const sources = undo.fields[field].sources;
+  if (!sources.includes(source)) sources.push(source);
+  plant[field] = today;
+}
+
+function removeCareSource(plant, field, source, today) {
+  const entry = plant.careUndo?.date === today ? plant.careUndo.fields[field] : null;
+  if (!entry || !entry.sources.includes(source)) return false;
+  entry.sources = entry.sources.filter(item => item !== source);
+  if (plant[field] === today && entry.sources.length === 0) {
+    plant[field] = entry.previous;
+  }
+  if (entry.sources.length === 0) delete plant.careUndo.fields[field];
+  return true;
+}
+
+function updateRepottedFromLog(plant, date) {
+  if (plant.lastRepotted && date < plant.lastRepotted) return;
+  const entry = plant.careUndo?.fields.lastRepotted;
+  if (entry) {
+    if (date === plant.careUndo.date) entry.previous = date;
+    else delete plant.careUndo.fields.lastRepotted;
+  }
+  plant.lastRepotted = date;
+}
+
 async function recordPlantCare(plantId, careType, toastMessage) {
   if (!canEditData()) return;
   const plant = appState.plants.find(p => p.id === plantId);
   if (!plant) return;
-  plant[careType] = getTodayStr();
+
+  const today = getTodayStr();
+  const isUndo = plant[careType] === today;
+
+  if (isUndo) {
+    if (!removeCareSource(plant, careType, 'direct', today)) {
+      showToast('以前の日付を復元できないため取り消せません。資材や育成ログの記録も確認してください');
+      return;
+    }
+  } else {
+    addCareSource(plant, careType, 'direct', today);
+  }
+
   try {
     await saveToDB();
   } catch (err) {
@@ -683,12 +776,14 @@ async function recordPlantCare(plantId, careType, toastMessage) {
   if (appState.activeDetailPlantId === plantId) {
     populateDetailModal(plantId);
   }
-  showToast(`${toastMessage}（${plant.name}）`);
+  showToast(isUndo ? `今日の記録を取り消しました（${plant.name}）` : `${toastMessage}（${plant.name}）`);
 }
 
 function setBatchMode(enabled) {
   appState.batchMode = enabled;
   appState.batchSelectedIds.clear();
+  appState.batchSelectedMaterials.clear();
+  renderBatchMaterialChips();
   document.getElementById('batchActionBar').classList.toggle('hidden', !appState.batchMode);
 
   const btn = document.getElementById('batchModeBtnHeader');
@@ -727,6 +822,12 @@ function selectAllVisibleInBatch() {
   renderApp();
 }
 
+function clearBatchSelection() {
+  appState.batchSelectedIds.clear();
+  updateBatchCountUI();
+  renderApp();
+}
+
 function updateBatchCountUI() {
   document.getElementById('batchSelectedCount').textContent = appState.batchSelectedIds.size;
 }
@@ -741,7 +842,7 @@ async function executeBatchCare(careFields, toastMessage) {
   let count = 0;
   appState.plants.forEach(p => {
     if (appState.batchSelectedIds.has(p.id)) {
-      careFields.forEach(field => { p[field] = today; });
+      careFields.forEach(field => addCareSource(p, field, 'direct', today));
       count++;
     }
   });
@@ -752,6 +853,149 @@ async function executeBatchCare(careFields, toastMessage) {
     return;
   }
   showToast(toastMessage.replace('{count}', count));
+  setBatchMode(false);
+}
+
+function applyMaterialUsage(plant, code, today) {
+  const def = MATERIAL_DEFS[code];
+  if (!def) return null;
+  if (!plant.materialLogs || typeof plant.materialLogs !== 'object') plant.materialLogs = {};
+  if (plant.materialLogs[code] === today) return null;
+  const undo = getTodayCareUndo(plant, today);
+  const previous = plant.materialLogs[code] || '';
+  plant.materialLogs[code] = today;
+  addCareSource(plant, 'lastFertilized', `material:${code}`, today);
+  if (def.updatesWatered) addCareSource(plant, 'lastWatered', `material:${code}`, today);
+
+  let createdLogId = null;
+  if (Array.isArray(plant.materialAutoLog) && plant.materialAutoLog.includes(code)) {
+    if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+    createdLogId = createId('g');
+    plant.growthLogs.push({
+      id: createdLogId,
+      tag: 'material',
+      date: today,
+      photos: [],
+      photoDataUrl: '',
+      note: `${def.label}を使用${def.updatesWatered ? '（水やり兼用）' : ''}`
+    });
+  }
+  undo.materials[code] = { previous, logId: createdLogId || '' };
+  return createdLogId;
+}
+
+async function recordMaterialUsage(plantId, code) {
+  if (!canEditData()) return;
+  const def = MATERIAL_DEFS[code];
+  const plant = appState.plants.find(p => p.id === plantId);
+  if (!def || !plant) return;
+
+  const today = getTodayStr();
+  if (!plant.materialLogs || typeof plant.materialLogs !== 'object') plant.materialLogs = {};
+  const isUndo = plant.materialLogs[code] === today;
+
+  if (isUndo) {
+    const snap = plant.careUndo?.date === today ? plant.careUndo.materials[code] : null;
+    if (!snap) {
+      showToast('以前の資材記録を復元できないため取り消せません');
+      return;
+    }
+    if (snap.previous) plant.materialLogs[code] = snap.previous;
+    else delete plant.materialLogs[code];
+    removeCareSource(plant, 'lastFertilized', `material:${code}`, today);
+    if (def.updatesWatered) removeCareSource(plant, 'lastWatered', `material:${code}`, today);
+    if (snap.logId && Array.isArray(plant.growthLogs)) {
+      plant.growthLogs = plant.growthLogs.filter(g => g.id !== snap.logId);
+    }
+    delete plant.careUndo.materials[code];
+  } else {
+    applyMaterialUsage(plant, code, today);
+  }
+
+  try {
+    await saveToDB();
+  } catch (err) {
+    renderApp();
+    if (appState.activeDetailPlantId === plantId) populateDetailModal(plantId);
+    return;
+  }
+  renderApp();
+  if (appState.activeDetailPlantId === plantId) populateDetailModal(plantId);
+  showToast(isUndo ? `${def.label}の記録を取り消しました（${plant.name}）` : `🧪 ${def.label}を記録しました（${plant.name}）`);
+}
+
+function renderBatchMaterialChips() {
+  const container = document.getElementById('batchMaterialChips');
+  if (!container) return;
+  container.replaceChildren();
+
+  Object.entries(MATERIAL_DEFS).forEach(([code, def]) => {
+    const selected = appState.batchSelectedMaterials.has(code);
+    const chip = createElement(
+      'button',
+      `px-2.5 py-1.5 rounded-lg text-[11px] font-semibold leading-none border transition cursor-pointer inline-flex items-center gap-1 ${
+        selected
+          ? 'bg-white text-sage-800 border-white shadow-2xs'
+          : 'bg-sage-700/80 text-sage-100 border-sage-600 hover:bg-sage-600'
+      }`
+    );
+    chip.type = 'button';
+    chip.appendChild(createElement('span', 'leading-none', def.label));
+    if (def.updatesWatered) {
+      chip.appendChild(createLucideIcon('droplets', `w-3 h-3 block shrink-0 ${selected ? 'text-sky-600' : 'text-sky-300'}`));
+    }
+    chip.addEventListener('click', () => {
+      if (appState.batchSelectedMaterials.has(code)) {
+        appState.batchSelectedMaterials.delete(code);
+      } else {
+        appState.batchSelectedMaterials.add(code);
+      }
+      renderBatchMaterialChips();
+    });
+    container.appendChild(chip);
+  });
+
+  const labelEl = document.getElementById('batchMaterialBtnLabel');
+  if (labelEl) {
+    const codes = Array.from(appState.batchSelectedMaterials);
+    if (codes.length === 0) {
+      labelEl.textContent = '資材を記録';
+    } else {
+      const hasWater = codes.some(c => MATERIAL_DEFS[c]?.updatesWatered);
+      labelEl.textContent = hasWater
+        ? `水やり＋資材(${codes.length})を記録`
+        : `資材(${codes.length})を記録`;
+    }
+  }
+}
+
+async function executeBatchMaterial() {
+  if (!canEditData()) return;
+  const codes = Array.from(appState.batchSelectedMaterials);
+  if (codes.length === 0) {
+    showToast('使用する資材チップをタップして選択してください');
+    return;
+  }
+  if (appState.batchSelectedIds.size === 0) {
+    showToast('対象の株カードをタップして選択してください');
+    return;
+  }
+  const today = getTodayStr();
+  let count = 0;
+  appState.plants.forEach(p => {
+    if (appState.batchSelectedIds.has(p.id)) {
+      codes.forEach(code => applyMaterialUsage(p, code, today));
+      count++;
+    }
+  });
+  try {
+    await saveToDB();
+  } catch (err) {
+    renderApp();
+    return;
+  }
+  const names = codes.map(c => MATERIAL_DEFS[c]?.label).filter(Boolean).join('・');
+  showToast(`🧪 ${count}株に「${names}」を一括記録しました`);
   setBatchMode(false);
 }
 
@@ -777,6 +1021,18 @@ function populateDetailModal(plantId) {
   const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
   appendBotanicalSvg(document.getElementById('detailSvgBadge'), svgInfo.svg);
   document.getElementById('detailLocationBadge').textContent = plant.location || '場所未設定';
+  const statusEl = document.getElementById('detailStatusBadge');
+  const stKey = plant.status && PLANT_STATUSES[plant.status] ? plant.status : 'normal';
+  if (statusEl) {
+    if (stKey !== 'normal') {
+      const stInfo = PLANT_STATUSES[stKey];
+      statusEl.className = `marker-badge font-bold shrink-0 ${stInfo.badgeClass}`;
+      statusEl.textContent = stInfo.label;
+    } else {
+      statusEl.className = 'hidden marker-badge font-bold shrink-0';
+      statusEl.textContent = '';
+    }
+  }
   document.getElementById('detailPlantName').textContent = plant.name;
 
   const daysOwned = plant.purchaseDate ? calcDaysBetween(plant.purchaseDate) : null;
@@ -809,6 +1065,81 @@ function populateDetailModal(plantId) {
     document.getElementById('specNotes').textContent = plant.notes;
   } else {
     notesBox.classList.add('hidden');
+  }
+
+const todayStr = getTodayStr();
+  const waterBtnEl = document.getElementById('detailQuickWaterBtn');
+  if (waterBtnEl) {
+    const done = plant.lastWatered === todayStr;
+    waterBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
+    waterBtnEl.className = done
+      ? 'text-[11px] px-2.5 py-1.5 rounded-xl bg-white text-sky-700 border border-sky-300 hover:bg-sky-50 font-semibold transition shrink-0 cursor-pointer'
+      : 'text-[11px] px-2.5 py-1.5 rounded-xl bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer';
+  }
+  const repotBtnEl = document.getElementById('detailQuickRepotBtn');
+  if (repotBtnEl) {
+    const done = plant.lastRepotted === todayStr;
+    repotBtnEl.textContent = done ? '今日済 (取消)' : '今日記録';
+    repotBtnEl.className = done
+      ? 'text-[11px] px-2.5 py-1.5 rounded-xl bg-white text-amber-800 border border-amber-300 hover:bg-amber-50 font-semibold transition shrink-0 cursor-pointer'
+      : 'text-[11px] px-2.5 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer';
+  }
+
+  const matContainer = document.getElementById('detailMaterialsContainer');
+  if (matContainer) {
+    matContainer.replaceChildren();
+    const matLogs = plant.materialLogs || {};
+    const autoList = Array.isArray(plant.materialAutoLog) ? plant.materialAutoLog : [];
+
+    const groups = [
+      { key: 'water', title: '水やり兼用（最終水やり日も更新）' },
+      { key: 'solid', title: '固形肥料・薬剤（水やり日とは独立）' }
+    ];
+
+    groups.forEach(grp => {
+      const entries = Object.entries(MATERIAL_DEFS).filter(([, def]) => def.group === grp.key);
+      if (!entries.length) return;
+      const section = createElement('div', 'space-y-1.5');
+      section.appendChild(createElement('p', 'text-[10px] font-semibold text-gray-500', grp.title));
+      const row = createElement('div', 'flex flex-wrap gap-1.5');
+
+      entries.forEach(([code, def]) => {
+        const lastDate = matLogs[code];
+        const days = lastDate ? calcDaysBetween(lastDate) : null;
+        const isToday = lastDate === todayStr;
+        const dateLabel = isToday ? '今日済' : (lastDate ? `${days}日前` : '未記録');
+        const isAuto = autoList.includes(code);
+
+        const chip = createElement(
+          'button',
+          `h-7 px-2.5 rounded-xl border text-xs font-medium leading-none inline-flex items-center gap-1.5 transition cursor-pointer ${
+            isToday
+              ? (def.updatesWatered ? 'bg-sky-600 text-white border-sky-600 shadow-2xs' : 'bg-sage-600 text-white border-sage-600 shadow-2xs')
+              : (def.updatesWatered
+                  ? 'bg-white hover:bg-sky-50 text-sky-800 border-sky-200'
+                  : 'bg-white hover:bg-sage-100/70 text-charcoal border-stoneborder')
+          }`
+        );
+        chip.type = 'button';
+        chip.title = isToday ? `${def.label}の今日の記録を取り消す` : `${def.label}を今日使用として記録`;
+        if (isToday) {
+          chip.appendChild(createLucideIcon('check', 'w-3 h-3 text-white block shrink-0'));
+        } else if (isAuto) {
+          const icon = createLucideIcon('file-check', 'w-3 h-3 text-sage-600 block shrink-0');
+          icon.setAttribute('aria-label', '自動記録ON');
+          chip.appendChild(icon);
+        }
+        chip.append(
+          createElement('span', 'font-semibold leading-none', def.label),
+          createElement('span', `text-[10px] leading-none ${isToday ? 'text-white/90' : 'text-gray-400'}`, dateLabel)
+        );
+        chip.addEventListener('click', () => recordMaterialUsage(plant.id, code));
+        row.appendChild(chip);
+      });
+
+      section.appendChild(row);
+      matContainer.appendChild(section);
+    });
   }
 
   const logs = getSortedGrowthLogs(plant);
@@ -1094,9 +1425,7 @@ async function addGrowthLogEntry() {
         photoDataUrl: '',
         note: noteVal
       };
-      if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
-        plant.lastRepotted = dateVal;
-      }
+      if (tagVal === 'repot') updateRepottedFromLog(plant, dateVal);
       successMessage = '📝 育成ログを更新しました';
     } else {
       const newLogId = createId('g');
@@ -1108,9 +1437,7 @@ async function addGrowthLogEntry() {
         photoDataUrl: '',
         note: noteVal
       });
-      if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
-        plant.lastRepotted = dateVal;
-      }
+      if (tagVal === 'repot') updateRepottedFromLog(plant, dateVal);
       document.getElementById('editGrowthLogId').value = newLogId;
       successMessage = '📝 育成ログを追加しました';
     }
@@ -1239,9 +1566,7 @@ async function submitQuickLog() {
       photoDataUrl: '',
       note: noteVal
     });
-    if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
-      plant.lastRepotted = dateVal;
-    }
+    if (tagVal === 'repot') updateRepottedFromLog(plant, dateVal);
 
     try {
       await saveToDB();
@@ -1310,6 +1635,24 @@ function selectFormSvg(typeKey) {
   renderSvgSelector();
 }
 
+function renderFormMaterialAutoLogGrid(selectedCodes = []) {
+  const grid = document.getElementById('formMaterialAutoLogGrid');
+  if (!grid) return;
+  const selectedSet = new Set(selectedCodes);
+  grid.replaceChildren();
+  Object.entries(MATERIAL_DEFS).forEach(([code, def]) => {
+    const label = createElement('label', 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-stoneborder bg-white hover:bg-sage-50 text-xs cursor-pointer select-none');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = code;
+    cb.name = 'materialAutoLog';
+    cb.checked = selectedSet.has(code);
+    cb.className = 'accent-sage-600 cursor-pointer';
+    label.append(cb, createElement('span', 'text-charcoal', def.label));
+    grid.appendChild(label);
+  });
+}
+
 function openPlantFormModal(editPlantId = null) {
   const form = document.getElementById('plantForm');
   form.reset();
@@ -1332,11 +1675,17 @@ function openPlantFormModal(editPlantId = null) {
     document.getElementById('formPrice').value = p.price ?? '';
     document.getElementById('formShop').value = p.shop || '';
     document.getElementById('formNotes').value = p.notes || '';
+    document.getElementById('formStatus').value = PLANT_STATUSES[p.status] ? p.status : 'normal';
+    document.getElementById('formMaterialAutoLogWrap')?.classList.remove('hidden');
+    renderFormMaterialAutoLogGrid(Array.isArray(p.materialAutoLog) ? p.materialAutoLog : []);
   } else {
     setPlantFormTitle('sprout', '新しい株を追加');
     document.getElementById('formPlantId').value = '';
     appState.selectedFormSvgType = 'agave';
     document.getElementById('formPurchaseDate').value = getTodayStr();
+    document.getElementById('formStatus').value = 'normal';
+    document.getElementById('formMaterialAutoLogWrap')?.classList.add('hidden');
+    renderFormMaterialAutoLogGrid([]);
     if (appState.selectedLocation !== 'すべて' && appState.selectedLocation !== '未設定') {
       document.getElementById('formLocation').value = appState.selectedLocation;
     }
@@ -1356,6 +1705,11 @@ function setPlantFormTitle(iconName, title) {
 
 function closePlantFormModal() {
   document.getElementById('formModal').classList.add('hidden');
+  const returnId = appState.returnToDetailPlantId;
+  appState.returnToDetailPlantId = null;
+  if (returnId && appState.plants.some(p => p.id === returnId)) {
+    openDetailModal(returnId);
+  }
 }
 
 async function handleFormPhotoSelect(event) {
@@ -1399,6 +1753,12 @@ async function savePlantForm(event) {
     const price = document.getElementById('formPrice').value ? Number(document.getElementById('formPrice').value) : null;
     const shop = document.getElementById('formShop').value.trim();
     const notes = document.getElementById('formNotes').value.trim();
+    const status = PLANT_STATUSES[document.getElementById('formStatus').value]
+      ? document.getElementById('formStatus').value
+      : 'normal';
+    const materialAutoLog = Array.from(document.querySelectorAll('input[name="materialAutoLog"]:checked'))
+      .map(el => el.value)
+      .filter(code => Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code));
 
     if (id) {
       const plant = appState.plants.find(p => p.id === id);
@@ -1408,9 +1768,13 @@ async function savePlantForm(event) {
       }
       const prevLocation = plant.location || '未設定';
       const prevSoil = plant.soil || '';
+      const prevStatus = PLANT_STATUSES[plant.status] ? plant.status : 'normal';
       const autoChanges = [];
       if (prevLocation !== location) autoChanges.push(`場所: ${prevLocation} → ${location}`);
       if (prevSoil !== soil) autoChanges.push(`用土: ${prevSoil || '未設定'} → ${soil || '未設定'}`);
+      if (prevStatus !== status) {
+        autoChanges.push(`状態: ${PLANT_STATUSES[prevStatus].label} → ${PLANT_STATUSES[status].label}`);
+      }
 
       Object.assign(plant, {
         name,
@@ -1423,7 +1787,9 @@ async function savePlantForm(event) {
         purchaseDate,
         price,
         shop,
-        notes
+        notes,
+        status,
+        materialAutoLog
       });
       if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
       if (autoChanges.length > 0) {
@@ -1431,21 +1797,21 @@ async function savePlantForm(event) {
         const isSoilChanged = prevSoil !== soil;
         plant.growthLogs.push({
           id: createId('g'),
-          tag: isSoilChanged ? 'repot' : 'move',
+          tag: isSoilChanged ? 'repot' : (prevStatus !== status ? 'status' : 'move'),
           date: today,
+          photos: [],
           photoDataUrl: '',
-          note: autoChanges.join('\n')
+          note: autoChanges.join('\n').slice(0, 1000)
         });
-        if (isSoilChanged && (!plant.lastRepotted || today > plant.lastRepotted)) {
-          plant.lastRepotted = today;
-        }
+        if (isSoilChanged) updateRepottedFromLog(plant, today);
       }
       if (appState.tempFormPhotoDataUrl) {
         plant.growthLogs.push({
           id: createId('g'),
           tag: 'growth',
           date: getTodayStr(),
-          photoDataUrl: appState.tempFormPhotoDataUrl,
+          photos: [appState.tempFormPhotoDataUrl],
+          photoDataUrl: '',
           note: '写真追加'
         });
       }
@@ -1463,6 +1829,9 @@ async function savePlantForm(event) {
         price,
         shop,
         notes,
+        status,
+        materialLogs: {},
+        materialAutoLog,
         lastWatered: null,
         lastFertilized: null,
         lastRepotted: purchaseDate || getTodayStr(),
@@ -1471,8 +1840,10 @@ async function savePlantForm(event) {
       if (appState.tempFormPhotoDataUrl) {
         newPlant.growthLogs.push({
           id: createId('g'),
+          tag: 'growth',
           date: purchaseDate || getTodayStr(),
-          photoDataUrl: appState.tempFormPhotoDataUrl,
+          photos: [appState.tempFormPhotoDataUrl],
+          photoDataUrl: '',
           note: 'お迎え・初回記録'
         });
       }
@@ -1637,6 +2008,39 @@ function validatePlantRecords(records) {
     }
     return val;
   };
+  const readCareUndo = (value, name) => {
+    if (value == null) return null;
+    const invalid = () => { throw new Error(`${name}のケア取消情報が不正です`); };
+    const isObject = val => val && typeof val === 'object' && !Array.isArray(val);
+    if (!isObject(value) || !isObject(value.fields) || !isObject(value.materials)) invalid();
+    const date = readDate(value.date, `${name}のケア取消情報の日付`);
+    if (!date) invalid();
+    const fields = {};
+    for (const [field, entry] of Object.entries(value.fields)) {
+      if (!['lastWatered', 'lastFertilized', 'lastRepotted'].includes(field) ||
+          !isObject(entry) || !Array.isArray(entry.sources) || entry.sources.length === 0) invalid();
+      const sources = entry.sources.map(source => {
+        if (source === 'direct' && field !== 'lastFertilized') return source;
+        if (typeof source !== 'string' || !source.startsWith('material:')) invalid();
+        const code = source.slice('material:'.length);
+        if (!Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code) ||
+            field === 'lastRepotted' ||
+            (field === 'lastWatered' && !MATERIAL_DEFS[code].updatesWatered)) invalid();
+        return source;
+      });
+      if (new Set(sources).size !== sources.length) invalid();
+      fields[field] = { previous: readDate(entry.previous, `${name}のケア取消前の日付`), sources };
+    }
+    const materials = {};
+    for (const [code, entry] of Object.entries(value.materials)) {
+      if (!Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code) || !isObject(entry)) invalid();
+      materials[code] = {
+        previous: readDate(entry.previous, `${name}の資材取消前の日付`),
+        logId: readStr(entry.logId, `${name}の資材取消対象ログID`, 200)
+      };
+    }
+    return { date, fields, materials };
+  };
 
   return records.map((record, i) => {
     if (!record || typeof record !== 'object' || Array.isArray(record)) {
@@ -1666,6 +2070,44 @@ function validatePlantRecords(records) {
       lastFertilized: readDate(record.lastFertilized, `${name}の活力剤の日`),
       lastRepotted: readDate(record.lastRepotted, `${name}の植え替え日`),
       notes: readStr(record.notes, `${name}の育成メモ`, 5000),
+      status: (() => {
+        if (record.status == null || record.status === '') return 'normal';
+        if (typeof record.status !== 'string' || !Object.prototype.hasOwnProperty.call(PLANT_STATUSES, record.status)) {
+          throw new Error(`${name}の育成ステータス(${record.status})が不正です`);
+        }
+        return record.status;
+      })(),
+      materialLogs: (() => {
+        if (record.materialLogs == null) return {};
+        if (typeof record.materialLogs !== 'object' || Array.isArray(record.materialLogs)) {
+          throw new Error(`${name}の資材記録が不正です`);
+        }
+        const out = {};
+        Object.entries(record.materialLogs).forEach(([k, v]) => {
+          if (!Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, k)) {
+            throw new Error(`${name}の資材コード(${k})が不正です`);
+          }
+          if (v !== null && v !== undefined && v !== '') {
+            out[k] = readDate(v, `${name}の資材(${k})使用日`);
+          }
+        });
+        return out;
+      })(),
+      materialAutoLog: (() => {
+        if (record.materialAutoLog == null) return [];
+        if (!Array.isArray(record.materialAutoLog)) {
+          throw new Error(`${name}の資材自動記録設定が配列ではありません`);
+        }
+        const out = [];
+        record.materialAutoLog.forEach((code, idx) => {
+          if (typeof code !== 'string' || !Object.prototype.hasOwnProperty.call(MATERIAL_DEFS, code)) {
+            throw new Error(`${name}の資材自動記録設定(${idx + 1}件目: ${code})が不正です`);
+          }
+          if (!out.includes(code)) out.push(code);
+        });
+        return out;
+      })(),
+      careUndo: readCareUndo(record.careUndo, name),
       growthLogs: logs.map((entry, j) => {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
           throw new Error(`${name}の成長記録${j + 1}件目が不正です`);
@@ -1887,6 +2329,9 @@ function clearSearch() {
 function resetFilters() {
   appState.selectedLocation = 'すべて';
   appState.onlyNeedsWater = false;
+  appState.selectedStatus = 'all';
+  const stSelect = document.getElementById('statusFilterSelect');
+  if (stSelect) stSelect.value = 'all';
   document.getElementById('searchInput').value = '';
   renderApp();
 }
@@ -1948,11 +2393,13 @@ function initializeUIEvents() {
     triggerImport,
     openPlantFormModal: () => openPlantFormModal(null),
     selectAllVisibleInBatch,
+    clearBatchSelection,
     executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
-    executeBatchFertilizer: () => executeBatchCare(['lastWatered', 'lastFertilized'], '🧪 {count}株に水やり＋活力剤を一括記録しました'),
+    executeBatchMaterial,
     editActivePlant: () => {
       if (!appState.activeDetailPlantId) return;
       const targetId = appState.activeDetailPlantId;
+      appState.returnToDetailPlantId = targetId;
       closeDetailModal();
       openPlantFormModal(targetId);
     },
@@ -2039,6 +2486,11 @@ function initializeUIEvents() {
 
   document.getElementById('searchInput').addEventListener('input', debounce(renderApp, 150));
   document.getElementById('sortSelect').addEventListener('change', renderApp);
+  document.getElementById('statusFilterSelect').addEventListener('change', (e) => {
+    appState.selectedStatus = e.target.value || 'all';
+    renderApp();
+  });
+  renderBatchMaterialChips();
   document.getElementById('plantForm').addEventListener('submit', savePlantForm);
   document.getElementById('importFileInput').addEventListener('change', handleImportFile);
   document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);

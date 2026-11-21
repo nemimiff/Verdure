@@ -12,6 +12,33 @@
   <script src="./tailwind-config.js"></script>
 
   <style>
+    @font-face {
+      font-family: 'Zen Kaku Gothic New';
+      src: url('./fonts/ZenKakuGothicNew-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      ascent-override: 89%;
+      descent-override: 15%;
+    }
+    @font-face {
+      font-family: 'Zen Kaku Gothic New';
+      src: url('./fonts/ZenKakuGothicNew-Medium.ttf') format('truetype');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+      ascent-override: 89%;
+      descent-override: 15%;
+    }
+    @font-face {
+      font-family: 'Zen Kaku Gothic New';
+      src: url('./fonts/ZenKakuGothicNew-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+      ascent-override: 89%;
+      descent-override: 15%;
+    }
     .modal-box-responsive {
       max-height: calc(var(--modal-viewport-height, 100dvh) - 1.5rem);
     }
@@ -108,22 +135,33 @@
 
   <!-- ================= BATCH WATERING FLOATING BAR ================= -->
   <div id="batchActionBar" class="hidden bg-sage-800 text-white border-b border-sage-700 sticky top-16 z-20 animate-fade-in">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-sage-600 text-xs font-bold" id="batchSelectedCount">0</span>
-        <span class="text-xs sm:text-sm font-medium">株を選択中（一括ドボン・水やりモード）</span>
-        <button data-action="selectAllVisibleInBatch" class="text-xs underline text-sage-200 hover:text-white ml-2">表示中の株をすべて選択</button>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-col gap-2">
+      <!-- 上段: 選択数・全選択・全解除・閉じる(×) -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0 flex-wrap">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-sage-600 text-xs font-bold shrink-0" id="batchSelectedCount">0</span>
+          <span class="text-xs sm:text-sm font-medium whitespace-nowrap">株を選択中</span>
+          <button type="button" data-action="selectAllVisibleInBatch" class="text-xs underline text-sage-200 hover:text-white whitespace-nowrap ml-1 cursor-pointer">すべて選択</button>
+          <button type="button" data-action="clearBatchSelection" class="text-xs underline text-sage-300 hover:text-white whitespace-nowrap cursor-pointer">すべて解除</button>
+        </div>
+        <button type="button" data-action="toggleBatchMode" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition shrink-0 cursor-pointer" title="一括モードを閉じる" aria-label="一括モードを閉じる">
+          <span data-icon="x" data-icon-class="w-4 h-4"></span>
+        </button>
       </div>
-      <div class="flex items-center gap-2">
-        <button data-action="executeBatchWater" id="batchWaterBtn" class="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition">
-          <span data-icon="droplets" data-icon-class="w-4 h-4"></span>
-          <span>今日水やり完了にする</span>
+
+      <!-- 中段: 資材チップ（複数選択） -->
+      <div id="batchMaterialChips" class="flex flex-wrap items-center gap-1.5"></div>
+
+      <!-- 下段: 実行ボタン -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" data-action="executeBatchWater" id="batchWaterBtn" class="h-9 px-3.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition whitespace-nowrap shrink-0 cursor-pointer">
+          <span data-icon="droplets" data-icon-class="w-4 h-4 shrink-0"></span>
+          <span>水やりを記録</span>
         </button>
-        <button data-action="executeBatchFertilizer" id="batchFertilizerBtn" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition">
-          <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5"></span>
-          <span>＋活力剤も記録</span>
+        <button type="button" data-action="executeBatchMaterial" id="batchMaterialBtn" class="h-9 px-3.5 rounded-lg bg-sage-500 hover:bg-sage-400 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition whitespace-nowrap shrink-0 cursor-pointer">
+          <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5 shrink-0"></span>
+          <span id="batchMaterialBtnLabel">資材を記録</span>
         </button>
-        <button data-action="toggleBatchMode" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs">完了</button>
       </div>
     </div>
   </div>
@@ -179,6 +217,15 @@
         <span data-icon="refresh-cw" data-icon-class="w-3.5 h-3.5"></span>
         <span class="hidden sm:inline">再並替</span>
       </button>
+      <div class="flex items-center gap-1 bg-white border border-stoneborder rounded-xl px-2.5 h-9 text-xs text-gray-600 shrink-0">
+        <span data-icon="sliders-horizontal" data-icon-class="w-3.5 h-3.5 text-gray-400 shrink-0"></span>
+        <select id="statusFilterSelect" class="bg-transparent focus:outline-none font-medium text-charcoal cursor-pointer text-xs">
+          <option value="all">全ステータス</option>
+          <option value="normal">通常</option>
+          <option value="rooting">発根管理中</option>
+          <option value="curing">養生中</option>
+        </select>
+      </div>
     </div>
   </section>
 
@@ -216,6 +263,7 @@
         <div class="flex items-center justify-between gap-2 sm:gap-1.5">
           <div class="flex items-center gap-2 min-w-0">
             <span class="marker-badge font-medium bg-sage-100 text-sage-700 border-transparent shrink-0"><span data-icon="map-pin" data-icon-class="text-sage-600"></span><span id="detailLocationBadge"></span></span>
+            <span id="detailStatusBadge" class="hidden marker-badge font-bold shrink-0"></span>
             <span id="detailDaysOwnedBadge" class="text-[10px] sm:text-[11px] text-gray-500 truncate"></span>
           </div>
           <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -231,39 +279,48 @@
       </div>
 
       <div class="p-4 sm:p-5 overflow-y-auto space-y-6 flex-1 min-h-0 overscroll-contain">
-        <!-- Quick Care Status Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex flex-row sm:flex-col justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-sky-800 font-medium mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="droplets" data-icon-class="w-3.5 h-3.5"></span>最終水やり</span>
+        <!-- Quick Care Status Row (水やり・植替えの2列 + 資材専用カード) -->
+        <div class="space-y-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1 text-xs text-sky-800 font-medium mb-0.5">
+                  <span data-icon="droplets" data-icon-class="w-3.5 h-3.5"></span>
+                  <span>最終水やり</span>
+                </div>
+                <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
+                <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
               </div>
-              <p id="detailLastWatered" class="font-bold text-xs sm:text-sm text-charcoal"></p>
-              <p id="detailWaterSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5"></p>
+              <button type="button" id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="text-[11px] px-2.5 py-1.5 rounded-xl bg-sky-600 text-white hover:bg-sky-700 font-semibold transition shrink-0 cursor-pointer">今日記録</button>
             </div>
-            <button id="detailQuickWaterBtn" data-action="quickCareFromModal" data-care-type="lastWatered" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
+
+            <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1 text-xs text-amber-900 font-medium mb-0.5">
+                  <span data-icon="shovel" data-icon-class="w-3.5 h-3.5"></span>
+                  <span>最終植替え</span>
+                </div>
+                <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
+                <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
+              </div>
+              <button type="button" id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="text-[11px] px-2.5 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 font-semibold transition shrink-0 cursor-pointer">今日記録</button>
+            </div>
           </div>
 
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-row sm:flex-col justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-emerald-800 font-medium mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5"></span>肥料・活力剤</span>
+          <!-- 資材・肥料・薬剤 専用カード（ワンタップON/OFF） -->
+          <div class="p-3 sm:p-3.5 rounded-2xl bg-sage-50/70 border border-sage-200/80 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-sage-800">
+                <span data-icon="flask-conical" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
+                <span>資材・肥料・薬剤</span>
+                <span class="text-[10px] font-normal text-gray-500">（タップで今日ON/OFF）</span>
               </div>
-              <p id="detailLastFertilized" class="font-bold text-xs sm:text-sm text-charcoal"></p>
-              <p class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">定期ケア</p>
+              <span class="text-[10px] text-gray-500 inline-flex items-center gap-1 leading-none shrink-0">
+                <span data-icon="file-check" data-icon-class="w-3 h-3 text-sage-600 block shrink-0"></span>
+                <span>自動ログ</span>
+              </span>
             </div>
-            <button id="detailQuickFertBtn" data-action="quickCareFromModal" data-care-type="lastFertilized" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
-          </div>
-
-          <div class="p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-100 flex flex-row sm:flex-col justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between text-xs text-amber-900 font-medium mb-1">
-                <span class="flex items-center gap-0.5 sm:gap-1"><span data-icon="shovel" data-icon-class="w-3.5 h-3.5"></span>最終植替え</span>
-              </div>
-              <p id="detailLastRepotted" class="font-bold text-xs sm:text-sm text-charcoal"></p>
-              <p id="detailSoilSub" class="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 truncate"></p>
-            </div>
-            <button id="detailQuickRepotBtn" data-action="quickCareFromModal" data-care-type="lastRepotted" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-600 text-white hover:bg-amber-700 transition shrink-0 ml-1 sm:ml-0 sm:mt-1">今日記録</button>
+            <div id="detailMaterialsContainer" class="space-y-2"></div>
           </div>
         </div>
 
@@ -355,6 +412,8 @@
                   <option value="rooting">発根・水差し</option>
                   <option value="check">根確認・処置</option>
                   <option value="move">場所・環境変更</option>
+                  <option value="status">状態変更</option>
+                  <option value="material">資材使用</option>
                 </select>
               </div>
               <div class="sm:col-span-3">
@@ -494,6 +553,20 @@
               </select>
             </div>
           </div>
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 border-t border-stoneborder">
+            <div>
+              <label class="block text-xs font-bold text-charcoal mb-1">育成ステータス</label>
+              <select id="formStatus" class="w-full px-2.5 py-2 rounded-xl border border-stoneborder bg-white focus:outline-none focus:border-sage-600">
+                <option value="normal">通常</option>
+                <option value="rooting">発根管理中</option>
+                <option value="curing">養生中</option>
+              </select>
+            </div>
+            <div id="formMaterialAutoLogWrap">
+              <label class="block text-xs font-bold text-charcoal mb-1">資材の育成ログ自動記録（ONにする資材を選択）</label>
+              <div id="formMaterialAutoLogGrid" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
         </div>
 
         <div class="border-t border-stoneborder pt-4">
@@ -550,6 +623,8 @@
               <option value="rooting">発根・水差し</option>
               <option value="check">根確認・処置</option>
               <option value="move">場所・環境変更</option>
+              <option value="status">状態変更</option>
+              <option value="material">資材使用</option>
             </select>
           </div>
           <div>

@@ -2,7 +2,7 @@ tailwind.config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+        sans: ['"Zen Kaku Gothic New"', 'sans-serif'],
       },
       colors: {
         canvas: '#F9F9F8',
