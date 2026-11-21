@@ -40,9 +40,9 @@
       descent-override: 15%;
     }
     /* 3サイズに --ui-lh（偶数の行高）を追加 */
-    .ui-sm { --ui-h: 28px; --ui-fs: 11px; --ui-lh: 14px; --ui-px: 10px; --ui-icon: 13px; --ui-r: 0.5rem; }
-    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-lh: 16px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.75rem; }
-    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-lh: 16px; --ui-px: 14px; --ui-icon: 15px; --ui-r: 0.75rem; }
+    .ui-sm { --ui-h: 26px; --ui-fs: 10px; --ui-lh: 14px; --ui-px: 10px; --ui-icon: 12px; --ui-r: 0.5rem; }
+    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-lh: 16px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.7rem; }
+    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-lh: 16px; --ui-px: 14px; --ui-icon: 16px; --ui-r: 0.75rem; }
 
     /* ボタン・タブ共通（デフォルト＝白ボタン・横幅可変） */
     .ui-btn {
@@ -126,6 +126,15 @@
       outline: none;
       box-sizing: border-box;
       transition: border-color 0.15s ease;
+    }
+    select.ui-field {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: calc(var(--ui-px) + var(--ui-icon) + 5px);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232F3E46' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right var(--ui-px) center;
+      background-size: var(--ui-icon) var(--ui-icon);
     }
     textarea.ui-field {
       height: auto;
@@ -254,7 +263,7 @@
   </header>
 
   <!-- ================= BATCH WATERING FLOATING BAR ================= -->
-  <div id="batchActionBar" class="hidden bg-sage-800 text-white border-b border-sage-700 sticky top-16 z-20 animate-fade-in">
+  <div id="batchActionBar" class="hidden bg-sage-800 text-white border-b border-sage-700 sticky top-16 z-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-col gap-2">
       <!-- 上段: 選択数・全選択・全解除・閉じる(×) -->
       <div class="flex items-center justify-between gap-2">
@@ -567,18 +576,18 @@
       <form id="plantForm" class="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1 min-h-0 overscroll-contain text-xs sm:text-sm">
         <div class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-charcoal mb-1">植物名 / 品種名 <span class="text-red-500">*</span></label>
+            <label class="block text-xs font-medium text-charcoal mb-1">植物名 / 品種名 <span class="text-red-500">*</span></label>
             <input type="text" id="formName" required maxlength="200" placeholder="例: アガベ チタノタ 白鯨 / モンステラ デリシオーサ" class="ui-field ui-lg" />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-charcoal mb-1.5">植物アイコン (SVGシルエット)</label>
+            <label class="block text-xs font-medium text-charcoal mb-1.5">アイコン </label>
             <div id="svgSelectorGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
           </div>
         </div>
 
         <div class="bg-canvas p-3.5 rounded-2xl border border-stoneborder">
-          <label class="block text-xs font-bold text-charcoal mb-1">現在の写真（任意・自動WebP軽量化）</label>
+          <label class="block text-xs font-medium text-charcoal mb-1">現在の写真（任意・自動WebP軽量化）</label>
           <p class="text-[11px] text-gray-500 mb-2">登録するとカードのサムネイルになり、成長記録の1枚目としても保存されます。</p>
           <div class="flex items-center gap-3">
             <label id="formPhotoLabel" class="ui-btn ui-lg">
@@ -596,7 +605,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
           <div>
-            <label class="block text-xs font-bold text-charcoal mb-1">置き場所</label>
+            <label class="block text-xs font-medium text-charcoal mb-1">置き場所</label>
             <input type="text" id="formLocation" maxlength="200" list="locationPresets" placeholder="選択または自由入力..." class="ui-field ui-lg" />
             <datalist id="locationPresets">
               <option value="ライト棚・直下"></option>
@@ -609,7 +618,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-charcoal mb-1">用土・鉢スペック（任意）</label>
+            <label class="block text-xs font-medium text-charcoal mb-1">用土・鉢スペック（任意）</label>
             <input type="text" id="formSoil" maxlength="300" list="soilPresets" placeholder="例: 無機質土 (スリット鉢)" class="ui-field ui-lg" />
             <datalist id="soilPresets">
               <option value="無機質土・スリット鉢"></option>
@@ -621,7 +630,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-charcoal mb-1">光量目安（任意）</label>
+            <label class="block text-xs font-medium text-charcoal mb-1">光量目安（任意）</label>
             <input type="text" id="formLight" maxlength="300" list="lightPresets" placeholder="例: 20,000 lx (強光)" class="ui-field ui-lg" />
             <datalist id="lightPresets">
               <option value="25,000 lx (強光・直下)"></option>
@@ -633,14 +642,14 @@
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-xs font-bold text-charcoal mb-1">水やり頻度目安</label>
+              <label class="block text-xs font-medium text-charcoal mb-1">水やり頻度目安</label>
               <div class="ui-field ui-lg">
                 <input type="number" id="formWaterInterval" min="1" max="90" placeholder="例: 7" />
                 <span class="text-xs text-gray-400 shrink-0">日毎</span>
               </div>
             </div>
             <div>
-              <label class="block text-xs font-bold text-charcoal mb-1">水やり方法</label>
+              <label class="block text-xs font-medium text-charcoal mb-1">水やり方法</label>
               <select id="formWaterMethod" class="ui-field ui-lg">
                 <option value="通常水やり">通常水やり</option>
                 <option value="底面給水(ドボン)">底面給水(ドボン)</option>
@@ -649,9 +658,9 @@
               </select>
             </div>
           </div>
-          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 border-t border-stoneborder">
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-4 border-t border-stoneborder">
             <div>
-              <label class="block text-xs font-bold text-charcoal mb-1">育成ステータス</label>
+              <label class="block text-xs font-medium text-charcoal mb-1">育成ステータス</label>
               <select id="formStatus" class="ui-field ui-lg">
                 <option value="normal">通常</option>
                 <option value="rooting">発根管理中</option>
@@ -771,7 +780,7 @@
 
       <div class="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto min-h-0 overscroll-contain">
         <div>
-          <label class="block text-[11px] font-bold text-charcoal mb-1.5">キーワード検索</label>
+          <label class="block text-xs font-medium text-charcoal mb-1.5">キーワード検索</label>
           <div class="ui-field ui-lg">
             <span data-icon="search" data-icon-class="text-gray-400"></span>
             <input
@@ -786,7 +795,7 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-charcoal mb-1.5">並び替え</label>
+          <label class="block text-xs font-medium text-charcoal mb-1.5">並び替え</label>
           <div class="ui-field ui-lg">
             <span data-icon="arrow-up-down" data-icon-class="text-gray-400"></span>
             <select id="sortSelect" class="font-medium text-charcoal cursor-pointer">
@@ -801,7 +810,7 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-charcoal mb-1.5">育成ステータス</label>
+          <label class="block text-xs font-medium text-charcoal mb-1.5">育成ステータス</label>
           <div class="ui-field ui-lg">
             <span data-icon="sliders-horizontal" data-icon-class="text-gray-400"></span>
             <select id="statusFilterSelect" class="font-medium text-charcoal cursor-pointer">
