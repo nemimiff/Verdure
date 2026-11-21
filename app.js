@@ -782,7 +782,7 @@ function createPlantCard(plant) {
     image.alt = plant.name;
     visual.appendChild(image);
 
-    const svgBadge = createElement('div', 'absolute bottom-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-0.5 border border-stoneborder shadow-xs');
+    const svgBadge = createElement('div', 'absolute bottom-1.5 right-1.5 sm:bottom-2.5 sm:right-2.5 w-8 h-8 rounded-xl bg-white/90 backdrop-blur-xs p-0.5 border border-stoneborder shadow-xs');
     svgBadge.title = svgInfo.label;
     appendBotanicalSvg(svgBadge, svgInfo.svg);
     visual.appendChild(svgBadge);
@@ -793,7 +793,7 @@ function createPlantCard(plant) {
   }
 
   // Top Overlay Row (Location & Status — 140px幅でも重ならないようFlex配置)
-  const topOverlay = createElement('div', 'absolute top-1.5 inset-x-1.5 sm:top-2.5 sm:inset-x-2.5 flex items-start justify-between gap-1 pointer-events-none');
+  const topOverlay = createElement('div', 'absolute top-1.5 inset-x-1.5 sm:top-2.5 sm:inset-x-2.5 flex items-center justify-between gap-1 pointer-events-none');
 
   const locationPill = createElement('div', 'flex items-center gap-1 min-w-0 flex-1');
   if (appState.batchMode) {
@@ -1122,31 +1122,67 @@ async function recordMaterialUsage(plantId, code) {
   showToast(isUndo ? `${def.label}の記録を取り消しました（${plant.name}）` : `🧪 ${def.label}を記録しました（${plant.name}）`);
 }
 
+function openBatchMaterialModal() {
+  if (!canEditData()) return;
+  if (appState.batchSelectedIds.size === 0) {
+    showToast('対象の株カードをタップして選択してください');
+    return;
+  }
+  appState.batchSelectedMaterials.clear();
+  document.getElementById('batchMaterialTitle').textContent = `${appState.batchSelectedIds.size}株に肥料・薬剤を記録`;
+  renderBatchMaterialChips();
+  document.getElementById('batchMaterialModal').classList.remove('hidden');
+}
+
+function closeBatchMaterialModal() {
+  document.getElementById('batchMaterialModal').classList.add('hidden');
+}
+
 function renderBatchMaterialChips() {
   const container = document.getElementById('batchMaterialChips');
   if (!container) return;
   container.replaceChildren();
 
-  Object.entries(MATERIAL_DEFS).forEach(([code, def]) => {
-    const selected = appState.batchSelectedMaterials.has(code);
-    const chip = createElement(
-      'button',
-      selected ? 'ui-btn ui-sm font-semibold' : 'ui-btn ui-sm ui-dark'
-    );
-    chip.type = 'button';
-    chip.appendChild(createElement('span', '', def.label));
-    if (def.updatesWatered) {
-      chip.appendChild(createLucideIcon('droplets', selected ? 'text-sky-600' : 'text-sky-300'));
-    }
-    chip.addEventListener('click', () => {
-      if (appState.batchSelectedMaterials.has(code)) {
-        appState.batchSelectedMaterials.delete(code);
-      } else {
-        appState.batchSelectedMaterials.add(code);
+  const groups = [
+    { key: 'water', title: '水やり兼用（最終水やり日も更新）' },
+    { key: 'solid', title: '固形肥料・薬剤（水やり日とは独立）' }
+  ];
+
+  groups.forEach(grp => {
+    const entries = Object.entries(MATERIAL_DEFS).filter(([, def]) => def.group === grp.key);
+    if (!entries.length) return;
+    const section = createElement('div', 'space-y-1.5');
+    section.appendChild(createElement('p', 'text-[11px] font-bold text-charcoal', grp.title));
+    const row = createElement('div', 'flex flex-wrap gap-1.5');
+
+    entries.forEach(([code, def]) => {
+      const selected = appState.batchSelectedMaterials.has(code);
+      const chip = createElement(
+        'button',
+        selected
+          ? (def.updatesWatered ? 'ui-btn ui-md ui-sky font-semibold' : 'ui-btn ui-md ui-primary font-semibold')
+          : (def.updatesWatered ? 'ui-btn ui-md ui-sky-soft' : 'ui-btn ui-md')
+      );
+      chip.type = 'button';
+      if (selected) {
+        chip.appendChild(createLucideIcon('check', 'text-white'));
+      } else if (def.updatesWatered) {
+        chip.appendChild(createLucideIcon('droplets', 'text-sky-600'));
       }
-      renderBatchMaterialChips();
+      chip.appendChild(createElement('span', '', def.label));
+      chip.addEventListener('click', () => {
+        if (appState.batchSelectedMaterials.has(code)) {
+          appState.batchSelectedMaterials.delete(code);
+        } else {
+          appState.batchSelectedMaterials.add(code);
+        }
+        renderBatchMaterialChips();
+      });
+      row.appendChild(chip);
     });
-    container.appendChild(chip);
+
+    section.appendChild(row);
+    container.appendChild(section);
   });
 
   const labelEl = document.getElementById('batchMaterialBtnLabel');
@@ -1188,6 +1224,7 @@ async function executeBatchMaterial() {
     renderApp();
     return;
   }
+  closeBatchMaterialModal();
   const names = codes.map(c => MATERIAL_DEFS[c]?.label).filter(Boolean).join('・');
   showToast(`🧪 ${count}株に「${names}」を一括記録しました`);
   setBatchMode(false);
@@ -3289,6 +3326,8 @@ function initializeUIEvents() {
     clearBatchSelection,
     executeBatchWater: () => executeBatchCare(['lastWatered'], '💧 {count}株の一括水やりを記録しました'),
     executeBatchMaterial,
+    openBatchMaterialModal,
+    closeBatchMaterialModal,
     openBatchEditModal,
     closeBatchEditModal,
     switchBatchEditTab: (event) => {
@@ -3375,6 +3414,8 @@ function initializeUIEvents() {
       closeImageViewer();
     } else if (!document.getElementById('confirmDialog').classList.contains('hidden')) {
       closeConfirmDialog();
+    } else if (!document.getElementById('batchMaterialModal').classList.contains('hidden')) {
+      closeBatchMaterialModal();
     } else if (!document.getElementById('batchEditModal').classList.contains('hidden')) {
       closeBatchEditModal();
     } else if (!document.getElementById('filterModal').classList.contains('hidden')) {
@@ -3406,6 +3447,9 @@ function initializeUIEvents() {
   document.getElementById('quickLogPhotoInput').addEventListener('change', previewQuickLogPhoto);
   document.getElementById('filterModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'filterModal') closeFilterModal();
+  });
+  document.getElementById('batchMaterialModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'batchMaterialModal') closeBatchMaterialModal();
   });
   document.getElementById('batchEditModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'batchEditModal') closeBatchEditModal();
