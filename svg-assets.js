@@ -182,3 +182,78 @@ const BOTANICAL_SVGS = {
     </svg>`
   }
 };
+
+const LOG_TAG_SVGS = {
+  growth: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -3)">
+      <path d="M13 26h14l-1.8 8.5a1.5 1.5 0 0 1-1.47 1.2H16.27a1.5 1.5 0 0 1-1.47-1.2L13 26Z" fill="#E4EBE5" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M20 26V14" stroke="#3A5A40" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M20 20c-5.5 0-8.5-3.2-8.5-7.8 4.8 0 8.5 2.8 8.5 7.8Z" fill="#9BB89D" stroke="#3A5A40" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M20 17c4.8 0 8-2.8 8-7.2-4.4 0-8 2.4-8 7.2Z" fill="#C7DAC8" stroke="#3A5A40" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M31 6.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2Z" fill="#D4A373"/>
+    </g>
+  </svg>`,
+  repot: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -1.4)">
+      <path d="M9.5 23h15l-1.8 11a1.5 1.5 0 0 1-1.48 1.25h-8.44A1.5 1.5 0 0 1 11.3 34l-1.8-11Z" fill="#E4EBE5" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M8.5 20.5h17v2.5h-17v-2.5Z" rx="1" fill="#F2E3D5" stroke="#2F3E46" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M12.5 20.5c1-3.2 3-4.8 4.5-4.8s3.5 1.6 4.5 4.8" fill="#D9C3B0" stroke="#2F3E46" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M29.5 14.5l4-4a1.8 1.8 0 0 0-2.55-2.55l-4 4" stroke="#2F3E46" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M24.2 12.2l5.6 5.6-3.8 3.8a3.2 3.2 0 0 1-4.53 0l-1.07-1.07a3.2 3.2 0 0 1 0-4.53l3.8-3.8Z" fill="#C7DAC8" stroke="#3A5A40" stroke-width="1.5" stroke-linejoin="round"/>
+    </g>
+  </svg>`,
+  cut: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -2)">
+      <path d="M13 33V12" stroke="#3A5A40" stroke-width="2" stroke-linecap="round"/>
+      <path d="M13 17c-4.2 0-6.5-2.4-6.5-6 3.8 0 6.5 2.2 6.5 6Z" fill="#C7DAC8" stroke="#3A5A40" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M9 23.5h8" stroke="#C87D65" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2.5 2.5"/>
+      <circle cx="29.5" cy="14" r="3.2" fill="#F6DFE2" stroke="#2F3E46" stroke-width="1.5"/>
+      <circle cx="29.5" cy="27" r="3.2" fill="#F6DFE2" stroke="#2F3E46" stroke-width="1.5"/>
+      <path d="M26.8 15.8L17.5 23.2M26.8 25.2L17.5 17.8" stroke="#2F3E46" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+  </svg>`,
+  rooting: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -1.2)">
+      <path d="M15 16h10l1.5 4.5V33a2.5 2.5 0 0 1-2.5 2.5h-8a2.5 2.5 0 0 1-2.5-2.5V20.5L15 16Z" fill="#EBF6FC" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M14.2 24.5h11.6V33a1.8 1.8 0 0 1-1.8 1.8h-8a1.8 1.8 0 0 1-1.8-1.8v-8.5Z" fill="#BAE6FD" fill-opacity="0.65"/>
+      <path d="M20 26V10" stroke="#3A5A40" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M20 13.5c-4.5 0-6.8-2.4-6.8-6 3.8 0 6.8 2 6.8 6Z" fill="#9BB89D" stroke="#3A5A40" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M20 12.5c4.2 0 6.5-2.2 6.5-5.5-3.6 0-6.5 1.8-6.5 5.5Z" fill="#C7DAC8" stroke="#3A5A40" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M20 26c-1.5 2-2.8 3.5-3.2 5.5M20 26c.2 2.2 0 4.2-.4 6M20 26c1.6 1.8 2.8 3.4 3.2 5.2" stroke="#588157" stroke-width="1.3" stroke-linecap="round"/>
+    </g>
+  </svg>`,
+  check: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -1.5)">
+      <circle cx="18.5" cy="18.5" r="9.5" fill="#F4F7F4" stroke="#2F3E46" stroke-width="1.7"/>
+      <path d="M25.5 25.5L33 33" stroke="#2F3E46" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M18.5 13v4.5M18.5 17.5c-2.2 1.2-3.5 3-3.8 5.2M18.5 17.5c.2 2 0 3.8-.3 5.5M18.5 17.5c2 1.2 3.3 2.8 3.7 5" stroke="#588157" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="29" cy="11" r="4" fill="#E9F0EA" stroke="#3A5A40" stroke-width="1.4"/>
+      <path d="M27.3 11l1.2 1.2 2.3-2.4" stroke="#3A5A40" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>`,
+  move: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -0.5)">
+      <path d="M20 7.5a8 8 0 0 1 8 8c0 5.8-8 14.5-8 14.5S12 21.3 12 15.5a8 8 0 0 1 8-8Z" fill="#E9F0EA" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M20 19v-5.5" stroke="#3A5A40" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M20 15.5c-2.6 0-4-1.5-4-3.6 2.2 0 4 1.3 4 3.6Z" fill="#9BB89D" stroke="#3A5A40" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M20 14.5c2.4 0 3.8-1.3 3.8-3.3-2 0-3.8 1.2-3.8 3.3Z" fill="#C7DAC8" stroke="#3A5A40" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M11 33.5h18" stroke="#3A5A40" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/>
+    </g>
+  </svg>`,
+  status: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -1.5)">
+      <path d="M20 32.5S9 25.2 9 16.8a6.2 6.2 0 0 1 11-3.9 6.2 6.2 0 0 1 11 3.9c0 8.4-11 15.7-11 15.7Z" fill="#F5E6E8" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M13.5 19.5h3.2l1.8-4 2.8 7 1.8-3h3.4" stroke="#3A5A40" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>`,
+  material: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0, -0.5)">
+      <path d="M16 9h8v4.5l5.2 12.2A4.5 4.5 0 0 1 25.05 32h-10.1a4.5 4.5 0 0 1-4.15-6.3L16 13.5V9Z" fill="#FFFFFF" stroke="#2F3E46" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M14.5 9h11" stroke="#2F3E46" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M13 22.5h14l2 4.5a3.2 3.2 0 0 1-2.95 4.4h-12.1A3.2 3.2 0 0 1 11 27l2-4.5Z" fill="#A3C4A8" fill-opacity="0.75"/>
+      <circle cx="18" cy="26.5" r="1.2" fill="#3A5A40"/>
+      <circle cx="22.5" cy="28" r="1" fill="#3A5A40"/>
+      <circle cx="21" cy="24.2" r="0.9" fill="#3A5A40"/>
+    </g>
+  </svg>`
+};

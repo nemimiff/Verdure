@@ -132,16 +132,34 @@ const CALENDAR_TASK_DEFS = {
   dormant:    { label: '休眠',     cellClass: 'bg-stone-400/80', btnActiveClass: 'bg-stone-500 text-white border-stone-500' }
 };
 
+const LOCATION_PRESETS = [
+  'ライト棚・直下',
+  'ライト棚・周辺',
+  '窓際・室内',
+  'キッチンレール',
+  'ダイニングレール',
+  'ベランダ・屋外'
+];
+
+const SOIL_PRESETS = [
+  '無機質土・スリット鉢',
+  '無機質土・プレステラ',
+  'ベラボン / ねこチップ',
+  '観葉植物ブレンド土',
+  '水苔・板付け'
+];
+
 const LOG_TAGS = {
-  growth:   { label: '成長記録', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
-  repot:    { label: '植替え', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200' },
-  cut:      { label: '胴切り・茎伏せ', badgeClass: 'bg-rose-50 text-rose-800 border-rose-200' },
-  rooting:  { label: '発根・水差し', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
-  check:    { label: '根確認・処置', badgeClass: 'bg-orange-50 text-orange-800 border-orange-200' },
-  move:     { label: '場所・環境変更', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
-  status:   { label: '状態変更', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
-  material: { label: '肥料・薬剤', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
+  growth:   { label: '成長記録', badgeClass: 'bg-sage-100 text-sage-800' },
+  repot:    { label: '植替え', badgeClass: 'bg-amber-50 text-amber-800' },
+  cut:      { label: '剪定', badgeClass: 'bg-rose-50 text-rose-800' },
+  rooting:  { label: '水差し', badgeClass: 'bg-teal-50 text-teal-800' },
+  check:    { label: '根を見る', badgeClass: 'bg-orange-50 text-orange-800' },
+  move:     { label: '場所変更', badgeClass: 'bg-indigo-50 text-indigo-800' },
+  status:   { label: '状態変更', badgeClass: 'bg-teal-50 text-teal-800' },
+  material: { label: '肥料・薬剤', badgeClass: 'bg-emerald-50 text-emerald-800' }
 };
+
 
 function getSortedGrowthLogs(plant) {
   if (!Array.isArray(plant?.growthLogs)) return [];
@@ -592,6 +610,44 @@ function getLocationCounts() {
   return counts;
 }
 
+function getAllLocationOptions() {
+  const seen = new Set();
+  const list = [];
+  appState.plants.forEach(p => {
+    const loc = (p.location || '').trim();
+    if (loc && loc !== '未設定' && !seen.has(loc)) {
+      seen.add(loc);
+      list.push(loc);
+    }
+  });
+  LOCATION_PRESETS.forEach(loc => {
+    if (!seen.has(loc)) {
+      seen.add(loc);
+      list.push(loc);
+    }
+  });
+  return list;
+}
+
+function getAllSoilOptions() {
+  const seen = new Set();
+  const list = [];
+  appState.plants.forEach(p => {
+    const soil = (p.soil || '').trim();
+    if (soil && !seen.has(soil)) {
+      seen.add(soil);
+      list.push(soil);
+    }
+  });
+  SOIL_PRESETS.forEach(soil => {
+    if (!seen.has(soil)) {
+      seen.add(soil);
+      list.push(soil);
+    }
+  });
+  return list;
+}
+
 function renderLocationTabs() {
   const container = document.getElementById('locationFilterChips');
   if (!container) return;
@@ -745,17 +801,17 @@ function createPlantCard(plant) {
     checkWrap.appendChild(createLucideIcon('check', 'w-3.5 h-3.5 sm:w-4 sm:h-4'));
     locationPill.appendChild(checkWrap);
   }
-  const locationBadge = createElement('span', 'marker-badge font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs min-w-0 max-w-full');
+  const locationBadge = createElement('span', 'ui-chip ui-ss font-medium bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80 shadow-2xs min-w-0 max-w-full');
   locationBadge.append(createLucideIcon('map-pin', 'text-sage-600'), createElement('span', 'truncate', plant.location || '未設定'));
   locationPill.appendChild(locationBadge);
 
-  const statusWrap = createElement('div', 'shrink-0');
+  const statusWrap = createElement('div', 'flex items-center shrink-0');
   const plantStatus = plant.status && PLANT_STATUSES[plant.status] ? plant.status : 'normal';
   if (plantStatus !== 'normal') {
     const stInfo = PLANT_STATUSES[plantStatus];
-    statusWrap.appendChild(createElement('span', `marker-badge font-bold shadow-2xs ${stInfo.badgeClass}`, stInfo.label));
+    statusWrap.appendChild(createElement('span', `ui-chip ui-ss font-bold shadow-2xs ${stInfo.badgeClass}`, stInfo.label));
   } else {
-    const statusBadge = createElement('span', `marker-badge font-bold shadow-2xs ${
+    const statusBadge = createElement('span', `ui-chip ui-ss font-bold shadow-2xs ${
       needsWater ? 'bg-amber-500 text-white border-transparent' : daysSinceWater === 0 ? 'bg-sky-600 text-white border-transparent' : 'bg-white/90 backdrop-blur-xs text-charcoal border-stoneborder/80'
     }`);
     statusBadge.append(
@@ -769,7 +825,7 @@ function createPlantCard(plant) {
   visual.appendChild(topOverlay);
 
   if (photoLogs.length) {
-    const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
+    const logBadge = createElement('span', 'ui-chip ui-ss absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
     logBadge.append(createLucideIcon('images'), document.createTextNode(`${totalPhotoCount}枚`));
     visual.appendChild(logBadge);
   }
@@ -1145,8 +1201,9 @@ function openBatchEditModal() {
   }
   document.getElementById('batchEditTitle').textContent = `${appState.batchSelectedIds.size}株を一括編集`;
   document.getElementById('batchEditLocationInput').value = '';
+  document.getElementById('batchEditLocationInput').classList.add('hidden');
   document.getElementById('batchEditLocationAutoLog').checked = false;
-  renderBatchEditLocationChips();
+  populateBatchEditLocationSelect();
   populateBatchCalendarCopySelect();
   renderCalendarEditorGrid('batchEditCalendarGrid', {});
   switchBatchEditTab('location');
@@ -1177,33 +1234,39 @@ function switchBatchEditTab(tab) {
   }
 }
 
-function renderBatchEditLocationChips() {
-  const wrap = document.getElementById('batchEditLocationChipsWrap');
-  const container = document.getElementById('batchEditLocationChips');
-  if (!container) return;
-  container.replaceChildren();
-  const entries = Array.from(getLocationCounts().entries()).filter(([loc]) => loc !== '未設定');
-  wrap?.classList.toggle('hidden', entries.length === 0);
-  entries.forEach(([loc, count]) => {
-    const btn = createElement('button', 'ui-btn ui-sm');
-    btn.type = 'button';
-    btn.append(
-      createLucideIcon('map-pin', 'text-sage-600'),
-      createElement('span', '', loc),
-      createElement('span', 'text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500', String(count))
-    );
-    btn.addEventListener('click', () => {
-      document.getElementById('batchEditLocationInput').value = loc;
-    });
-    container.appendChild(btn);
+function populateBatchEditLocationSelect() {
+  const select = document.getElementById('batchEditLocationSelect');
+  if (!select) return;
+  select.replaceChildren();
+
+  const placeholder = createElement('option', '', '-- 移動先・統一する場所を選択 --');
+  placeholder.value = '';
+  select.appendChild(placeholder);
+
+  const counts = getLocationCounts();
+  const allLocations = getAllLocationOptions();
+  allLocations.forEach(loc => {
+    const cnt = counts.get(loc);
+    const label = cnt ? `${loc} (${cnt}株)` : loc;
+    const opt = createElement('option', '', label);
+    opt.value = loc;
+    select.appendChild(opt);
   });
+
+  const customOpt = createElement('option', '', '＋ 新しく場所を入力...');
+  customOpt.value = '__custom__';
+  select.appendChild(customOpt);
+  select.value = '';
 }
 
 async function submitBatchLocation() {
   if (!canEditData()) return;
   const submitBtn = document.getElementById('submitBatchLocationBtn');
   await runWithButtonDisabled(submitBtn, async () => {
-    const newLoc = document.getElementById('batchEditLocationInput').value.trim();
+    const selectVal = document.getElementById('batchEditLocationSelect')?.value || '';
+    const newLoc = selectVal === '__custom__'
+      ? document.getElementById('batchEditLocationInput').value.trim()
+      : selectVal.trim();
     if (!newLoc) {
       showToast('移動先・統一する場所名を入力してください');
       return;
@@ -1420,10 +1483,10 @@ function populateDetailModal(plantId) {
   if (statusEl) {
     if (stKey !== 'normal') {
       const stInfo = PLANT_STATUSES[stKey];
-      statusEl.className = `marker-badge font-bold shrink-0 ${stInfo.badgeClass}`;
+      statusEl.className = `ui-chip ui-ss font-bold shrink-0 ${stInfo.badgeClass}`;
       statusEl.textContent = stInfo.label;
     } else {
-      statusEl.className = 'hidden marker-badge font-bold shrink-0';
+      statusEl.className = 'hidden ui-chip ui-ss font-bold shrink-0';
       statusEl.textContent = '';
     }
   }
@@ -1579,7 +1642,7 @@ function populateDetailModal(plantId) {
     // Left: Date (M/D)
     const dateCol = createElement(
       'div',
-      'w-10 sm:w-11 shrink-0 text-[11px] font-semibold text-gray-500 pt-1 pr-2 text-right tabular-nums',
+      'w-10 sm:w-11 shrink-0 text-[11px] font-semibold text-gray-500 pt-0.5 pr-2 text-right tabular-nums',
       shortDate
     );
 
@@ -1593,7 +1656,10 @@ function populateDetailModal(plantId) {
     // Right: Content
     const contentCol = createElement('div', `flex-1 min-w-0 pl-3 ${isLast ? 'pb-1' : 'pb-5'}`);
     const headerRow = createElement('div', 'flex items-center justify-between gap-2');
-    const tagBadge = createElement('span', `inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${tagInfo.badgeClass}`, tagInfo.label);
+    const tagBadge = createElement('span', `ui-chip ui-ss font-bold ${tagInfo.badgeClass}`);
+    const tagIconWrap = createElement('span', 'chip-illust');
+    appendBotanicalSvg(tagIconWrap, LOG_TAG_SVGS[entry.tag] || LOG_TAG_SVGS.growth);
+    tagBadge.append(tagIconWrap, createElement('span', '', tagInfo.label));
 
     const controlsWrap = createElement('div', 'flex items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition shrink-0');
     const editButton = createElement('button', 'p-1 rounded-md text-gray-400 hover:text-amber-600 hover:bg-amber-50');
@@ -1761,11 +1827,18 @@ function renderGrowthTagButtons() {
     const isActive = activeTag === key;
     const btn = createElement(
       'button',
-      isActive ? 'ui-btn ui-sm ui-primary font-semibold' : 'ui-btn ui-sm'
+      `p-1.5 sm:p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
+        isActive ? 'border-sage-600 bg-sage-50 ring-2 ring-sage-500/20' : 'border-stoneborder bg-white hover:bg-gray-50'
+      }`
     );
     btn.type = 'button';
-    btn.textContent = info.label;
     btn.addEventListener('click', () => selectGrowthLogTag(key));
+    const iconWrap = createElement('div', 'w-7 h-7 sm:w-8 sm:h-8 shrink-0');
+    appendBotanicalSvg(iconWrap, LOG_TAG_SVGS[key] || LOG_TAG_SVGS.growth);
+    btn.append(
+      iconWrap,
+      createElement('span', 'text-[10px] font-medium text-charcoal text-center leading-tight', info.label)
+    );
     container.appendChild(btn);
   });
 }
@@ -1844,22 +1917,48 @@ function updateGrowthTagFormUI() {
     const currentSoil = plant.soil || '';
     dynamicBox.classList.remove('hidden');
     dynamicBox.appendChild(createElement('label', 'block text-[11px] font-semibold text-charcoal', '新しい用土・鉢（変更すると基本情報にも反映）'));
-    const input = createElement('input', 'ui-field ui-md');
-    input.type = 'text';
-    input.id = 'growthRepotSoilInput';
-    input.maxLength = 300;
-    input.setAttribute('list', 'soilPresets');
-    input.placeholder = '例: 無機質土・スリット鉢';
-    input.value = currentSoil;
-    input.addEventListener('input', () => {
-      const nextSoil = input.value.trim();
+
+    const select = createElement('select', 'ui-field ui-md');
+    select.id = 'growthRepotSoilSelect';
+    const emptyOpt = createElement('option', '', '-- 未設定 --');
+    emptyOpt.value = '';
+    select.appendChild(emptyOpt);
+
+    const soilOptions = getAllSoilOptions();
+    soilOptions.forEach(soil => {
+      const opt = createElement('option', '', soil);
+      opt.value = soil;
+      select.appendChild(opt);
+    });
+    const customOpt = createElement('option', '', '＋ 新しく用土を入力...');
+    customOpt.value = '__custom__';
+    select.appendChild(customOpt);
+    select.value = currentSoil && soilOptions.includes(currentSoil) ? currentSoil : '';
+
+    const customInput = createElement('input', 'hidden ui-field ui-md mt-1.5');
+    customInput.type = 'text';
+    customInput.id = 'growthRepotSoilInput';
+    customInput.maxLength = 300;
+    customInput.placeholder = '新しい用土・鉢を入力（例: 無機質土・スリット鉢）';
+
+    const syncSoilNote = () => {
+      const nextSoil = select.value === '__custom__' ? customInput.value.trim() : select.value;
       if (nextSoil !== currentSoil) {
         applyGrowthAutoNote(`用土: ${currentSoil || '未設定'} → ${nextSoil || '未設定'}`);
       } else {
         applyGrowthAutoNote('');
       }
+    };
+
+    select.addEventListener('change', () => {
+      const isCustom = select.value === '__custom__';
+      customInput.classList.toggle('hidden', !isCustom);
+      if (isCustom) customInput.focus();
+      syncSoilNote();
     });
-    dynamicBox.appendChild(input);
+    customInput.addEventListener('input', syncSoilNote);
+
+    dynamicBox.append(select, customInput);
     return;
   }
 
@@ -1868,40 +1967,48 @@ function updateGrowthTagFormUI() {
     dynamicBox.classList.remove('hidden');
     dynamicBox.appendChild(createElement('label', 'block text-[11px] font-semibold text-charcoal', `移動先の置き場所（現在: ${currentLoc}）`));
 
-    const locations = Array.from(getLocationCounts().keys()).filter(loc => loc !== '未設定');
-    if (locations.length > 0) {
-      const chipRow = createElement('div', 'flex flex-wrap gap-1 mb-1');
-      locations.forEach(loc => {
-        const chip = createElement('button', 'ui-btn ui-sm');
-        chip.type = 'button';
-        chip.textContent = loc;
-        chip.addEventListener('click', () => {
-          const locInput = document.getElementById('growthMoveLocationInput');
-          if (!locInput) return;
-          locInput.value = loc;
-          locInput.dispatchEvent(new Event('input'));
-        });
-        chipRow.appendChild(chip);
-      });
-      dynamicBox.appendChild(chipRow);
-    }
+    const select = createElement('select', 'ui-field ui-md');
+    select.id = 'growthMoveLocationSelect';
+    const emptyOpt = createElement('option', '', '-- 移動先を選択 --');
+    emptyOpt.value = '';
+    select.appendChild(emptyOpt);
 
-    const input = createElement('input', 'ui-field ui-md');
-    input.type = 'text';
-    input.id = 'growthMoveLocationInput';
-    input.maxLength = 200;
-    input.setAttribute('list', 'locationPresets');
-    input.placeholder = '新しい置き場所を入力または上から選択...';
-    input.value = currentLoc === '未設定' ? '' : currentLoc;
-    input.addEventListener('input', () => {
-      const nextLoc = input.value.trim() || '未設定';
+    const locOptions = getAllLocationOptions();
+    locOptions.forEach(loc => {
+      const opt = createElement('option', '', loc);
+      opt.value = loc;
+      select.appendChild(opt);
+    });
+    const customOpt = createElement('option', '', '＋ 新しく場所を入力...');
+    customOpt.value = '__custom__';
+    select.appendChild(customOpt);
+    select.value = currentLoc !== '未設定' && locOptions.includes(currentLoc) ? currentLoc : '';
+
+    const customInput = createElement('input', 'hidden ui-field ui-md mt-1.5');
+    customInput.type = 'text';
+    customInput.id = 'growthMoveLocationInput';
+    customInput.maxLength = 200;
+    customInput.placeholder = '新しい置き場所を入力...';
+
+    const syncLocNote = () => {
+      const rawNext = select.value === '__custom__' ? customInput.value.trim() : select.value;
+      const nextLoc = rawNext || '未設定';
       if (nextLoc !== currentLoc) {
         applyGrowthAutoNote(`場所: ${currentLoc} → ${nextLoc}`);
       } else {
         applyGrowthAutoNote('');
       }
+    };
+
+    select.addEventListener('change', () => {
+      const isCustom = select.value === '__custom__';
+      customInput.classList.toggle('hidden', !isCustom);
+      if (isCustom) customInput.focus();
+      syncLocNote();
     });
-    dynamicBox.appendChild(input);
+    customInput.addEventListener('input', syncLocNote);
+
+    dynamicBox.append(select, customInput);
     return;
   }
 
@@ -1979,10 +2086,13 @@ async function addGrowthLogEntry() {
           }
         }
       } else if (tagVal === 'repot') {
+        const soilSelect = document.getElementById('growthRepotSoilSelect');
         const soilInput = document.getElementById('growthRepotSoilInput');
-        if (soilInput) {
+        if (soilSelect) {
           const prevSoil = plant.soil || '';
-          const nextSoil = soilInput.value.trim();
+          const nextSoil = soilSelect.value === '__custom__'
+            ? (soilInput?.value.trim() || '')
+            : soilSelect.value;
           if (nextSoil !== prevSoil) {
             plant.soil = nextSoil;
             if (!noteVal) {
@@ -1994,10 +2104,14 @@ async function addGrowthLogEntry() {
           noteVal = '植替えを実施';
         }
       } else if (tagVal === 'move') {
+        const locSelect = document.getElementById('growthMoveLocationSelect');
         const locInput = document.getElementById('growthMoveLocationInput');
-        if (locInput) {
+        if (locSelect) {
           const prevLoc = plant.location || '未設定';
-          const nextLoc = locInput.value.trim() || '未設定';
+          const rawNext = locSelect.value === '__custom__'
+            ? (locInput?.value.trim() || '')
+            : locSelect.value;
+          const nextLoc = rawNext || '未設定';
           if (nextLoc !== prevLoc) {
             plant.location = nextLoc;
             if (!noteVal) {
@@ -3295,6 +3409,13 @@ function initializeUIEvents() {
   });
   document.getElementById('batchEditModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'batchEditModal') closeBatchEditModal();
+  });
+  document.getElementById('batchEditLocationSelect')?.addEventListener('change', (e) => {
+    const input = document.getElementById('batchEditLocationInput');
+    if (!input) return;
+    const isCustom = e.target.value === '__custom__';
+    input.classList.toggle('hidden', !isCustom);
+    if (isCustom) input.focus();
   });
   document.getElementById('batchEditCalendarCopySelect')?.addEventListener('change', (e) => {
     const srcId = e.target.value;

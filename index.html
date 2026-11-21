@@ -39,10 +39,11 @@
       ascent-override: 89%;
       descent-override: 15%;
     }
-    /* 3サイズに --ui-lh（偶数の行高）を追加 */
-    .ui-sm { --ui-h: 26px; --ui-fs: 10px; --ui-lh: 14px; --ui-px: 10px; --ui-icon: 12px; --ui-r: 0.5rem; }
-    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-lh: 16px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.7rem; }
-    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-lh: 16px; --ui-px: 14px; --ui-icon: 16px; --ui-r: 0.75rem; }
+    
+    .ui-ss { --ui-h: 16px; --ui-fs:  9px; --ui-lh: 10px; --ui-px:  4px; --ui-icon: 10px; --ui-r: 0.40rem; }
+    .ui-sm { --ui-h: 26px; --ui-fs: 10px; --ui-lh: 14px; --ui-px: 10px; --ui-icon: 12px; --ui-r: 0.60rem; }
+    .ui-md { --ui-h: 32px; --ui-fs: 12px; --ui-lh: 16px; --ui-px: 12px; --ui-icon: 14px; --ui-r: 0.65rem; }
+    .ui-lg { --ui-h: 38px; --ui-fs: 13px; --ui-lh: 16px; --ui-px: 14px; --ui-icon: 16px; --ui-r: 0.70rem; }
 
     /* ボタン・タブ共通（デフォルト＝白ボタン・横幅可変） */
     .ui-btn {
@@ -183,28 +184,35 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    .marker-badge {
-      display: flex;
+    .ui-chip {
+      display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      padding: 1px 5px;
-      border-width: 1px;
-      border-style: solid;
-      border-radius: 0.375rem;
-      font-size: 9px;
-      line-height: 1.5;
+      gap: 0.1rem;
+      height: var(--ui-h);
+      padding: 0 var(--ui-px);
+      font-size: var(--ui-fs);
+      line-height: var(--ui-lh);
+      border-radius: var(--ui-r);
+      border: 1px solid transparent;
+      white-space: nowrap;
+      box-sizing: border-box;
     }
-    .marker-badge svg {
-      width: 0.75rem;
-      height: 0.75rem;
+    .ui-chip svg {
+      width: var(--ui-icon);
+      height: var(--ui-icon);
       flex-shrink: 0;
     }
-    @media (min-width: 640px) {
-      .marker-badge {
-        padding-left: 7px;
-        padding-right: 7px;
-        font-size: 10px;
-      }
+    .ui-chip .chip-illust {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ui-chip .chip-illust svg {
+      width: 100%;
+      height: 100%;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -369,8 +377,8 @@
         </div>
         <div class="flex items-center justify-between gap-2 sm:gap-1.5">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="marker-badge font-medium bg-sage-100 text-sage-700 border-transparent shrink-0"><span data-icon="map-pin" data-icon-class="text-sage-600"></span><span id="detailLocationBadge"></span></span>
-            <span id="detailStatusBadge" class="hidden marker-badge font-bold shrink-0"></span>
+            <span class="ui-chip ui-ss font-medium bg-sage-100 text-sage-700 border-transparent shrink-0"><span data-icon="map-pin" data-icon-class="text-sage-600"></span><span id="detailLocationBadge"></span></span>
+            <span id="detailStatusBadge" class="hidden ui-chip ui-ss font-bold shrink-0"></span>
             <span id="detailDaysOwnedBadge" class="text-[10px] sm:text-[11px] text-gray-500 truncate"></span>
           </div>
           <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -403,8 +411,8 @@
         <div id="detailTabLog" class="space-y-5">
           <!-- Add / Edit Log Box -->
           <div id="growthLogFormBox" class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 space-y-3">
-            <!-- Category Buttons -->
-            <div id="growthTagButtons" class="flex flex-wrap gap-1.5"></div>
+            <!-- Category Icon Cards -->
+            <div id="growthTagButtons" class="grid grid-cols-4 gap-1.5 sm:gap-2"></div>
             <input type="hidden" id="newGrowthTagInput" value="growth" />
             <input type="hidden" id="editGrowthLogId" value="" />
 
@@ -520,7 +528,7 @@
                 <span data-icon="calendar" data-icon-class="w-3.5 h-3.5 text-sage-600"></span>
                 <span>栽培カレンダー</span>
               </h3>
-              <span id="detailCalendarCurrentMonthBadge" class="text-[10px] font-semibold text-sage-700 bg-sage-100 px-2 py-0.5 rounded-full"></span>
+              <span id="detailCalendarCurrentMonthBadge" class="ui-chip ui-ss font-semibold text-sage-700 bg-sage-100"></span>
             </div>
             <div id="detailCalendarGrid" class="overflow-x-auto no-scrollbar"></div>
           </div>
@@ -532,13 +540,13 @@
                 <span data-icon="sparkles" data-icon-class="w-4 h-4 text-sage-600"></span>
                 成長変化
               </h3>
-              <span id="comparisonSpanBadge" class="marker-badge font-medium bg-white text-sage-700 border-sage-200"></span>
+              <span id="comparisonSpanBadge" class="ui-chip ui-ss font-medium bg-white text-sage-700 border-sage-200"></span>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-white p-2 rounded-xl border border-stoneborder">
                 <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
                   <img id="compareFirstImg" src="" alt="First record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
-                  <span class="marker-badge absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
+                  <span class="ui-chip ui-ss absolute top-2 left-2 bg-black/60 text-white border-transparent">BEFORE</span>
                 </div>
                 <p id="compareFirstDate" class="text-[11px] font-bold text-charcoal"></p>
                 <p id="compareFirstNote" class="text-[11px] text-gray-500 truncate"></p>
@@ -546,7 +554,7 @@
               <div class="bg-white p-2 rounded-xl border border-stoneborder">
                 <div class="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-1.5 relative">
                   <img id="compareLatestImg" src="" alt="Latest record" class="w-full h-full object-cover cursor-zoom-in" data-action="viewImageFullscreen" />
-                  <span class="marker-badge absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
+                  <span class="ui-chip ui-ss absolute top-2 left-2 bg-sage-600 text-white border-transparent">NOW (最新)</span>
                 </div>
                 <p id="compareLatestDate" class="text-[11px] font-bold text-charcoal"></p>
                 <p id="compareLatestNote" class="text-[11px] text-gray-500 truncate"></p>
@@ -856,13 +864,10 @@
       <div class="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto min-h-0 overscroll-contain">
         <!-- Tab 1: Location -->
         <div id="batchEditTabLocation" class="space-y-3.5">
-          <div id="batchEditLocationChipsWrap">
-            <label class="block text-[11px] font-bold text-charcoal mb-1.5">既存の置き場所から選ぶ（タップで入力）</label>
-            <div id="batchEditLocationChips" class="flex flex-wrap gap-1.5"></div>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-charcoal mb-1">移動先・統一する場所名</label>
-            <input type="text" id="batchEditLocationInput" maxlength="200" list="locationPresets" placeholder="例: ライト棚・直下" class="ui-field ui-lg" />
+          <div class="space-y-2">
+            <label class="block text-[11px] font-bold text-charcoal">移動先・統一する場所名</label>
+            <select id="batchEditLocationSelect" class="ui-field ui-lg"></select>
+            <input type="text" id="batchEditLocationInput" maxlength="200" placeholder="新しい場所名を入力（例: ライト棚・直下）" class="hidden ui-field ui-lg" />
           </div>
           <label class="flex items-center gap-2 text-xs text-charcoal cursor-pointer select-none">
             <input type="checkbox" id="batchEditLocationAutoLog" class="accent-sage-600 cursor-pointer" />
