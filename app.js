@@ -77,6 +77,8 @@ const appState = {
   selectedFormSvgType: 'agave',
   tempFormPhotoDataUrl: null,
   tempGrowthPhotoDataUrl: null,
+  activeQuickLogPlantId: null,
+  tempQuickLogPhotoDataUrl: null,
   dbLoadError: true
 };
 
@@ -88,9 +90,22 @@ function createId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
+const LOG_TAGS = {
+  growth:  { label: '成長記録', badgeClass: 'bg-sage-100 text-sage-800 border-sage-200' },
+  repot:   { label: '植替え', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200' },
+  cut:     { label: '胴切り・茎伏せ', badgeClass: 'bg-rose-50 text-rose-800 border-rose-200' },
+  rooting: { label: '発根・水差し', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200' },
+  check:   { label: '根確認・処置', badgeClass: 'bg-orange-50 text-orange-800 border-orange-200' },
+  move:    { label: '場所・環境変更', badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200' }
+};
+
 function getSortedGrowthLogs(plant) {
   if (!Array.isArray(plant?.growthLogs)) return [];
   return [...plant.growthLogs].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
+
+function getPhotoLogs(plant) {
+  return getSortedGrowthLogs(plant).filter(g => Boolean(g.photoDataUrl));
 }
 
 function canEditData() {
@@ -488,8 +503,8 @@ function getFilteredAndSortedPlants() {
 
 function createPlantCard(plant) {
   const svgInfo = BOTANICAL_SVGS[plant.svgType] || BOTANICAL_SVGS.agave;
-  const sortedLogs = getSortedGrowthLogs(plant);
-  const latestLog = sortedLogs[sortedLogs.length - 1];
+  const photoLogs = getPhotoLogs(plant);
+  const latestLog = photoLogs[photoLogs.length - 1];
   const latestPhoto = latestLog?.photoDataUrl || null;
 
   const daysSinceWater = plant.lastWatered ? calcDaysBetween(plant.lastWatered) : null;
@@ -556,9 +571,9 @@ function createPlantCard(plant) {
   statusWrap.appendChild(statusBadge);
   visual.appendChild(statusWrap);
 
-  if (sortedLogs.length) {
+  if (photoLogs.length) {
     const logBadge = createElement('span', 'marker-badge absolute bottom-1.5 left-1.5 sm:bottom-2.5 sm:left-2.5 bg-black/60 text-white font-medium border-transparent');
-    logBadge.append(createLucideIcon('images'), document.createTextNode(`${sortedLogs.length}枚`));
+    logBadge.append(createLucideIcon('images'), document.createTextNode(`${photoLogs.length}枚`));
     visual.appendChild(logBadge);
   }
 
@@ -581,22 +596,35 @@ function createPlantCard(plant) {
 
   body.appendChild(details);
 
-  // Quick Care Buttons
+  // Quick Care & Log Buttons
   const actions = createElement('div', 'grid grid-cols-2 gap-1 sm:gap-1.5');
-  QUICK_CARE_CARDS.slice(0, 2).forEach(cardDef => {
-    const button = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${cardDef.btnClass}`);
-    button.type = 'button';
-    button.title = `今日${cardDef.label}したとして記録`;
-    button.append(
-      createLucideIcon(cardDef.icon, 'w-3.5 h-3.5 shrink-0'),
-      createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', cardDef.label)
-    );
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      recordPlantCare(plant.id, cardDef.careType, `${cardDef.label}を記録しました`);
-    });
-    actions.appendChild(button);
+
+  const waterCard = QUICK_CARE_CARDS[0];
+  const waterBtn = createElement('button', `py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer ${waterCard.btnClass}`);
+  waterBtn.type = 'button';
+  waterBtn.title = '今日水やりしたとして記録';
+  waterBtn.append(
+    createLucideIcon(waterCard.icon, 'w-3.5 h-3.5 shrink-0'),
+    createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', waterCard.label)
+  );
+  waterBtn.addEventListener('click', event => {
+    event.stopPropagation();
+    recordPlantCare(plant.id, waterCard.careType, `${waterCard.label}を記録しました`);
   });
+
+  const quickLogBtn = createElement('button', 'py-2 px-1 sm:px-2 rounded-lg sm:rounded-xl text-xs font-semibold border flex flex-col sm:flex-row items-center justify-center gap-0 sm:gap-1 transition cursor-pointer bg-sage-50 hover:bg-sage-600 text-sage-800 hover:text-white border-sage-200/80');
+  quickLogBtn.type = 'button';
+  quickLogBtn.title = '写真やひとことメモをサッと追加';
+  quickLogBtn.append(
+    createLucideIcon('square-pen', 'w-3.5 h-3.5 shrink-0'),
+    createElement('span', 'text-[10px] sm:text-xs leading-none mt-0.5 sm:mt-0', '記録')
+  );
+  quickLogBtn.addEventListener('click', event => {
+    event.stopPropagation();
+    openQuickLogModal(plant.id);
+  });
+
+  actions.append(waterBtn, quickLogBtn);
   body.appendChild(actions);
 
   card.appendChild(body);
@@ -771,13 +799,14 @@ function populateDetailModal(plantId) {
   }
 
   const logs = getSortedGrowthLogs(plant);
-  document.getElementById('growthCountBadge').textContent = `(${logs.length}枚)`;
+  const photoLogs = logs.filter(g => Boolean(g.photoDataUrl));
+  document.getElementById('growthCountBadge').textContent = `(${logs.length}件)`;
 
   const compSec = document.getElementById('growthComparisonSection');
-  if (logs.length >= 2) {
+  if (photoLogs.length >= 2) {
     compSec.classList.remove('hidden');
-    const first = logs[0];
-    const latest = logs[logs.length - 1];
+    const first = photoLogs[0];
+    const latest = photoLogs[photoLogs.length - 1];
 
     const firstImg = document.getElementById('compareFirstImg');
     firstImg.src = first.photoDataUrl;
@@ -805,47 +834,92 @@ function populateDetailModal(plantId) {
   if (reversed.length === 0) {
     timelineGrid.appendChild(createElement(
       'div',
-      'col-span-full py-8 text-center text-xs text-gray-400 border border-dashed border-stoneborder rounded-2xl',
-      'まだ成長写真が登録されていません。上の「写真を選択」から1枚目を記録してみましょう。'
+      'py-8 text-center text-xs text-gray-400 border border-dashed border-stoneborder rounded-2xl',
+      'まだ育成ログがありません。上のフォームから写真やひとことメモを記録してみましょう。'
     ));
     return;
   }
 
-  reversed.forEach(entry => {
-    const item = createElement('div', 'bg-canvas rounded-2xl border border-stoneborder overflow-hidden flex flex-col justify-between group');
-    const imageWrap = createElement('div', 'aspect-square bg-gray-100 relative overflow-hidden');
-    const image = createElement('img', 'w-full h-full object-cover cursor-zoom-in');
-    image.src = entry.photoDataUrl;
-    image.alt = 'Growth log';
-    image.dataset.action = 'viewImageFullscreen';
-    image.dataset.caption = `${entry.date || ''} ${entry.note || ''}`.trim();
-    imageWrap.appendChild(image);
+  let lastYear = null;
+  reversed.forEach((entry, idx) => {
+    const isLast = idx === reversed.length - 1;
+    const tagInfo = LOG_TAGS[entry.tag] || LOG_TAGS.growth;
 
-    const controlsWrap = createElement('div', 'opacity-0 group-hover:opacity-100 transition absolute top-2 right-2 flex items-center gap-1.5');
+    const dateStr = entry.date || '';
+    const parts = dateStr.split('-');
+    const year = parts.length === 3 ? parts[0] : '';
+    const shortDate = parts.length === 3 ? `${Number(parts[1])}/${Number(parts[2])}` : dateStr;
 
-    const editButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-amber-500');
+    if (year && year !== lastYear) {
+      const yearDivider = createElement('div', `flex items-center gap-2.5 ${idx === 0 ? 'mb-3' : 'mt-1 mb-3'}`);
+      yearDivider.append(
+        createElement('span', 'h-px flex-1 bg-stoneborder/80'),
+        createElement('span', 'px-2.5 py-0.5 rounded-full bg-canvas border border-stoneborder text-[11px] font-bold text-sage-700 tabular-nums', `${year}年`),
+        createElement('span', 'h-px flex-1 bg-stoneborder/80')
+      );
+      timelineGrid.appendChild(yearDivider);
+      lastYear = year;
+    }
+
+    const nextDateParts = reversed[idx + 1]?.date ? reversed[idx + 1].date.split('-') : [];
+    const nextYear = nextDateParts.length === 3 ? nextDateParts[0] : '';
+    const isYearLast = isLast || (year && nextYear && year !== nextYear);
+
+    const row = createElement('div', 'flex items-stretch group');
+
+    // Left: Date (M/D)
+    const dateCol = createElement(
+      'div',
+      'w-10 sm:w-11 shrink-0 text-[11px] font-semibold text-gray-500 pt-1 pr-2 text-right tabular-nums',
+      shortDate
+    );
+
+    // Center: Dot & Vertical Line
+    const axisCol = createElement('div', 'flex flex-col items-center shrink-0');
+    axisCol.appendChild(createElement('span', 'w-2.5 h-2.5 rounded-full bg-sage-500 ring-4 ring-white mt-1.5 shrink-0 z-10'));
+    if (!isYearLast) {
+      axisCol.appendChild(createElement('span', 'w-px flex-1 bg-stoneborder my-0.5'));
+    }
+
+    // Right: Content
+    const contentCol = createElement('div', `flex-1 min-w-0 pl-3 ${isLast ? 'pb-1' : 'pb-5'}`);
+    const headerRow = createElement('div', 'flex items-center justify-between gap-2');
+    const tagBadge = createElement('span', `inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${tagInfo.badgeClass}`, tagInfo.label);
+
+    const controlsWrap = createElement('div', 'flex items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition shrink-0');
+    const editButton = createElement('button', 'p-1 rounded-md text-gray-400 hover:text-amber-600 hover:bg-amber-50');
     editButton.type = 'button';
     editButton.title = 'この記録を編集';
     editButton.appendChild(createLucideIcon('pencil', 'w-3.5 h-3.5'));
     editButton.addEventListener('click', () => editGrowthLogEntry(plant.id, entry.id));
 
-    const deleteButton = createElement('button', 'p-1.5 rounded-lg bg-black/60 text-white hover:bg-red-600');
+    const deleteButton = createElement('button', 'p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50');
     deleteButton.type = 'button';
-    deleteButton.title = 'この写真を削除';
+    deleteButton.title = 'この記録を削除';
     deleteButton.appendChild(createLucideIcon('trash-2', 'w-3.5 h-3.5'));
     deleteButton.addEventListener('click', () => deleteGrowthLogEntry(plant.id, entry.id));
 
     controlsWrap.append(editButton, deleteButton);
-    imageWrap.appendChild(controlsWrap);
-    item.appendChild(imageWrap);
+    headerRow.append(tagBadge, controlsWrap);
+    contentCol.appendChild(headerRow);
 
-    const caption = createElement('div', 'p-2.5');
-    caption.append(
-      createElement('p', 'text-[11px] font-bold text-charcoal', entry.date || ''),
-      createElement('p', 'text-xs text-gray-600 mt-0.5 line-clamp-2', entry.note || '記録のみ')
-    );
-    item.appendChild(caption);
-    timelineGrid.appendChild(item);
+    if (entry.note) {
+      contentCol.appendChild(createElement('p', 'text-xs text-charcoal mt-1 whitespace-pre-line leading-relaxed', entry.note));
+    }
+
+    if (entry.photoDataUrl) {
+      const imgWrap = createElement('div', 'mt-2');
+      const image = createElement('img', 'w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover border border-stoneborder cursor-zoom-in shadow-2xs');
+      image.src = entry.photoDataUrl;
+      image.alt = 'Growth log';
+      image.dataset.action = 'viewImageFullscreen';
+      image.dataset.caption = `${entry.date || ''} [${tagInfo.label}] ${entry.note || ''}`.trim();
+      imgWrap.appendChild(image);
+      contentCol.appendChild(imgWrap);
+    }
+
+    row.append(dateCol, axisCol, contentCol);
+    timelineGrid.appendChild(row);
   });
 }
 
@@ -868,7 +942,7 @@ function clearNewGrowthPhoto() {
   appState.tempGrowthPhotoDataUrl = null;
   document.getElementById('newGrowthPhotoInput').value = '';
   document.getElementById('newGrowthPreviewBox').classList.add('hidden');
-  document.getElementById('newGrowthPhotoLabel').textContent = '写真を選択 (自動圧縮)';
+  document.getElementById('newGrowthPhotoLabel').textContent = '写真を追加（任意）';
 }
 
 function editGrowthLogEntry(plantId, logId) {
@@ -878,14 +952,19 @@ function editGrowthLogEntry(plantId, logId) {
   if (!log) return;
 
   document.getElementById('editGrowthLogId').value = log.id;
+  document.getElementById('newGrowthTagInput').value = LOG_TAGS[log.tag] ? log.tag : 'growth';
   document.getElementById('newGrowthDateInput').value = log.date || getTodayStr();
   document.getElementById('newGrowthNoteInput').value = log.note || '';
 
-  appState.tempGrowthPhotoDataUrl = log.photoDataUrl;
-  document.getElementById('newGrowthPreviewImg').src = log.photoDataUrl;
-  document.getElementById('newGrowthSizeInfo').textContent = '現在の写真 (変更可能)';
-  document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
-  document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
+  if (log.photoDataUrl) {
+    appState.tempGrowthPhotoDataUrl = log.photoDataUrl;
+    document.getElementById('newGrowthPreviewImg').src = log.photoDataUrl;
+    document.getElementById('newGrowthSizeInfo').textContent = '現在の写真 (変更・取消可能)';
+    document.getElementById('newGrowthPreviewBox').classList.remove('hidden');
+    document.getElementById('newGrowthPhotoLabel').textContent = '別の写真に変更';
+  } else {
+    clearNewGrowthPhoto();
+  }
 
   const addBtn = document.getElementById('addGrowthLogBtn');
   addBtn.textContent = '更新';
@@ -898,6 +977,7 @@ function editGrowthLogEntry(plantId, logId) {
 
 function cancelEditGrowthLog() {
   clearNewGrowthPhoto();
+  document.getElementById('newGrowthTagInput').value = 'growth';
   document.getElementById('newGrowthDateInput').value = getTodayStr();
   document.getElementById('newGrowthNoteInput').value = '';
   document.getElementById('editGrowthLogId').value = '';
@@ -918,14 +998,15 @@ async function addGrowthLogEntry() {
     const plant = appState.plants.find(p => p.id === plantId);
     if (!plant) return;
 
-    if (!appState.tempGrowthPhotoDataUrl) {
-      showToast('追加・更新する写真を選択してください');
-      return;
-    }
-
+    const tagVal = document.getElementById('newGrowthTagInput').value || 'growth';
     const dateVal = document.getElementById('newGrowthDateInput').value || getTodayStr();
     const noteVal = document.getElementById('newGrowthNoteInput').value.trim();
     const editLogId = document.getElementById('editGrowthLogId').value;
+
+    if (!appState.tempGrowthPhotoDataUrl && !noteVal) {
+      showToast('写真またはひとことメモを入力してください');
+      return;
+    }
 
     if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
 
@@ -933,26 +1014,34 @@ async function addGrowthLogEntry() {
     if (editLogId) {
       const logIndex = plant.growthLogs.findIndex(g => g.id === editLogId);
       if (logIndex === -1) {
-        showToast('更新する成長記録が見つかりません');
+        showToast('更新する育成ログが見つかりません');
         return;
       }
       plant.growthLogs[logIndex] = {
         id: editLogId,
+        tag: tagVal,
         date: dateVal,
-        photoDataUrl: appState.tempGrowthPhotoDataUrl,
+        photoDataUrl: appState.tempGrowthPhotoDataUrl || '',
         note: noteVal
       };
-      successMessage = '📷 成長記録を更新しました';
+      if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
+        plant.lastRepotted = dateVal;
+      }
+      successMessage = '📝 育成ログを更新しました';
     } else {
       const newLogId = createId('g');
       plant.growthLogs.push({
         id: newLogId,
+        tag: tagVal,
         date: dateVal,
-        photoDataUrl: appState.tempGrowthPhotoDataUrl,
+        photoDataUrl: appState.tempGrowthPhotoDataUrl || '',
         note: noteVal
       });
+      if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
+        plant.lastRepotted = dateVal;
+      }
       document.getElementById('editGrowthLogId').value = newLogId;
-      successMessage = '📷 成長アルバムに写真を追加しました';
+      successMessage = '📝 育成ログを追加しました';
     }
 
     try {
@@ -970,12 +1059,101 @@ async function addGrowthLogEntry() {
   });
 }
 
+function openQuickLogModal(plantId) {
+  if (!canEditData()) return;
+  const plant = appState.plants.find(p => p.id === plantId);
+  if (!plant) return;
+  appState.activeQuickLogPlantId = plantId;
+  clearQuickLogPhoto();
+  document.getElementById('quickLogPlantName').textContent = plant.name;
+  document.getElementById('quickLogTagInput').value = 'growth';
+  document.getElementById('quickLogDateInput').value = getTodayStr();
+  document.getElementById('quickLogNoteInput').value = '';
+  document.getElementById('quickLogModal').classList.remove('hidden');
+}
+
+function closeQuickLogModal() {
+  appState.activeQuickLogPlantId = null;
+  clearQuickLogPhoto();
+  document.getElementById('quickLogModal').classList.add('hidden');
+}
+
+async function previewQuickLogPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const { dataUrl, approxKB } = await compressImageFile(file);
+    appState.tempQuickLogPhotoDataUrl = dataUrl;
+    document.getElementById('quickLogPreviewImg').src = dataUrl;
+    document.getElementById('quickLogPreviewWrap').classList.remove('hidden');
+    document.getElementById('quickLogPhotoLabel').textContent = `変更 (約${approxKB}KB)`;
+  } catch (e) {
+    showToast('画像の読み込みに失敗しました');
+  }
+}
+
+function clearQuickLogPhoto() {
+  appState.tempQuickLogPhotoDataUrl = null;
+  const input = document.getElementById('quickLogPhotoInput');
+  if (input) input.value = '';
+  document.getElementById('quickLogPreviewWrap')?.classList.add('hidden');
+  const label = document.getElementById('quickLogPhotoLabel');
+  if (label) label.textContent = '写真を選択';
+}
+
+async function submitQuickLog() {
+  if (!canEditData()) return;
+  const submitBtn = document.getElementById('submitQuickLogBtn');
+  await runWithButtonDisabled(submitBtn, async () => {
+    const plantId = appState.activeQuickLogPlantId;
+    const plant = appState.plants.find(p => p.id === plantId);
+    if (!plant) return;
+
+    const tagVal = document.getElementById('quickLogTagInput').value || 'growth';
+    const dateVal = document.getElementById('quickLogDateInput').value || getTodayStr();
+    const noteVal = document.getElementById('quickLogNoteInput').value.trim();
+
+    if (!appState.tempQuickLogPhotoDataUrl && !noteVal) {
+      showToast('写真またはひとことメモを入力してください');
+      return;
+    }
+
+    if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+    plant.growthLogs.push({
+      id: createId('g'),
+      tag: tagVal,
+      date: dateVal,
+      photoDataUrl: appState.tempQuickLogPhotoDataUrl || '',
+      note: noteVal
+    });
+    if (tagVal === 'repot' && (!plant.lastRepotted || dateVal > plant.lastRepotted)) {
+      plant.lastRepotted = dateVal;
+    }
+
+    try {
+      await saveToDB();
+    } catch (err) {
+      renderApp();
+      return;
+    }
+
+    const existingCard = document.getElementById(`card_${plantId}`);
+    if (existingCard) {
+      existingCard.replaceWith(createPlantCard(plant));
+    } else {
+      renderApp();
+    }
+    closeQuickLogModal();
+    showToast(`📝 「${plant.name}」に記録を追加しました`);
+  });
+}
+
 async function deleteGrowthLogEntry(plantId, logId) {
   if (!canEditData()) return;
   const plant = appState.plants.find(p => p.id === plantId);
   if (!plant || !Array.isArray(plant.growthLogs)) return;
 
-  openConfirmDialog('写真の削除', 'この成長記録写真を削除しますか？', async () => {
+  openConfirmDialog('育成ログの削除', 'この育成ログを削除しますか？', async () => {
     if (!canEditData()) return;
     plant.growthLogs = plant.growthLogs.filter(g => g.id !== logId);
     if (document.getElementById('editGrowthLogId').value === logId) {
@@ -990,7 +1168,7 @@ async function deleteGrowthLogEntry(plantId, logId) {
     }
     populateDetailModal(plantId);
     renderApp();
-    showToast('写真を削除しました');
+    showToast('育成ログを削除しました');
   });
 }
 
@@ -1115,6 +1293,12 @@ async function savePlantForm(event) {
         showToast('更新する株が見つかりません');
         return;
       }
+      const prevLocation = plant.location || '未設定';
+      const prevSoil = plant.soil || '';
+      const autoChanges = [];
+      if (prevLocation !== location) autoChanges.push(`場所: ${prevLocation} → ${location}`);
+      if (prevSoil !== soil) autoChanges.push(`用土: ${prevSoil || '未設定'} → ${soil || '未設定'}`);
+
       Object.assign(plant, {
         name,
         svgType: appState.selectedFormSvgType,
@@ -1128,10 +1312,25 @@ async function savePlantForm(event) {
         shop,
         notes
       });
-      if (appState.tempFormPhotoDataUrl) {
-        if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+      if (!Array.isArray(plant.growthLogs)) plant.growthLogs = [];
+      if (autoChanges.length > 0) {
+        const today = getTodayStr();
+        const isSoilChanged = prevSoil !== soil;
         plant.growthLogs.push({
           id: createId('g'),
+          tag: isSoilChanged ? 'repot' : 'move',
+          date: today,
+          photoDataUrl: '',
+          note: autoChanges.join('\n')
+        });
+        if (isSoilChanged && (!plant.lastRepotted || today > plant.lastRepotted)) {
+          plant.lastRepotted = today;
+        }
+      }
+      if (appState.tempFormPhotoDataUrl) {
+        plant.growthLogs.push({
+          id: createId('g'),
+          tag: 'growth',
           date: getTodayStr(),
           photoDataUrl: appState.tempFormPhotoDataUrl,
           note: '写真追加'
@@ -1358,13 +1557,15 @@ function validatePlantRecords(records) {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
           throw new Error(`${name}の成長記録${j + 1}件目が不正です`);
         }
-        if (typeof entry.photoDataUrl !== 'string' || !/^data:image\/(?:webp|jpeg|png);base64,/.test(entry.photoDataUrl)) {
+        const photoDataUrl = entry.photoDataUrl == null ? '' : entry.photoDataUrl;
+        if (typeof photoDataUrl !== 'string' || (photoDataUrl !== '' && !/^data:image\/(?:webp|jpeg|png);base64,/.test(photoDataUrl))) {
           throw new Error(`${name}の成長記録${j + 1}件目の画像形式が不正です`);
         }
         return {
           id: typeof entry.id === 'string' && entry.id ? entry.id : createId(`g_${j}`),
+          tag: typeof entry.tag === 'string' && Object.prototype.hasOwnProperty.call(LOG_TAGS, entry.tag) ? entry.tag : 'growth',
           date: readDate(entry.date, `${name}の成長記録${j + 1}件目の日付`),
-          photoDataUrl: entry.photoDataUrl,
+          photoDataUrl,
           note: readStr(entry.note, `${name}の成長記録${j + 1}件目のメモ`, 1000)
         };
       })
@@ -1657,6 +1858,9 @@ function initializeUIEvents() {
     addGrowthLogEntry,
     cancelEditGrowthLog,
     clearNewGrowthPhoto,
+    closeQuickLogModal,
+    clearQuickLogPhoto,
+    submitQuickLog,
     closePlantFormModal,
     clearFormPhoto,
     viewImageFullscreen,
@@ -1702,6 +1906,8 @@ function initializeUIEvents() {
       closeImageViewer();
     } else if (!document.getElementById('confirmDialog').classList.contains('hidden')) {
       closeConfirmDialog();
+    } else if (!document.getElementById('quickLogModal').classList.contains('hidden')) {
+      closeQuickLogModal();
     } else if (!document.getElementById('formModal').classList.contains('hidden')) {
       closePlantFormModal();
     } else if (!document.getElementById('detailModal').classList.contains('hidden')) {
@@ -1715,6 +1921,7 @@ function initializeUIEvents() {
   document.getElementById('importFileInput').addEventListener('change', handleImportFile);
   document.getElementById('formPhotoInput').addEventListener('change', handleFormPhotoSelect);
   document.getElementById('newGrowthPhotoInput').addEventListener('change', previewGrowthPhoto);
+  document.getElementById('quickLogPhotoInput').addEventListener('change', previewQuickLogPhoto);
 
   initializeImageViewerEvents();
   initializeIconPlaceholders();

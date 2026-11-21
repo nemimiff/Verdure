@@ -334,31 +334,38 @@
           </div>
         </div>
 
-        <!-- Growth Photo Album & Add Log Section -->
+        <!-- Growth Log Timeline & Add Log Section -->
         <div>
           <div class="flex items-center justify-between mb-3">
             <h3 id="growthAlbumTitle" class="text-sm font-bold text-charcoal flex items-center gap-1.5">
               <span data-icon="images" data-icon-class="w-4 h-4 text-sage-600"></span>
-              <span>成長記録アルバム</span>
+              <span>育成ログ</span>
               <span id="growthCountBadge" class="text-xs font-normal text-gray-500"></span>
             </h3>
           </div>
 
-          <!-- Add New Growth Photo Box -->
-          <div class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 mb-4">
-            <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2.5 items-stretch sm:items-center">
-              <div class="sm:col-span-4">
-                <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full">
-                  <span data-icon="upload" data-icon-class="w-4 h-4"></span>
-                  <span id="newGrowthPhotoLabel">写真を選択 (自動圧縮)</span>
-                  <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
-                </label>
+          <!-- Add New Log Box -->
+          <div class="bg-canvas border border-stoneborder rounded-2xl p-3 sm:p-3.5 mb-5">
+            <div class="flex flex-col sm:grid sm:grid-cols-12 gap-2 items-stretch sm:items-center">
+              <div class="sm:col-span-3">
+                <select id="newGrowthTagInput" class="w-full px-2.5 py-2 rounded-xl border border-stoneborder bg-white text-xs font-medium text-charcoal focus:outline-none focus:border-sage-600">
+                  <option value="growth">成長記録</option>
+                  <option value="repot">植替え</option>
+                  <option value="cut">胴切り・茎伏せ</option>
+                  <option value="rooting">発根・水差し</option>
+                  <option value="check">根確認・処置</option>
+                  <option value="move">場所・環境変更</option>
+                </select>
               </div>
               <div class="sm:col-span-3">
                 <input type="date" id="newGrowthDateInput" class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
               </div>
-              <div class="sm:col-span-3">
-                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="新葉展開、子株など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
+              <div class="sm:col-span-4">
+                <label id="newGrowthPhotoLabelWrap" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-sage-500 bg-white hover:bg-sage-50 text-sage-700 text-xs font-medium cursor-pointer transition h-full">
+                  <span data-icon="camera" data-icon-class="w-3.5 h-3.5"></span>
+                  <span id="newGrowthPhotoLabel">写真を追加（任意）</span>
+                  <input type="file" id="newGrowthPhotoInput" accept="image/*" class="hidden" />
+                </label>
               </div>
               <div class="sm:col-span-2 flex gap-1.5">
                 <button data-action="addGrowthLogEntry" id="addGrowthLogBtn" class="w-full py-2 px-3 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold transition cursor-pointer h-full">
@@ -367,6 +374,9 @@
                 <button data-action="cancelEditGrowthLog" id="cancelEditGrowthLogBtn" class="hidden w-full py-2 px-3 rounded-xl border border-stoneborder bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold transition cursor-pointer flex-1">
                   取消
                 </button>
+              </div>
+              <div class="sm:col-span-12">
+                <input type="text" id="newGrowthNoteInput" maxlength="1000" placeholder="ひとことメモ（例: 葉元が黒ずんだので胴切り、新葉展開など...）" class="w-full px-3 py-2 rounded-xl border border-stoneborder bg-white text-xs focus:outline-none focus:border-sage-600" />
               </div>
             </div>
             <input type="hidden" id="editGrowthLogId" value="">
@@ -383,7 +393,7 @@
             </div>
           </div>
 
-          <div id="growthTimelineGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+          <div id="growthTimelineGrid" class="space-y-0"></div>
         </div>
       </div>
     </div>
@@ -517,6 +527,62 @@
           <button type="submit" class="px-5 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold shadow-xs cursor-pointer">保存する</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 3: QUICK LOG ENTRY ================= -->
+  <div id="quickLogModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white border border-stoneborder rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-fade-in">
+      <div class="px-5 py-3.5 border-b border-stoneborder bg-canvas flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold text-sage-600">育成ログをサッと追加</p>
+          <h3 id="quickLogPlantName" class="font-bold text-sm sm:text-base text-charcoal truncate"></h3>
+        </div>
+        <button type="button" data-action="closeQuickLogModal" class="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 shrink-0">
+          <span data-icon="x" data-icon-class="w-4 h-4"></span>
+        </button>
+      </div>
+      <div class="p-4 sm:p-5 space-y-3.5 text-xs">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-bold text-charcoal mb-1">カテゴリ</label>
+            <select id="quickLogTagInput" class="w-full px-2.5 py-2 rounded-xl border border-stoneborder bg-white font-medium text-charcoal focus:outline-none focus:border-sage-600">
+              <option value="growth">成長記録</option>
+              <option value="repot">植替え</option>
+              <option value="cut">胴切り・茎伏せ</option>
+              <option value="rooting">発根・水差し</option>
+              <option value="check">根確認・処置</option>
+              <option value="move">場所・環境変更</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-charcoal mb-1">日付</label>
+            <input type="date" id="quickLogDateInput" class="w-full px-2.5 py-2 rounded-xl border border-stoneborder bg-white focus:outline-none focus:border-sage-600" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal mb-1">写真（任意・自動圧縮）</label>
+          <div class="flex items-center gap-2.5">
+            <label class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-sage-500 bg-canvas hover:bg-sage-50 text-sage-700 font-medium cursor-pointer transition">
+              <span data-icon="camera" data-icon-class="w-4 h-4"></span>
+              <span id="quickLogPhotoLabel">写真を選択</span>
+              <input type="file" id="quickLogPhotoInput" accept="image/*" class="hidden" />
+            </label>
+            <div id="quickLogPreviewWrap" class="hidden flex items-center gap-2 shrink-0">
+              <img id="quickLogPreviewImg" src="" class="w-11 h-11 rounded-lg object-cover border border-stoneborder" />
+              <button type="button" data-action="clearQuickLogPhoto" class="text-xs text-gray-400 hover:text-red-500">取消</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-charcoal mb-1">ひとことメモ（任意）</label>
+          <textarea id="quickLogNoteInput" rows="2" maxlength="1000" placeholder="例: 葉の根元が黒ずんでたので胴切り、新葉展開など..." class="w-full px-3 py-2 rounded-xl border border-stoneborder focus:outline-none focus:border-sage-600"></textarea>
+        </div>
+        <div class="pt-1 flex items-center justify-end gap-2">
+          <button type="button" data-action="closeQuickLogModal" class="px-4 py-2 rounded-xl border border-stoneborder font-medium hover:bg-gray-50">キャンセル</button>
+          <button type="button" id="submitQuickLogBtn" data-action="submitQuickLog" class="px-5 py-2 rounded-xl bg-sage-600 hover:bg-sage-700 text-white font-semibold cursor-pointer">記録する</button>
+        </div>
+      </div>
     </div>
   </div>
 
